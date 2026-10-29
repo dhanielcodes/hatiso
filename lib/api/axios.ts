@@ -1,0 +1,125 @@
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  InternalAxiosRequestConfig,
+  AxiosResponse,
+} from 'axios';
+import { ApiError } from '@/types';
+
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.xnett-hasito.com/v1';
+
+/**
+ * Global Axios Instance for Hasito Marketplace & Banking
+ */
+export const apiClient: AxiosInstance = axios.create({
+  baseURL: BASE_URL,
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  },
+});
+
+/**
+ * Global Request Interceptor
+ * Injects JWT Bearer token and client metadata into all outgoing requests
+ */
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    // Only access localStorage in client-side runtime
+    if (typeof window !== 'undefined') {
+      const storedToken =
+        localStorage.getItem('hasito_auth_token') ||
+        sessionStorage.getItem('hasito_auth_token');
+
+      if (storedToken && config.headers) {
+        config.headers.Authorization = `Bearer ${storedToken}`;
+      }
+
+      // Add device / client info header
+      config.headers['X-Client-Platform'] = 'Web';
+      config.headers['X-Client-Version'] = '1.0.0';
+      config.headers['X-Request-Timestamp'] = new Date().toISOString();
+    }
+    return config;
+  },
+  (error: AxiosError) => {
+    return Promise.reject(error);
+  }
+);
+
+/**
+ * Global Response Interceptor
+ * Handles standardized responses, token expiration, 401/403/500 errors
+ */
+apiClient.interceptors.response.use(
+  (response: AxiosResponse) => {
+    return response;
+  },
+  (error: AxiosError<{ message?: string; errors?: Record<string, string[]> }>) => {
+    const status = error.response?.status;
+    const responseData = error.response?.data;
+
+    const formattedError: ApiError = {
+      message:
+        responseData?.message ||
+        error.message ||
+        'An unexpected network error occurred. Please try again.',
+      statusCode: status,
+      errors: responseData?.errors,
+    };
+
+    if (typeof window !== 'undefined') {
+      if (status === 401) {
+        // Token expired or invalid
+        localStorage.removeItem('hasito_auth_token');
+        localStorage.removeItem('hasito_user');
+        console.warn('[Axios Interceptor] Unauthorized (401). Session invalidated.');
+        
+        // Notify listeners or redirect if not already on an auth page
+        const currentPath = window.location.pathname;
+        if (!currentPath.startsWith('/auth')) {
+          // Can redirect or trigger login modal
+          // window.location.href = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
+        }
+      } else if (status === 403) {
+        console.error('[Axios Interceptor] Forbidden (403): Access denied.');
+      } else if (status === 500) {
+        console.error('[Axios Interceptor] Internal Server Error (500).');
+      }
+    }
+
+    return Promise.reject(formattedError);
+  }
+);
+
+/**
+ * Generic API Helpers for type-safe requests
+ */
+export async function apiGet<T>(url: string, params?: Record<string, any>): Promise<T> {
+  const response = await apiClient.get<T>(url, { params });
+  return response.data;
+}
+
+export async function apiPost<T>(url: string, data?: any): Promise<T> {
+  const response = await apiClient.post<T>(url, data);
+  return response.data;
+}
+
+export async function apiPut<T>(url: string, data?: any): Promise<T> {
+  const response = await apiClient.put<T>(url, data);
+  return response.data;
+}
+
+export async function apiPatch<T>(url: string, data?: any): Promise<T> {
+  const response = await apiClient.patch<T>(url, data);
+  return response.data;
+}
+
+export async function apiDelete<T>(url: string): Promise<T> {
+  const response = await apiClient.delete<T>(url);
+  return response.data;
+}
+
+export default apiClient;

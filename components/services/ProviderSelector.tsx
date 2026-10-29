@@ -1,0 +1,85 @@
+'use client';
+
+import React from 'react';
+import Image from 'next/image';
+import { Check } from 'lucide-react';
+
+export interface ProviderItem {
+  id: string;
+  name: string;
+  imageSrc: string;
+}
+
+interface ProviderSelectorProps {
+  label?: string;
+  providers: ProviderItem[];
+  selectedId: string;
+  onSelect: (id: string, name: string) => void;
+}
+
+export default function ProviderSelector({
+  label = 'Select biller',
+  providers,
+  selectedId,
+  onSelect,
+}: ProviderSelectorProps) {
+  return (
+    <div className="w-full">
+      <label className="mb-2 block text-xs font-semibold text-slate-700">
+        {label}
+      </label>
+
+      {/* Light ice-blue container matching the Figma mockup */}
+      <div className="rounded-2xl bg-[#EEF7FB] p-3 sm:p-4">
+        <div
+          className={`grid items-center gap-2 sm:gap-3 ${providers.length === 5 ? 'grid-cols-5' : 'grid-cols-4'
+            }`}
+        >
+          {providers.map((item) => {
+            const isSelected = selectedId.toLowerCase() === item.id.toLowerCase();
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onSelect(item.id, item.name)}
+                className={`relative flex flex-col items-center justify-center transition-all duration-200 focus:outline-none ${isSelected
+                    ? 'rounded-2xl border border-[#FF6500] bg-[#FBF2ED] py-3 px-1.5 sm:px-2 shadow-xs'
+                    : 'rounded-2xl border border-transparent py-3 px-1.5 sm:px-2 hover:bg-white/60'
+                  }`}
+              >
+                {/* Circular Provider Logo — next/image for crisp Retina rendering */}
+                <div className="relative h-10 w-10 sm:h-12 sm:w-12 overflow-hidden rounded-full flex-shrink-0">
+                  <Image
+                    src={item.imageSrc}
+                    alt={`${item.name} provider`}
+                    fill
+                    sizes="48px"
+                    className="object-contain transition-transform duration-200 hover:scale-105"
+                  />
+                </div>
+
+                {/* Provider Name */}
+                <span className="mt-1.5 text-[11px] sm:text-xs font-bold text-[#102A36] text-center line-clamp-1">
+                  {item.name}
+                </span>
+
+                {/* Bottom Selection Checkmark or Equal-Height Spacer */}
+                <div className="mt-1 flex h-4 w-4 items-center justify-center">
+                  {isSelected ? (
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#FF6500] text-white shadow-xs">
+                      <Check className="h-2.5 w-2.5 stroke-[3]" />
+                    </div>
+                  ) : (
+                    <div className="h-4 w-4 opacity-0" aria-hidden="true" />
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
