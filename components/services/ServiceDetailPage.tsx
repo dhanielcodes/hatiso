@@ -13,50 +13,27 @@ import {
 import Navbar from '@/components/marketplace/Navbar';
 import Footer from '@/components/marketplace/Footer';
 import ServiceTabsSelector from './ServiceTabsSelector';
-import { ProviderItem } from './ProviderSelector';
 import ServicePaymentForm, { PendingPayment } from './ServicePaymentForm';
+import { useDigitalServiceCatalogues } from '@/lib/queries/useDigitalServiceCategories';
+import { DigitalServiceCategory } from '@/lib/api/digitalServices';
 
 interface ServiceDetailPageProps {
   initialSlug?: string;
 }
 
-const NETWORK_PROVIDERS: ProviderItem[] = [
-  { id: 'mtn', name: 'MTN', imageSrc: '/images/network_mtn.png' },
-  { id: 'airtel', name: 'Airtel', imageSrc: '/images/network_airtel.png' },
-  { id: '9mobile', name: '9mobile', imageSrc: '/images/network_9mobile.png' },
-  { id: 'glo', name: 'Glo', imageSrc: '/images/network_glo.png' },
-];
-
-const ELECTRICITY_PROVIDERS: ProviderItem[] = [
-  { id: 'ikeja', name: 'Ikeja Electricity', imageSrc: '/images/elec_ikeja.png' },
-  { id: 'ibedc', name: 'IBEDC', imageSrc: '/images/elec_ibedc.png' },
-  { id: 'ekedc', name: 'EKEDC', imageSrc: '/images/elec_ekedc.png' },
-  { id: 'jos', name: 'JED (Jos)', imageSrc: '/images/elec_jos.png' },
-  { id: 'kaduna', name: 'Kaduna', imageSrc: '/images/elec_kaduna.png' },
-];
-
-const TV_PROVIDERS: ProviderItem[] = [
-  { id: 'dstv', name: 'DSTV', imageSrc: '/images/tv_dstv.png' },
-  { id: 'gotv', name: 'GOTV', imageSrc: '/images/tv_gotv.png' },
-  { id: 'showmax', name: 'Showmax', imageSrc: '/images/tv_showmax.png' },
-  { id: 'startimes', name: 'Startimes', imageSrc: '/images/tv_startimes.png' },
-];
-
-const BETTING_PROVIDERS: ProviderItem[] = [
-  { id: 'sportybet', name: 'SportyBet', imageSrc: '/images/betting_sportybet.png' },
-  { id: 'bet9ja', name: 'Bet9ja', imageSrc: '/images/betting_bet9ja.png' },
-  { id: 'betway', name: 'Betway', imageSrc: '/images/betting_betway.png' },
-  { id: 'kingbet', name: 'KingBet', imageSrc: '/images/betting_kingbet.png' },
-  { id: 'merrybet', name: 'MerryBet', imageSrc: '/images/betting_merrybet.png' },
-];
-
-const EDUCATION_PROVIDERS: ProviderItem[] = [
-  { id: 'waec', name: 'WAEC', imageSrc: '/images/network_mtn.png' },
-  { id: 'jamb', name: 'JAMB', imageSrc: '/images/network_airtel.png' },
-  { id: 'neco', name: 'NECO', imageSrc: '/images/network_glo.png' },
-];
+const categoryBySlug: Record<string, DigitalServiceCategory> = {
+  airtime: 'TELCO',
+  data: 'TELCO',
+  electricity: 'DISCO',
+  tv: 'CABLE',
+  education: 'EDUCATION',
+  betting: 'OTHER_SERVICES',
+};
 
 export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDetailPageProps) {
+
+
+
   const [activeSlug, setActiveSlug] = useState(initialSlug);
   const [slugFromProp, setSlugFromProp] = useState(initialSlug);
   const [isFading, setIsFading] = useState(false);
@@ -87,53 +64,6 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [activeSlug]);
-
-  const handleServiceClick = (slug: string) => {
-    if (slug === activeSlug) return;
-
-    setIsFading(true);
-    setTimeout(() => {
-      setActiveSlug(slug);
-      if (typeof window !== 'undefined') {
-        window.history.pushState(null, '', `/categories/${slug}`);
-      }
-      setTimeout(() => {
-        setIsFading(false);
-      }, 50);
-    }, 150);
-  };
-
-  const currentProviders =
-    activeSlug === 'airtime' || activeSlug === 'data'
-      ? NETWORK_PROVIDERS
-      : activeSlug === 'electricity'
-        ? ELECTRICITY_PROVIDERS
-        : activeSlug === 'tv'
-          ? TV_PROVIDERS
-          : activeSlug === 'betting'
-            ? BETTING_PROVIDERS
-            : EDUCATION_PROVIDERS;
-
-  const handleValidated = (payment: PendingPayment) => {
-    setPendingPayment(payment);
-    setIsConfirmModalOpen(true);
-  };
-
-  const handleConfirmPayment = () => {
-    setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-      setIsConfirmModalOpen(false);
-      setTransactionRef('TXN-' + Math.random().toString(36).substring(2, 9).toUpperCase());
-      setIsSuccessModalOpen(true);
-    }, 1200);
-  };
-
-  const handleReset = () => {
-    setIsSuccessModalOpen(false);
-    setPendingPayment(null);
-    setFormResetKey((k) => k + 1);
-  };
 
   const heroContent = {
     airtime: {
@@ -185,6 +115,52 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
     cardSubtitle: 'Safe and encrypted digital payments on XNETT.',
   };
 
+
+  const category = categoryBySlug[activeSlug] ?? 'OTHER_SERVICES';
+  const {
+    data: serviceCatalogues,
+    isError: hasCategoryRequestError,
+    isLoading,
+  } = useDigitalServiceCatalogues(category, 0);
+
+
+  const handleServiceClick = (slug: string) => {
+    if (slug === activeSlug) return;
+
+    setIsFading(true);
+    setTimeout(() => {
+      setActiveSlug(slug);
+      if (typeof window !== 'undefined') {
+        window.history.pushState(null, '', `/categories/${slug}`);
+      }
+      setTimeout(() => {
+        setIsFading(false);
+      }, 50);
+    }, 150);
+  };
+
+  const handleValidated = (payment: PendingPayment) => {
+    setPendingPayment(payment);
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleConfirmPayment = () => {
+    setIsProcessing(true);
+    setTimeout(() => {
+      setIsProcessing(false);
+      setIsConfirmModalOpen(false);
+      setTransactionRef('TXN-' + Math.random().toString(36).substring(2, 9).toUpperCase());
+      setIsSuccessModalOpen(true);
+    }, 1200);
+  };
+
+  const handleReset = () => {
+    setIsSuccessModalOpen(false);
+    setPendingPayment(null);
+    setFormResetKey((k) => k + 1);
+  };
+
+
   return (
     <div className="relative min-h-screen bg-[#1B3C4A] text-white selection:bg-[#FF6500] selection:text-white">
       <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-25">
@@ -217,9 +193,8 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 xl:px-0 pt-4 pb-24">
         <section
-          className={`mt-4 mb-12 sm:mb-16 grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-14 w-full transition-all duration-300 ease-out ${
-            isFading ? 'opacity-30 scale-[0.99] blur-[0.4px]' : 'opacity-100 scale-100 blur-0'
-          }`}
+          className={`mt-4 mb-12 sm:mb-16 grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-14 w-full transition-all duration-300 ease-out ${isFading ? 'opacity-30 scale-[0.99] blur-[0.4px]' : 'opacity-100 scale-100 blur-0'
+            }`}
         >
           <div className="flex flex-col lg:col-span-6 xl:col-span-7 min-h-[220px] sm:min-h-[250px] justify-center">
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl transition-all duration-300">
@@ -288,7 +263,9 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
         <section className="my-10 flex justify-center">
           <ServicePaymentForm
             activeSlug={activeSlug}
-            providers={currentProviders}
+            billers={serviceCatalogues ?? []}
+            isLoading={isLoading}
+            isError={hasCategoryRequestError}
             isFading={isFading}
             onValidated={handleValidated}
             formResetKey={formResetKey}
@@ -320,11 +297,17 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
               <div className="flex items-center justify-between rounded-xl bg-[#EEF7FB] p-3.5">
                 <span className="text-slate-500">Provider</span>
                 <div className="flex items-center gap-2">
-                  <img
-                    src={pendingPayment.providerImage}
-                    alt={pendingPayment.providerName}
-                    className="h-6 w-6 rounded-full object-contain"
-                  />
+                  {pendingPayment.providerImage ? (
+                    <img
+                      src={pendingPayment.providerImage}
+                      alt={pendingPayment.providerName}
+                      className="h-6 w-6 rounded-full object-contain"
+                    />
+                  ) : (
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#204657] text-[9px] font-bold text-white">
+                      {pendingPayment.providerName.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
                   <span className="font-bold text-slate-900">{pendingPayment.providerName}</span>
                 </div>
               </div>

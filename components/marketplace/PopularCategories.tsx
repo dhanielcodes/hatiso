@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { POPULAR_CATEGORIES } from '@/lib/constants/categories';
+import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServiceCategories';
+import type { DigitalServiceCategory } from '@/lib/api/digitalServices';
 
 // Custom precision SVG icons matching the exact iconography in the screenshot
 const CategoryIconMap: Record<string, React.ReactNode> = {
@@ -193,7 +194,25 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   ),
 };
 
+const categoryCardConfig: Record<
+  DigitalServiceCategory,
+  { label: string; slug: string; href: string }
+> = {
+  TELCO: { label: 'Airtime & Data', slug: 'airtime', href: '/categories/airtime' },
+  DISCO: { label: 'Electricity', slug: 'electricity', href: '/categories/electricity' },
+  CABLE: { label: 'Cable TV', slug: 'tv', href: '/categories/tv' },
+  EDUCATION: { label: 'Education', slug: 'education', href: '/categories/education' },
+  INSURANCE: { label: 'Insurance', slug: 'government-services', href: '/services' },
+  OTHER_SERVICES: { label: 'Other Services', slug: 'shopping', href: '/services' },
+};
+
 export default function PopularCategories() {
+  const {
+    data: serviceCategories,
+    isError: hasCategoryRequestError,
+    isLoading,
+  } = useDigitalServiceCategories();
+
   return (
     <section id="popular-categories" className="relative px-4 py-36 sm:px-8 lg:px-14">
       <div className="mx-auto max-w-7xl">
@@ -207,13 +226,23 @@ export default function PopularCategories() {
         {/* Categories Grid & Featured Promo Banner */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Left: 2 Rows x 5 Columns Grid of Two-Tone Category Cards (10 Cards total) */}
-          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-5 lg:col-span-8 lg:gap-3.5 xl:col-span-9">
-            {POPULAR_CATEGORIES.map((category) => {
-              const icon = CategoryIconMap[category.slug] || CategoryIconMap['airtime'];
+          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-5 lg:col-span-8 lg:gap-3.5 xl:col-span-9" aria-live="polite">
+            {isLoading &&
+              Array.from({ length: 6 }, (_, index) => (
+                <div key={index} className="min-h-47.5 animate-pulse rounded-xl bg-white/10" />
+              ))}
+            {hasCategoryRequestError && (
+              <p className="col-span-full self-center text-sm text-slate-300">
+                Available services are temporarily unavailable.
+              </p>
+            )}
+            {serviceCategories?.map((serviceCategory) => {
+              const category = categoryCardConfig[serviceCategory];
+              const icon = CategoryIconMap[category.slug] || CategoryIconMap.airtime;
 
               return (
                 <Link
-                  key={category.id}
+                  key={serviceCategory}
                   href={category.href}
                   className="group flex flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 hover:-translate-y-1 hover:ring-2 hover:ring-[#FF6500]/40 active:scale-95"
                   style={{ minHeight: '190px' }}
@@ -228,7 +257,7 @@ export default function PopularCategories() {
                   {/* Bottom Portion: Pure Crisp White with Dark Slate Navy Title */}
                   <div className="flex items-center justify-center bg-white py-3 px-2 text-center">
                     <span className="text-xs sm:text-sm font-semibold text-[#102A36] transition-colors group-hover:text-[#FF6500]">
-                      {category.name}
+                      {category.label}
                     </span>
                   </div>
                 </Link>

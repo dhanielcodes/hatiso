@@ -1,232 +1,387 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Formik, Form } from 'formik';
-import {
-  ArrowLeft,
-  User,
-  Mail,
-  Phone,
-  Zap,
-  Building2,
-  UserCircle2,
-} from 'lucide-react';
+import { Formik, Form, useField } from 'formik';
+import * as Yup from 'yup';
+import { CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
-import {
-  TextField,
-  PasswordField,
-  PhoneField,
-  CheckboxField,
-  SubmitButton,
-} from '@/components/forms';
-import { registerSchema, RegisterFormValues } from '@/lib/validation/schemas';
+import { TextField, PasswordField, CheckboxField, SubmitButton } from '@/components/forms';
+import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
+import StepIndicator from '@/components/auth/StepIndicator';
+import OtpInput from '@/components/auth/OtpInput';
+import PasswordStrength from '@/components/auth/PasswordStrength';
 
-const initialValues: RegisterFormValues = {
-  accountType: 'personal',
-  fullName: '',
-  email: '',
-  phone: '',
-  password: '',
-  agreeTerms: true,
-};
+/* ─── Step schemas ─────────────────────────────────────────────── */
+const step1Schema = Yup.object({
+  fullName: Yup.string().trim().min(2, 'Name is too short').required('Full name is required'),
+  email: Yup.string().trim().email('Enter a valid email address').required('Email is required'),
+  phone: Yup.string()
+    .trim()
+    .min(7, 'Phone number is too short')
+    .required('Phone number is required'),
+  agreeTerms: Yup.boolean().oneOf([true], 'You must agree to the Terms of Service').required(),
+});
 
+const step3Schema = Yup.object({
+  password: Yup.string()
+    .min(8, 'At least 8 characters')
+    .matches(/[A-Z]/, 'At least 1 uppercase letter')
+    .matches(/[0-9]/, 'At least 1 number')
+    .required('Password is required'),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref('password')], 'Passwords do not match')
+    .required('Please confirm your password'),
+});
+
+/* ─── Shared button style ───────────────────────────────────────── */
+const BTN =
+  'w-full rounded-xl bg-[#F5A56B] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
+
+/* ─── Phone input ───────────────────────────────────────────────── */
+function PhoneInputField({ name, ...rest }: { name: string; [k: string]: unknown }) {
+  const [field, meta] = useField(name);
+  const hasError = Boolean(meta.touched && meta.error);
+  return (
+    <div>
+      <label className="mb-1.5 block text-[13px] font-medium text-[#1C1C1C]">
+        Phone Number <span className="text-[#FF6500]">*</span>
+      </label>
+      <div
+        className={`flex items-center rounded-xl border bg-white px-4 py-3.5 transition focus-within:ring-1 ${
+          hasError
+            ? 'border-rose-400 focus-within:border-rose-500 focus-within:ring-rose-500'
+            : 'border-[#E8E4DE] focus-within:border-[#FF6500] focus-within:ring-[#FF6500]'
+        }`}
+      >
+        <span className="mr-2 select-none text-sm font-medium text-slate-600">+234</span>
+        <input
+          {...field}
+          {...(rest as React.InputHTMLAttributes<HTMLInputElement>)}
+          type="tel"
+          inputMode="numeric"
+          placeholder="_ _ _ _ _ _ _ _ _"
+          aria-invalid={hasError}
+          className="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
+        />
+      </div>
+      {hasError && <p className="mt-1.5 text-xs text-rose-600">{meta.error}</p>}
+    </div>
+  );
+}
+
+/* ─── Saved step-1 data ─────────────────────────────────────────── */
+interface Step1Data {
+  fullName: string;
+  email: string;
+  phone: string;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
 export default function RegisterPage() {
   const router = useRouter();
   const { register, isLoading, error, clearError } = useAuthStore();
 
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step1Data, setStep1Data] = useState<Step1Data>({ fullName: '', email: '', phone: '' });
+  const [otp, setOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [resendCount, setResendCount] = useState(52);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [createdName, setCreatedName] = useState('');
+
+  /* Countdown timer (starts when step 2 mounts) */
+  const startCountdown = useCallback(() => {
+    setResendCount(52);
+    const id = setInterval(() => {
+      setResendCount((n) => {
+        if (n <= 1) {
+          clearInterval(id);
+          return 0;
+        }
+        return n - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#1B3C4A] text-white flex flex-col justify-between selection:bg-[#FF6500] selection:text-white">
-      <header className="px-6 py-6 sm:px-12 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#183541]">
-            <Zap className="h-5 w-5 text-[#FF6500]" />
-          </div>
-          <span className="text-xl font-black tracking-widest text-white">
-            X<span className="text-[#FF6500]">NETT</span>
-          </span>
-        </Link>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Back to Marketplace</span>
-        </Link>
-      </header>
+    <div className="grid min-h-screen bg-[#F7F4EF] lg:grid-cols-2">
+      <AuthBrandPanel />
 
-      <main className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-lg rounded-3xl border border-slate-700/80 bg-gradient-to-b from-[#183745] to-[#122A34] p-8 shadow-2xl backdrop-blur-xl">
-          <div className="mb-6 text-center">
-            <h1 className="text-2xl font-black text-white sm:text-3xl">Create an Account</h1>
-            <p className="mt-1.5 text-xs text-slate-300">
-              Join thousands of users transacting and settling services across Africa.
-            </p>
-          </div>
+      {/* ── Right panel ── */}
+      <main className="flex min-h-screen flex-col bg-[#F7F4EF] px-5 py-6 sm:px-10 lg:px-16 xl:px-20">
+        <div className="flex flex-1 flex-col items-center justify-center py-4">
+          <div className="w-full max-w-[460px]">
+            {/* Step indicator */}
+            <StepIndicator currentStep={step} />
 
-          {error && (
-            <div className="mb-4 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-300">
-              {error}
-            </div>
-          )}
-
-          <Formik
-            initialValues={initialValues}
-            validationSchema={registerSchema}
-            onSubmit={async (values) => {
-              clearError();
-              try {
-                await register({
-                  fullName: values.fullName,
-                  email: values.email,
-                  phone: values.phone,
-                  accountType: values.accountType,
-                  password: values.password,
-                });
-                router.push('/dashboard');
-              } catch {
-                // Handled in store
-              }
-            }}
-          >
-            {({ values, setFieldValue, handleChange }) => (
+            {/* ══ STEP 1 ══════════════════════════════════════════ */}
+            {step === 1 && (
               <>
-                <div className="mb-6 grid grid-cols-2 gap-2 rounded-xl bg-[#0F222A] p-1 border border-slate-700">
-                  <button
-                    type="button"
-                    onClick={() => setFieldValue('accountType', 'personal')}
-                    className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-bold transition-all ${
-                      values.accountType === 'personal'
-                        ? 'bg-[#FF6500] text-white shadow'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <UserCircle2 className="h-4 w-4" />
-                    <span>Personal</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFieldValue('accountType', 'business')}
-                    className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-bold transition-all ${
-                      values.accountType === 'business'
-                        ? 'bg-[#FF6500] text-white shadow'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <Building2 className="h-4 w-4" />
-                    <span>Business / Merchant</span>
-                  </button>
+                <div className="mb-6 text-center">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#FF6500]">
+                    STEP 1
+                  </p>
+                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
+                    Create your account
+                  </h1>
+                  <p className="mt-1.5 text-[13px] text-slate-500">
+                    Join Hasito today. It takes few minutes to set up your profile
+                  </p>
                 </div>
 
-                <Form className="space-y-4" noValidate>
-                  <TextField
-                    name="fullName"
-                    label={
-                      values.accountType === 'business'
-                        ? 'Business / Company Name'
-                        : 'Full Legal Name'
-                    }
-                    variant="dark"
-                    placeholder={
-                      values.accountType === 'business' ? 'Acme Global Ventures' : 'John Doe'
-                    }
-                    icon={<User className="h-4 w-4" />}
-                    onChange={(e) => {
-                      handleChange(e);
-                      if (error) clearError();
-                    }}
-                  />
-
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Formik
+                  initialValues={{
+                    fullName: step1Data.fullName,
+                    email: step1Data.email,
+                    phone: step1Data.phone,
+                    agreeTerms: false as boolean,
+                  }}
+                  validationSchema={step1Schema}
+                  onSubmit={(values) => {
+                    setStep1Data({
+                      fullName: values.fullName,
+                      email: values.email,
+                      phone: values.phone,
+                    });
+                    setStep(2);
+                    // start countdown after brief delay (let step 2 mount)
+                    setTimeout(startCountdown, 100);
+                  }}
+                >
+                  <Form className="space-y-4" noValidate>
+                    <TextField
+                      name="fullName"
+                      label="Full Name"
+                      required
+                      variant="auth"
+                      placeholder="e.g. Mayowa Babs"
+                    />
                     <TextField
                       name="email"
                       type="email"
                       label="Email Address"
-                      variant="dark"
-                      placeholder="name@example.com"
-                      icon={<Mail className="h-4 w-4" />}
+                      required
+                      variant="auth"
+                      placeholder="e.g. alexandra@example.com"
                       autoComplete="email"
-                      onChange={(e) => {
-                        handleChange(e);
-                        if (error) clearError();
-                      }}
+                    />
+                    <PhoneInputField name="phone" />
+
+                    <CheckboxField
+                      name="agreeTerms"
+                      variant="auth"
+                      label={
+                        <>
+                          I agree to the{' '}
+                          <Link href="/terms" className="font-semibold text-slate-900 underline">
+                            Terms of Service
+                          </Link>{' '}
+                          and{' '}
+                          <Link href="/privacy" className="font-semibold text-slate-900 underline">
+                            Privacy Policy
+                          </Link>
+                          .
+                        </>
+                      }
                     />
 
-                    <PhoneField
-                      name="phone"
-                      label="Phone Number"
-                      variant="dark"
-                      showCountryAffix={false}
-                      placeholder="+234 801 234 5678"
-                      icon={<Phone className="h-4 w-4" />}
-                      onChange={(e) => {
-                        handleChange(e);
-                        if (error) clearError();
-                      }}
-                    />
-                  </div>
+                    <SubmitButton className={BTN}>Continue</SubmitButton>
+                  </Form>
+                </Formik>
 
-                  <PasswordField
-                    name="password"
-                    label="Set Secure Password"
-                    variant="dark"
-                    placeholder="At least 8 characters"
-                    autoComplete="new-password"
-                    onChange={(e) => {
-                      handleChange(e);
-                      if (error) clearError();
-                    }}
-                  />
-
-                  <CheckboxField
-                    name="agreeTerms"
-                    variant="dark"
-                    label={
-                      <>
-                        I agree to the{' '}
-                        <span className="text-[#FF6500] underline">Terms of Service</span> and{' '}
-                        <span className="text-[#FF6500] underline">Privacy Policy</span>.
-                      </>
-                    }
-                  />
-
-                  <SubmitButton
-                    disabled={isLoading}
-                    className="mt-3 w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-bold text-white shadow-lg shadow-[#FF6500]/30 transition-all hover:bg-[#E84D15] active:scale-95 disabled:opacity-50"
-                    loadingLabel={
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        Creating account...
-                      </span>
-                    }
+                <p className="mt-5 text-center text-[13px] text-slate-500">
+                  Already have an account?{' '}
+                  <Link
+                    href="/auth/login"
+                    className="font-semibold text-[#FF6500] hover:text-[#E84D15]"
                   >
-                    {isLoading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        Creating account...
-                      </span>
-                    ) : (
-                      'Create Account'
-                    )}
-                  </SubmitButton>
-                </Form>
+                    Sign In
+                  </Link>
+                </p>
               </>
             )}
-          </Formik>
 
-          <div className="mt-6 text-center text-xs text-slate-400">
-            Already registered?{' '}
-            <Link href="/auth/login" className="font-semibold text-[#FF6500] hover:underline">
-              Sign in here
-            </Link>
+            {/* ══ STEP 2 ══════════════════════════════════════════ */}
+            {step === 2 && (
+              <>
+                <div className="mb-8 text-center">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#FF6500]">
+                    STEP 2
+                  </p>
+                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
+                    Phone Number Verification
+                  </h1>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500">
+                    An OTP (One-Time Password) has been sent to your phone number.
+                    <br />
+                    Enter OTP below to verify your phone number.
+                  </p>
+                </div>
+
+                {otpError && (
+                  <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-center text-xs text-rose-600">
+                    {otpError}
+                  </div>
+                )}
+
+                <OtpInput
+                  value={otp}
+                  onChange={(val) => {
+                    setOtp(val);
+                    setOtpError('');
+                  }}
+                  hasError={Boolean(otpError)}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (otp.length < 6) {
+                      setOtpError('Please enter the 6-digit code sent to your phone.');
+                      return;
+                    }
+                    // Mock verify — accept any 6-digit code
+                    setOtpVerified(true);
+                    setStep(3);
+                  }}
+                  className={`${BTN} mt-8`}
+                >
+                  Verify
+                </button>
+
+                <p className="mt-5 text-center text-[13px] text-slate-500">
+                  Resend code in {resendCount}s?{' '}
+                  <button
+                    type="button"
+                    disabled={resendCount > 0}
+                    onClick={() => {
+                      setOtp('');
+                      startCountdown();
+                    }}
+                    className="font-semibold text-[#FF6500] hover:text-[#E84D15] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Click to resend code
+                  </button>
+                </p>
+              </>
+            )}
+
+            {/* ══ STEP 3 ══════════════════════════════════════════ */}
+            {step === 3 && (
+              <>
+                <div className="mb-6 text-center">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#FF6500]">
+                    STEP 3
+                  </p>
+                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
+                    Create Password
+                  </h1>
+                  <p className="mt-1.5 text-[13px] text-slate-500">
+                    Choose a password that you will use to log in to your Hatiso account
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-600">
+                    {error}
+                  </div>
+                )}
+
+                <Formik
+                  initialValues={{ password: '', confirmPassword: '' }}
+                  validationSchema={step3Schema}
+                  onSubmit={async (values) => {
+                    clearError();
+                    try {
+                      await register({
+                        fullName: step1Data.fullName,
+                        email: step1Data.email,
+                        phone: step1Data.phone,
+                        accountType: 'personal',
+                        password: values.password,
+                      });
+                      setCreatedName(step1Data.fullName.split(' ')[0]);
+                      setShowSuccess(true);
+                    } catch {
+                      // Handled in store
+                    }
+                  }}
+                >
+                  {({ values }) => (
+                    <Form className="space-y-4" noValidate>
+                      <PasswordField
+                        name="password"
+                        label="Password"
+                        required
+                        variant="auth"
+                        placeholder="••••••••••"
+                        autoComplete="new-password"
+                      />
+
+                      <PasswordField
+                        name="confirmPassword"
+                        label="Password"
+                        required
+                        variant="auth"
+                        placeholder="••••••••••"
+                        autoComplete="new-password"
+                      />
+
+                      {/* Strength indicator */}
+                      {values.password && <PasswordStrength password={values.password} />}
+
+                      <SubmitButton
+                        disabled={isLoading}
+                        className={`${BTN} mt-2`}
+                        loadingLabel={
+                          <span className="inline-flex items-center justify-center gap-2">
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            Creating account...
+                          </span>
+                        }
+                      >
+                        Create Password
+                      </SubmitButton>
+                    </Form>
+                  )}
+                </Formik>
+              </>
+            )}
           </div>
         </div>
       </main>
 
-      <footer className="py-4 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} XNETT Marketplace. All rights reserved.
-      </footer>
+      {/* ══ SUCCESS MODAL ═══════════════════════════════════════════ */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-white p-8 text-center shadow-2xl">
+            {/* Green check */}
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+              <CheckCircle2 className="h-9 w-9 text-emerald-500" strokeWidth={2.2} />
+            </div>
+
+            <h2 className="text-xl font-bold text-[#111111]">
+              Welcome aboard, {createdName}.
+            </h2>
+            <p className="mx-auto mt-2 max-w-[260px] text-[13px] leading-relaxed text-slate-500">
+              Your Hatiso account is all set. Step into your dashboard and discover what&apos;s
+              waiting for you.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard')}
+              className="mt-7 w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#E84D15] active:scale-[0.99]"
+            >
+              Continue to Dashboard
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

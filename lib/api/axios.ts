@@ -7,7 +7,8 @@ import axios, {
 import { ApiError } from '@/types';
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.xnett-hasito.com/v1';
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') ||
+  'https://f866-154-120-96-18.ngrok-free.app';
 
 /**
  * Global Axios Instance for Hasito Marketplace & Banking
@@ -18,6 +19,9 @@ export const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    ...(BASE_URL.includes('.ngrok-free.app')
+      ? { 'ngrok-skip-browser-warning': 'true' }
+      : {}),
   },
 });
 
@@ -38,9 +42,10 @@ apiClient.interceptors.request.use(
       }
 
       // Add device / client info header
-      config.headers['X-Client-Platform'] = 'Web';
-      config.headers['X-Client-Version'] = '1.0.0';
-      config.headers['X-Request-Timestamp'] = new Date().toISOString();
+      /*     config.headers['X-Client-Platform'] = 'Web';
+          config.headers['X-Client-Version'] = '1.0.0';
+          config.headers['X-Request-Timestamp'] = new Date().toISOString(); */
+      config.headers['ngrok-skip-browser-warning'] = 'true';
     }
     return config;
   },
@@ -76,7 +81,7 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('hasito_auth_token');
         localStorage.removeItem('hasito_user');
         console.warn('[Axios Interceptor] Unauthorized (401). Session invalidated.');
-        
+
         // Notify listeners or redirect if not already on an auth page
         const currentPath = window.location.pathname;
         if (!currentPath.startsWith('/auth')) {
@@ -97,22 +102,22 @@ apiClient.interceptors.response.use(
 /**
  * Generic API Helpers for type-safe requests
  */
-export async function apiGet<T>(url: string, params?: Record<string, any>): Promise<T> {
+export async function apiGet<T>(url: string, params?: Record<string, unknown>): Promise<T> {
   const response = await apiClient.get<T>(url, { params });
   return response.data;
 }
 
-export async function apiPost<T>(url: string, data?: any): Promise<T> {
+export async function apiPost<T>(url: string, data?: unknown): Promise<T> {
   const response = await apiClient.post<T>(url, data);
   return response.data;
 }
 
-export async function apiPut<T>(url: string, data?: any): Promise<T> {
+export async function apiPut<T>(url: string, data?: unknown): Promise<T> {
   const response = await apiClient.put<T>(url, data);
   return response.data;
 }
 
-export async function apiPatch<T>(url: string, data?: any): Promise<T> {
+export async function apiPatch<T>(url: string, data?: unknown): Promise<T> {
   const response = await apiClient.patch<T>(url, data);
   return response.data;
 }

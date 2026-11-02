@@ -21,6 +21,7 @@ export interface SelectFieldProps
   options: SelectOption[];
   placeholder?: string;
   showError?: boolean;
+  onValueChange?: (value: string) => void;
 }
 
 export default function SelectField({
@@ -31,6 +32,7 @@ export default function SelectField({
   options,
   placeholder = 'Select an option',
   showError = true,
+  onValueChange,
   className = '',
   id,
   required,
@@ -53,8 +55,12 @@ export default function SelectField({
       <div className="relative">
         <select
           id={inputId}
-          {...field}
           {...rest}
+          {...field}
+          onChange={(event) => {
+            field.onChange(event);
+            onValueChange?.(event.target.value);
+          }}
           required={required}
           aria-invalid={hasError}
           className={`${fieldControlClass(variant, { hasError, withIcon: true })} appearance-none`}

@@ -71,6 +71,41 @@ body {
   -webkit-backdrop-filter: blur(8px);
 }
 
+@keyframes auth-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.auth-float {
+  animation: auth-float 4.8s ease-in-out infinite;
+}
+
+.auth-float-delay {
+  animation-delay: 1.2s;
+}
+
+.auth-float-delay-2 {
+  animation-delay: 2.1s;
+}
+
+.auth-float-delay-3 {
+  animation-delay: 0.6s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-float,
+  .auth-float-delay,
+  .auth-float-delay-2,
+  .auth-float-delay-3 {
+    animation: none;
+  }
+}
+
 /* Subtle background radial glow */
 .hero-glow-bg {
   background: radial-gradient(circle at 75% 20%, rgba(34, 211, 238, 0.06) 0%, transparent 50%),

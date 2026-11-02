@@ -36,7 +36,7 @@ export default function CheckboxField({
           checked={Boolean(field.checked ?? field.value)}
           className={`mt-0.5 ${checkboxClass(variant)}`}
         />
-        <span className={variant === 'dark' ? 'text-slate-300' : 'text-slate-700'}>{label}</span>
+        <span className={variant === 'dark' ? 'text-slate-300' : variant === 'auth' ? 'text-[13px] text-slate-700' : 'text-slate-700'}>{label}</span>
       </label>
       {showError && hasError ? <p className={fieldErrorClass(variant)}>{meta.error}</p> : null}
     </div>

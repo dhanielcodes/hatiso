@@ -7,7 +7,7 @@ import { Check } from 'lucide-react';
 export interface ProviderItem {
   id: string;
   name: string;
-  imageSrc: string;
+  imageSrc?: string;
 }
 
 interface ProviderSelectorProps {
@@ -49,14 +49,18 @@ export default function ProviderSelector({
                   }`}
               >
                 {/* Circular Provider Logo — next/image for crisp Retina rendering */}
-                <div className="relative h-10 w-10 sm:h-12 sm:w-12 overflow-hidden rounded-full flex-shrink-0">
-                  <Image
-                    src={item.imageSrc}
-                    alt={`${item.name} provider`}
-                    fill
-                    sizes="48px"
-                    className="object-contain transition-transform duration-200 hover:scale-105"
-                  />
+                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-xs font-bold text-[#204657] sm:h-12 sm:w-12">
+                  {item.imageSrc ? (
+                    <Image
+                      src={item.imageSrc}
+                      alt={`${item.name} provider`}
+                      fill
+                      sizes="48px"
+                      className="object-contain transition-transform duration-200 hover:scale-105"
+                    />
+                  ) : (
+                    item.name.slice(0, 2).toUpperCase()
+                  )}
                 </div>
 
                 {/* Provider Name */}

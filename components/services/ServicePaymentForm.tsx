@@ -1,547 +1,257 @@
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
-import { Formik, Form, useFormikContext } from 'formik';
-import { Phone, Mail, AlertCircle } from 'lucide-react';
-import { AmountField, TextField, SubmitButton } from '@/components/forms';
-import { servicePaymentSchema } from '@/lib/validation/schemas';
-import ProviderSelector, { ProviderItem } from './ProviderSelector';
+import React, { useMemo, useState } from 'react';
+import { Form, Formik, useFormikContext } from 'formik';
+import * as Yup from 'yup';
+import { AlertCircle, Mail, Phone } from 'lucide-react';
+import {
+  DateField,
+  NumberField,
+  SelectField,
+  SubmitButton,
+  TextAreaField,
+  TextField,
+} from '@/components/forms';
+import type {
+  DigitalServiceBiller,
+  DigitalServiceFormField,
+  DigitalServiceProduct,
+} from '@/lib/api/digitalServices';
+import ProviderSelector, { type ProviderItem } from './ProviderSelector';
 
-export type ServiceFormValues = {
-  providerId: string;
-  recipientNumber: string;
-  meterType: 'prepaid' | 'postpaid';
-  amount: number | '';
-  dataFrequency: 'daily' | 'weekly' | 'monthly';
-  selectedDataPlan: string;
-  tvFrequency: 'weekly' | '2-weeks' | 'monthly' | 'yearly';
-  selectedTvPlan: string;
-  email: string;
+export type DynamicServiceFormValues = Record<string, unknown> & {
+  billerCode: string;
+  productCode: string;
 };
 
 export type PendingPayment = {
   slug: string;
   providerId: string;
   providerName: string;
-  providerImage: string;
+  providerImage?: string;
   recipientNumber: string;
   amount: number;
   email: string;
-  meterType?: 'prepaid' | 'postpaid';
+  productCode: string;
+  values: DynamicServiceFormValues;
 };
-
-const PRESET_AMOUNTS = [
-  { value: 100, label: 'Pay ₦100.00' },
-  { value: 500, label: 'Pay ₦500.00' },
-  { value: 1000, label: 'Pay ₦1,000.00' },
-  { value: 2000, label: 'Pay ₦2,000.00' },
-  { value: 5000, label: 'Pay ₦5,000.00' },
-  { value: 10000, label: 'Pay ₦10,000.00' },
-];
-
-const DATA_PLANS: Record<
-  string,
-  Array<{ id: string; name: string; validity: string; price: number }>
-> = {
-  daily: [
-    { id: 'd-1', name: '1GB', validity: '1 Days', price: 350 },
-    { id: 'd-2', name: '2 GB', validity: '1 Days', price: 600 },
-    { id: 'd-3', name: '3.2 GB', validity: '1 Days', price: 1000 },
-  ],
-  weekly: [
-    { id: 'w-1', name: '3.5 GB', validity: '7 Days', price: 1500 },
-    { id: 'w-2', name: '7 GB', validity: '7 Days', price: 2500 },
-    { id: 'w-3', name: '10 GB', validity: '7 Days', price: 3500 },
-  ],
-  monthly: [
-    { id: 'm-1', name: '12 GB', validity: '30 Days', price: 4000 },
-    { id: 'm-2', name: '25 GB', validity: '30 Days', price: 7500 },
-    { id: 'm-3', name: '50 GB', validity: '30 Days', price: 13000 },
-  ],
-};
-
-const TV_PLANS: Record<
-  string,
-  Array<{ id: string; name: string; validity: string; price: number }>
-> = {
-  weekly: [
-    { id: 'tv-w1', name: 'Dstv Padi', validity: '7 Days', price: 2000 },
-    { id: 'tv-w2', name: 'Dstv Yanga', validity: '7 Days', price: 3000 },
-    { id: 'tv-w3', name: 'Dstv Confam', validity: '7 Days', price: 5000 },
-  ],
-  '2-weeks': [
-    { id: 'tv-2w1', name: 'Dstv Padi', validity: '14 Days', price: 3800 },
-    { id: 'tv-2w2', name: 'Dstv Yanga', validity: '14 Days', price: 5700 },
-    { id: 'tv-2w3', name: 'Dstv Confam', validity: '14 Days', price: 9500 },
-  ],
-  monthly: [
-    { id: 'tv-m1', name: 'Dstv Compact', validity: '30 Days', price: 15700 },
-    { id: 'tv-m2', name: 'Dstv Compact Plus', validity: '30 Days', price: 25000 },
-    { id: 'tv-m3', name: 'Dstv Premium', validity: '30 Days', price: 37000 },
-  ],
-  yearly: [
-    { id: 'tv-y1', name: 'Dstv Compact Annual', validity: '365 Days', price: 172000 },
-    { id: 'tv-y2', name: 'Dstv Premium Annual', validity: '365 Days', price: 407000 },
-  ],
-};
-
-function defaultProviderId(slug: string) {
-  if (slug === 'airtime' || slug === 'data') return 'mtn';
-  if (slug === 'electricity') return 'ikeja';
-  if (slug === 'tv') return 'dstv';
-  if (slug === 'betting') return 'sportybet';
-  return 'waec';
-}
-
-export function buildInitialValues(slug: string): ServiceFormValues {
-  return {
-    providerId: defaultProviderId(slug),
-    recipientNumber: '',
-    meterType: 'prepaid',
-    amount: '',
-    dataFrequency: 'daily',
-    selectedDataPlan: 'd-1',
-    tvFrequency: 'weekly',
-    selectedTvPlan: 'tv-w1',
-    email: '',
-  };
-}
-
-function resolvePrice(slug: string, values: ServiceFormValues): number {
-  if (slug === 'data') {
-    const plans = DATA_PLANS[values.dataFrequency] || DATA_PLANS.daily;
-    return (plans.find((p) => p.id === values.selectedDataPlan) || plans[0]).price;
-  }
-  if (slug === 'tv') {
-    const plans = TV_PLANS[values.tvFrequency] || TV_PLANS.weekly;
-    return (plans.find((p) => p.id === values.selectedTvPlan) || plans[0]).price;
-  }
-  return typeof values.amount === 'number' ? values.amount : 0;
-}
-
-function CarrierDetector({ activeSlug }: { activeSlug: string }) {
-  const { values, setFieldValue } = useFormikContext<ServiceFormValues>();
-
-  useEffect(() => {
-    if (activeSlug !== 'airtime' && activeSlug !== 'data') return;
-
-    const cleanNumber = values.recipientNumber.replace(/\s+/g, '');
-    if (cleanNumber.length < 4) return;
-
-    const prefix = cleanNumber.startsWith('234')
-      ? '0' + cleanNumber.slice(3, 6)
-      : cleanNumber.slice(0, 4);
-
-    if (/^(0803|0806|0703|0706|0813|0816|0810|0814|0903|0906|0913|0916)/.test(prefix)) {
-      setFieldValue('providerId', 'mtn');
-    } else if (/^(0802|0808|0708|0812|0701|0902|0901|0904|0907|0912)/.test(prefix)) {
-      setFieldValue('providerId', 'airtel');
-    } else if (/^(0805|0807|0705|0815|0811|0905|0915)/.test(prefix)) {
-      setFieldValue('providerId', 'glo');
-    } else if (/^(0809|0817|0818|0909|0908)/.test(prefix)) {
-      setFieldValue('providerId', '9mobile');
-    }
-  }, [values.recipientNumber, activeSlug, setFieldValue]);
-
-  return null;
-}
-
-function detectCarrierLabel(recipientNumber: string, activeSlug: string): string | null {
-  if (activeSlug !== 'airtime' && activeSlug !== 'data') return null;
-  const cleanNumber = recipientNumber.replace(/\s+/g, '');
-  if (cleanNumber.length < 4) return null;
-  const prefix = cleanNumber.startsWith('234')
-    ? '0' + cleanNumber.slice(3, 6)
-    : cleanNumber.slice(0, 4);
-
-  if (/^(0803|0806|0703|0706|0813|0816|0810|0814|0903|0906|0913|0916)/.test(prefix)) return 'MTN';
-  if (/^(0802|0808|0708|0812|0701|0902|0901|0904|0907|0912)/.test(prefix)) return 'Airtel';
-  if (/^(0805|0807|0705|0815|0811|0905|0915)/.test(prefix)) return 'Glo';
-  if (/^(0809|0817|0818|0909|0908)/.test(prefix)) return '9mobile';
-  return null;
-}
 
 interface ServicePaymentFormProps {
   activeSlug: string;
-  providers: ProviderItem[];
+  billers: DigitalServiceBiller[];
+  isLoading?: boolean;
+  isError?: boolean;
   isFading?: boolean;
   onValidated: (payment: PendingPayment) => void;
   formResetKey?: number;
 }
 
-function ServicePaymentFields({
-  activeSlug,
-  providers,
-}: {
-  activeSlug: string;
-  providers: ProviderItem[];
-}) {
-  const { values, setFieldValue, errors, touched, submitCount } =
-    useFormikContext<ServiceFormValues>();
-  const detectedCarrier = detectCarrierLabel(values.recipientNumber, activeSlug);
-  const activeProvider =
-    providers.find((p) => p.id.toLowerCase() === values.providerId.toLowerCase()) ||
-    providers[0];
-  const requireAmount = activeSlug !== 'data' && activeSlug !== 'tv';
-  const selectedPreset =
-    typeof values.amount === 'number'
-      ? PRESET_AMOUNTS.find((p) => p.value === values.amount)?.value ?? null
-      : null;
+const providerImages: Record<string, string> = {
+  mtn: '/images/network_mtn.png',
+  airtel: '/images/network_airtel.png',
+  glo: '/images/network_glo.png',
+  '9mobile': '/images/network_9mobile.png',
+  dstv: '/images/tv_dstv.png',
+  gotv: '/images/tv_gotv.png',
+  ikeja: '/images/elec_ikeja.png',
+  ibedc: '/images/elec_ibedc.png',
+  ekedc: '/images/elec_ekedc.png',
+  jos: '/images/elec_jos.png',
+  kaduna: '/images/elec_kaduna.png',
+};
 
-  const formError =
-    submitCount > 0
-      ? (typeof errors.recipientNumber === 'string' && touched.recipientNumber
-          ? errors.recipientNumber
-          : typeof errors.amount === 'string'
-            ? errors.amount
-            : typeof errors.providerId === 'string'
-              ? errors.providerId
-              : '')
-      : '';
+function valueAtPath(values: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce<unknown>((current, segment) => {
+    if (!current || typeof current !== 'object') return undefined;
+    return (current as Record<string, unknown>)[segment];
+  }, values);
+}
+
+function setAtPath(target: Record<string, unknown>, path: string, value: unknown) {
+  const segments = path.split('.');
+  let current = target;
+  for (const segment of segments.slice(0, -1)) {
+    const existing = current[segment];
+    if (!existing || typeof existing !== 'object' || Array.isArray(existing)) current[segment] = {};
+    current = current[segment] as Record<string, unknown>;
+  }
+  current[segments[segments.length - 1]] = value;
+}
+
+function availableProducts(biller: DigitalServiceBiller | undefined) {
+  return biller?.products.filter((product) => product.active && product.profile.purchasable) ?? [];
+}
+
+function buildInitialValues(biller: DigitalServiceBiller, product: DigitalServiceProduct): DynamicServiceFormValues {
+  const values: Record<string, unknown> = { billerCode: biller.billerCode, productCode: product.code };
+  for (const field of product.formFields) setAtPath(values, field.path, field.value ?? '');
+  setAtPath(values, 'productCode', product.code);
+  return values as DynamicServiceFormValues;
+}
+
+function fieldSchema(field: DigitalServiceFormField): Yup.AnySchema {
+  let schema: Yup.AnySchema;
+  if (field.type === 'integer' || field.type === 'number') {
+    schema = Yup.number()
+      .transform((value, originalValue) => (originalValue === '' || originalValue == null ? undefined : value))
+      .typeError(`${field.label} must be a number`);
+    if (field.type === 'integer') schema = (schema as Yup.NumberSchema).integer(`${field.label} must be a whole number`);
+    if (field.minimum !== null) schema = (schema as Yup.NumberSchema).min(field.minimum, `${field.label} must be at least ${field.minimum.toLocaleString()}`);
+    if (field.maximum !== null) schema = (schema as Yup.NumberSchema).max(field.maximum, `${field.label} must be at most ${field.maximum.toLocaleString()}`);
+  } else {
+    schema = Yup.string().trim();
+    if (field.type === 'email') schema = (schema as Yup.StringSchema).email(`Enter a valid ${field.label.toLowerCase()}`);
+    if (field.pattern) {
+      try {
+        schema = (schema as Yup.StringSchema).matches(new RegExp(field.pattern), `Enter a valid ${field.label.toLowerCase()}`);
+      } catch {
+        // The remaining backend constraints still apply if a malformed pattern is returned.
+      }
+    }
+  }
+  return field.required ? schema.required(`${field.label} is required`) : schema.optional();
+}
+
+function setSchemaAtPath(target: Record<string, unknown>, path: string, schema: Yup.AnySchema) {
+  const segments = path.split('.');
+  let current = target;
+  for (const segment of segments.slice(0, -1)) {
+    const existing = current[segment];
+    if (!existing || typeof existing !== 'object') current[segment] = {};
+    current = current[segment] as Record<string, unknown>;
+  }
+  current[segments[segments.length - 1]] = schema;
+}
+
+function objectSchema(shape: Record<string, unknown>): Yup.ObjectSchema<Record<string, unknown>> {
+  const nestedShape = Object.fromEntries(
+    Object.entries(shape).map(([key, value]) => [
+      key,
+      Yup.isSchema(value) ? value : objectSchema(value as Record<string, unknown>),
+    ])
+  );
+  return Yup.object(nestedShape);
+}
+
+function buildValidationSchema(product: DigitalServiceProduct) {
+  const shape: Record<string, unknown> = {
+    billerCode: Yup.string().required('Select a biller'),
+    productCode: Yup.string().required('Select a product'),
+  };
+  for (const field of product.formFields) setSchemaAtPath(shape, field.path, fieldSchema(field));
+  return objectSchema(shape);
+}
+
+function toProviderItems(billers: DigitalServiceBiller[]): ProviderItem[] {
+  return billers.map((biller) => ({
+    id: biller.billerCode,
+    name: biller.billerName,
+    imageSrc: providerImages[biller.billerCode.toLowerCase()],
+  }));
+}
+
+function DynamicFormField({ field }: { field: DigitalServiceFormField }) {
+  const common = {
+    name: field.path,
+    label: field.label,
+    required: field.required,
+    readOnly: field.readOnly,
+    disabled: field.readOnly,
+    placeholder: field.readOnly ? undefined : `Enter ${field.label.toLowerCase()}`,
+  };
+
+  if (field.type === 'integer' || field.type === 'number') {
+    return <NumberField {...common} min={field.minimum ?? undefined} max={field.maximum ?? undefined} step={field.type === 'integer' ? 1 : 'any'} />;
+  }
+  if (field.type === 'date') return <DateField {...common} />;
+  if (field.type === 'textarea') return <TextAreaField {...common} />;
 
   return (
-    <>
-      <CarrierDetector activeSlug={activeSlug} />
-
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-xl">
-            {activeSlug === 'airtime'
-              ? '📱'
-              : activeSlug === 'data'
-                ? '📶'
-                : activeSlug === 'electricity'
-                  ? '⚡'
-                  : activeSlug === 'tv'
-                    ? '📺'
-                    : activeSlug === 'betting'
-                      ? '🎲'
-                      : '🎓'}
-          </span>
-          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl capitalize">
-            {activeSlug}
-          </h2>
-        </div>
-        <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-          {activeSlug === 'airtime' || activeSlug === 'data'
-            ? 'Enter the number to top up.'
-            : 'Enter the details below.'}
-        </p>
-      </div>
-
-      {formError ? (
-        <div className="mt-4 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-600">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
-          <span>{formError}</span>
-        </div>
-      ) : null}
-
-      <Form className="mt-6 space-y-5" noValidate>
-        <ProviderSelector
-          label={
-            activeSlug === 'airtime' || activeSlug === 'data'
-              ? 'Select biller'
-              : 'Select provider'
-          }
-          providers={providers}
-          selectedId={values.providerId}
-          onSelect={(id) => setFieldValue('providerId', id)}
-        />
-
-        {activeSlug === 'electricity' && (
-          <div>
-            <label className="mb-2 block text-xs font-semibold text-slate-700">
-              Select package
-            </label>
-            <div className="rounded-2xl bg-[#EEF7FB] p-4 flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <img
-                  src={activeProvider.imageSrc}
-                  alt="provider"
-                  className="h-6 w-6 rounded-full object-contain"
-                />
-                <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                  {activeProvider.name} DISCO
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 bg-white/70 p-1 rounded-xl">
-                {(['prepaid', 'postpaid'] as const).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setFieldValue('meterType', type)}
-                    className={`py-2 text-xs font-bold rounded-lg transition-all capitalize ${
-                      values.meterType === type
-                        ? 'bg-[#FDF2EC] text-[#FF6500] shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <TextField
-          name="recipientNumber"
-          label={
-            activeSlug === 'electricity'
-              ? 'Meter Number'
-              : activeSlug === 'tv'
-                ? 'Smartcard Number'
-                : activeSlug === 'betting'
-                  ? 'User ID'
-                  : 'Phone Number'
-          }
-          required
-          placeholder={
-            activeSlug === 'electricity'
-              ? 'Enter your meter number'
-              : activeSlug === 'tv'
-                ? 'Enter your smartcard number'
-                : activeSlug === 'betting'
-                  ? 'Enter your user id'
-                  : 'Enter your phone number'
-          }
-          startIcon={<Phone className="h-4 w-4" />}
-          labelAction={
-            detectedCarrier ? (
-              <span className="text-[11px] font-semibold text-[#FF6500]">
-                {detectedCarrier} detected
-              </span>
-            ) : undefined
-          }
-          showError={false}
-        />
-
-        {activeSlug === 'data' && (
-          <div>
-            <label className="mb-2 block text-xs font-semibold text-slate-700">
-              Choose a plan
-            </label>
-            <div className="space-y-3 rounded-2xl bg-[#EEF7FB] p-4 sm:p-5">
-              <span className="text-xs font-medium text-slate-600">Top up</span>
-              <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-200/60 p-1 text-center">
-                {(['daily', 'weekly', 'monthly'] as const).map((freq) => (
-                  <button
-                    key={freq}
-                    type="button"
-                    onClick={() => {
-                      setFieldValue('dataFrequency', freq);
-                      setFieldValue('selectedDataPlan', DATA_PLANS[freq][0].id);
-                    }}
-                    className={`rounded-lg py-1.5 text-xs font-bold capitalize transition-all ${
-                      values.dataFrequency === freq
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {freq}
-                  </button>
-                ))}
-              </div>
-              <div className="space-y-2 pt-1">
-                {DATA_PLANS[values.dataFrequency].map((plan) => {
-                  const isSelected = values.selectedDataPlan === plan.id;
-                  return (
-                    <button
-                      key={plan.id}
-                      type="button"
-                      onClick={() => setFieldValue('selectedDataPlan', plan.id)}
-                      className={`flex w-full items-center justify-between rounded-xl p-3.5 transition-all ${
-                        isSelected
-                          ? 'border-2 border-[#FF6500] bg-white shadow-sm ring-2 ring-[#FF6500]/20'
-                          : 'border border-slate-200/80 bg-white hover:border-[#FF6500]/40'
-                      }`}
-                    >
-                      <div className="text-left">
-                        <span className="block text-sm font-extrabold text-slate-900">
-                          {plan.name}
-                        </span>
-                        <span className="text-xs text-slate-500">{plan.validity}</span>
-                      </div>
-                      <span className="text-sm font-extrabold text-[#FF6500]">
-                        ₦ {plan.price.toLocaleString()}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeSlug === 'tv' && (
-          <div>
-            <label className="mb-2 block text-xs font-semibold text-slate-700">
-              Choose a plan
-            </label>
-            <div className="space-y-3 rounded-2xl bg-[#EEF7FB] p-4 sm:p-5">
-              <span className="text-xs font-medium text-slate-600">Top up</span>
-              <div className="grid grid-cols-4 gap-1 rounded-xl bg-slate-200/60 p-1 text-center">
-                {(['weekly', '2-weeks', 'monthly', 'yearly'] as const).map((freq) => (
-                  <button
-                    key={freq}
-                    type="button"
-                    onClick={() => {
-                      setFieldValue('tvFrequency', freq);
-                      setFieldValue('selectedTvPlan', TV_PLANS[freq][0].id);
-                    }}
-                    className={`rounded-lg py-1.5 text-[11px] font-bold capitalize transition-all ${
-                      values.tvFrequency === freq
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {freq === '2-weeks' ? '2-Weeks' : freq}
-                  </button>
-                ))}
-              </div>
-              <div className="space-y-2 pt-1">
-                {TV_PLANS[values.tvFrequency].map((plan) => {
-                  const isSelected = values.selectedTvPlan === plan.id;
-                  return (
-                    <button
-                      key={plan.id}
-                      type="button"
-                      onClick={() => setFieldValue('selectedTvPlan', plan.id)}
-                      className={`flex w-full items-center justify-between rounded-xl p-3.5 transition-all ${
-                        isSelected
-                          ? 'border-2 border-[#FF6500] bg-white shadow-sm ring-2 ring-[#FF6500]/20'
-                          : 'border border-slate-200/80 bg-white hover:border-[#FF6500]/40'
-                      }`}
-                    >
-                      <div className="text-left">
-                        <span className="block text-sm font-extrabold text-slate-900">
-                          {plan.name}
-                        </span>
-                        <span className="text-xs text-slate-500">{plan.validity}</span>
-                      </div>
-                      <span className="text-sm font-extrabold text-[#FF6500]">
-                        ₦ {plan.price.toLocaleString()}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {requireAmount && (
-          <div>
-            <label className="mb-2 block text-xs font-semibold text-slate-700">Amount</label>
-            <div className="space-y-4 rounded-2xl bg-[#EEF7FB] p-4 sm:p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-600">Top up</span>
-                <span className="text-[11px] font-semibold text-[#FF6500]">
-                  Instant Fulfillment
-                </span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-                {PRESET_AMOUNTS.map((preset) => {
-                  const isSelected = selectedPreset === preset.value;
-                  return (
-                    <button
-                      key={preset.value}
-                      type="button"
-                      onClick={() => setFieldValue('amount', preset.value)}
-                      className={`rounded-xl px-2 py-2.5 text-center text-xs font-bold transition-all duration-150 active:scale-95 ${
-                        isSelected
-                          ? 'border-2 border-[#FF6500] bg-white text-[#FF6500] shadow-sm ring-2 ring-[#FF6500]/20'
-                          : 'border border-slate-200/80 bg-white text-slate-800 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-[#FF6500]/50'
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <AmountField
-                name="amount"
-                label={
-                  <>
-                    Enter Amount<span className="text-[#FF6500]">*</span>
-                  </>
-                }
-                min={100}
-                max={100000}
-                placeholder="0.00 (Min. ₦100)"
-                showError
-              />
-            </div>
-          </div>
-        )}
-
-        <TextField
-          name="email"
-          type="email"
-          label="Email for receipt (optional)"
-          placeholder="Enter your email address"
-          startIcon={<Mail className="h-4 w-4" />}
-        />
-
-        <SubmitButton className="w-full rounded-xl bg-[#FF9A62] py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#FF6500] hover:shadow-lg active:scale-[0.99]">
-          Continue
-        </SubmitButton>
-      </Form>
-    </>
+    <TextField
+      {...common}
+      type={field.type === 'email' ? 'email' : field.type === 'tel' ? 'tel' : 'text'}
+      pattern={field.pattern ?? undefined}
+      startIcon={field.type === 'email' ? <Mail className="h-4 w-4" /> : field.type === 'tel' ? <Phone className="h-4 w-4" /> : undefined}
+    />
   );
 }
 
-export default function ServicePaymentForm({
+function DynamicFields({
   activeSlug,
-  providers,
-  isFading,
-  onValidated,
-  formResetKey = 0,
-}: ServicePaymentFormProps) {
-  const initialValues = useMemo(() => buildInitialValues(activeSlug), [activeSlug]);
+  billers,
+  onBillerChange,
+  onProductChange,
+}: {
+  activeSlug: string;
+  billers: DigitalServiceBiller[];
+  onBillerChange: (billerCode: string) => void;
+  onProductChange: (productCode: string) => void;
+}) {
+  const { values, errors, submitCount } = useFormikContext<DynamicServiceFormValues>();
+  const selectedBiller = billers.find((biller) => biller.billerCode === values.billerCode) ?? billers[0];
+  const products = availableProducts(selectedBiller);
+  const selectedProduct = products.find((product) => product.code === values.productCode) ?? products[0];
+
+  if (!selectedBiller || !selectedProduct) return null;
+
+  const topLevelError = submitCount > 0 ? Object.values(errors).find((error) => typeof error === 'string') : undefined;
+  return (
+    <Form className="mt-6 space-y-5" noValidate>
+      <div className="text-center">
+        <h2 className="text-xl font-bold capitalize text-slate-900 sm:text-2xl">{activeSlug}</h2>
+        <p className="mt-1 text-xs text-slate-500 sm:text-sm">Choose a provider and product to continue.</p>
+      </div>
+      {typeof topLevelError === 'string' ? <div className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-600"><AlertCircle className="h-4 w-4 shrink-0" /><span>{topLevelError}</span></div> : null}
+      <ProviderSelector label="Select biller" providers={toProviderItems(billers)} selectedId={selectedBiller.billerCode} onSelect={onBillerChange} />
+      <SelectField name="productCode" label="Select product" required placeholder="Select a product" options={products.map((product) => ({ value: product.code, label: product.name }))} onValueChange={onProductChange} />
+      {selectedProduct.formFields.filter((field) => field.type !== 'hidden' && field.path !== 'productCode').map((field) => <DynamicFormField key={field.path} field={field} />)}
+      <SubmitButton className="w-full rounded-xl bg-[#FF9A62] py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#FF6500] hover:shadow-lg active:scale-[0.99]">Continue</SubmitButton>
+    </Form>
+  );
+}
+
+export default function ServicePaymentForm({ activeSlug, billers, isLoading = false, isError = false, isFading, onValidated, formResetKey = 0 }: ServicePaymentFormProps) {
+  const [selectedBillerCode, setSelectedBillerCode] = useState<string>();
+  const [selectedProductCode, setSelectedProductCode] = useState<string>();
+  const selectedBiller = billers.find((biller) => biller.billerCode === selectedBillerCode) ?? billers[0];
+  const availableBillerProducts = availableProducts(selectedBiller);
+  const selectedProduct = availableBillerProducts.find((product) => product.code === selectedProductCode) ?? availableBillerProducts[0];
+  const initialValues = useMemo(() => (selectedBiller && selectedProduct ? buildInitialValues(selectedBiller, selectedProduct) : null), [selectedBiller, selectedProduct]);
   const validationSchema = useMemo(
-    () =>
-      servicePaymentSchema({
-        slug: activeSlug,
-        requireAmount: activeSlug !== 'data' && activeSlug !== 'tv',
-        minAmount: 100,
-        maxAmount: 100000,
-      }),
-    [activeSlug]
+    () => (selectedProduct ? buildValidationSchema(selectedProduct) : undefined),
+    [selectedProduct]
   );
 
   return (
-    <div
-      className={`w-full max-w-xl rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl transition-all duration-300 ease-out sm:p-8 ${
-        isFading ? 'opacity-30 scale-[0.99] blur-[0.4px]' : 'opacity-100 scale-100 blur-0'
-      }`}
-    >
-      <Formik
-        key={`${activeSlug}-${formResetKey}`}
-        initialValues={initialValues}
-        validationSchema={validationSchema}
-        enableReinitialize
-        onSubmit={(values) => {
-          const provider =
-            providers.find((p) => p.id.toLowerCase() === values.providerId.toLowerCase()) ||
-            providers[0];
-          onValidated({
-            slug: activeSlug,
-            providerId: values.providerId,
-            providerName: provider.name,
-            providerImage: provider.imageSrc,
-            recipientNumber: values.recipientNumber,
-            amount: resolvePrice(activeSlug, values),
-            email: values.email,
-            meterType: values.meterType,
-          });
-        }}
-      >
-        <ServicePaymentFields activeSlug={activeSlug} providers={providers} />
-      </Formik>
+    <div className={`w-full max-w-xl rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl transition-all duration-300 ease-out sm:p-8 ${isFading ? 'scale-[0.99] opacity-30 blur-[0.4px]' : 'scale-100 opacity-100 blur-0'}`}>
+      {isLoading ? <p className="py-14 text-center text-sm text-slate-500">Loading available services…</p> : null}
+      {isError ? <p className="py-14 text-center text-sm text-red-600">We could not load services right now. Please try again.</p> : null}
+      {!isLoading && !isError && !initialValues ? <p className="py-14 text-center text-sm text-slate-500">No purchasable products are available for this service.</p> : null}
+      {initialValues && selectedBiller && selectedProduct && validationSchema ? (
+        <Formik<DynamicServiceFormValues>
+          key={`${selectedBiller.billerCode}-${selectedProduct.code}-${formResetKey}`}
+          initialValues={initialValues}
+          validationSchema={validationSchema}
+          validateOnBlur
+          validateOnChange={false}
+          onSubmit={(values) => {
+            const biller = billers.find((item) => item.billerCode === values.billerCode) ?? selectedBiller;
+            const product = availableProducts(biller).find((item) => item.code === values.productCode) ?? selectedProduct;
+            const amountMinor = Number(valueAtPath(values, 'amountMinor') ?? product.fixedAmountMinor ?? 0);
+            onValidated({ slug: activeSlug, providerId: biller.billerCode, providerName: biller.billerName, providerImage: providerImages[biller.billerCode.toLowerCase()], recipientNumber: String(valueAtPath(values, 'recipient') ?? ''), amount: Number.isFinite(amountMinor) ? amountMinor / 100 : 0, email: String(valueAtPath(values, 'email') ?? ''), productCode: product.code, values });
+          }}
+        >
+          <DynamicFields
+            activeSlug={activeSlug}
+            billers={billers}
+            onBillerChange={(billerCode) => {
+              setSelectedBillerCode(billerCode);
+              setSelectedProductCode(undefined);
+            }}
+            onProductChange={setSelectedProductCode}
+          />
+        </Formik>
+      ) : null}
     </div>
   );
 }

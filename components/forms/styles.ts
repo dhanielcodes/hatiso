@@ -1,9 +1,13 @@
-export type FieldVariant = 'light' | 'dark';
+export type FieldVariant = 'light' | 'dark' | 'auth';
 
 export function fieldLabelClass(variant: FieldVariant = 'light') {
-  return variant === 'dark'
-    ? 'mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300'
-    : 'mb-2 block text-xs font-semibold text-slate-700';
+  if (variant === 'dark') {
+    return 'mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300';
+  }
+  if (variant === 'auth') {
+    return 'mb-1.5 block text-[13px] font-medium text-[#1C1C1C]';
+  }
+  return 'mb-2 block text-xs font-semibold text-slate-700';
 }
 
 export function fieldControlClass(
@@ -20,6 +24,18 @@ export function fieldControlClass(
       opts?.hasError
         ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500'
         : 'border-slate-600 focus:border-[#FF6500] focus:ring-[#FF6500]',
+      opts?.withIcon ? 'pr-11' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  if (variant === 'auth') {
+    return [
+      'w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 transition focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60 bg-white',
+      opts?.hasError
+        ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500'
+        : 'border-[#E8E4DE] focus:border-[#FF6500] focus:ring-[#FF6500]',
       opts?.withIcon ? 'pr-11' : '',
     ]
       .filter(Boolean)
