@@ -50,6 +50,10 @@ interface ServicePaymentFormProps {
   isFading?: boolean;
   onValidated: (payment: PendingPayment) => void | Promise<void>;
   formResetKey?: number;
+  initialBillerCode?: string;
+  hideBillerSelector?: boolean;
+  variant?: 'marketplace' | 'dashboard';
+  initialEmail?: string;
 }
 
 const providerImages: Record<string, string> = {
@@ -113,9 +117,10 @@ function availableProducts(biller: DigitalServiceBiller | undefined) {
   return biller?.products.filter((product) => product.active && product.profile.purchasable) ?? [];
 }
 
-function buildInitialValues(biller: DigitalServiceBiller, product: DigitalServiceProduct): DynamicServiceFormValues {
-  const values: Record<string, unknown> = { billerCode: biller.billerCode, productCode: product.code };
+function buildInitialValues(biller: DigitalServiceBiller, product: DigitalServiceProduct, initialEmail = ''): DynamicServiceFormValues {
+  const values: Record<string, unknown> = { billerCode: biller.billerCode, productCode: product.code, email: initialEmail };
   for (const field of product.formFields) setAtPath(values, field.path, field.value ?? '');
+  if (initialEmail && product.formFields.some((field) => field.path === 'email')) setAtPath(values, 'email', initialEmail);
   setAtPath(values, 'productCode', product.code);
   return values as DynamicServiceFormValues;
 }
@@ -252,11 +257,15 @@ function DynamicFields({
   billers,
   onBillerChange,
   onProductChange,
+  hideBillerSelector = false,
+  variant = 'marketplace',
 }: {
   activeSlug: string;
   billers: DigitalServiceBiller[];
   onBillerChange: (billerCode: string) => void;
   onProductChange: (productCode: string) => void;
+  hideBillerSelector?: boolean;
+  variant?: 'marketplace' | 'dashboard';
 }) {
   const { values, errors, submitCount } = useFormikContext<DynamicServiceFormValues>();
   const selectedBiller = billers.find((biller) => biller.billerCode === values.billerCode) ?? billers[0];
@@ -267,34 +276,35 @@ function DynamicFields({
 
   const topLevelError = submitCount > 0 ? Object.values(errors).find((error) => typeof error === 'string') : undefined;
   return (
-    <Form className="mt-6 space-y-5" noValidate>
-      <div className="text-center">
+    <Form className={variant === 'dashboard' ? 'space-y-5' : 'mt-6 space-y-5'} noValidate>
+      {variant === 'marketplace' && <div className="text-center">
         <h2 className="text-xl font-bold capitalize text-slate-900 sm:text-2xl">{activeSlug}</h2>
         <p className="mt-1 text-xs text-slate-500 sm:text-sm">Choose a provider and product to continue.</p>
-      </div>
+      </div>}
       {typeof topLevelError === 'string' ? <div className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-600"><AlertCircle className="h-4 w-4 shrink-0" /><span>{topLevelError}</span></div> : null}
-      <ProviderSelector label="Select biller" providers={toProviderItems(billers, providerSelectorType)} selectedId={selectedBiller.billerCode} onSelect={onBillerChange} type={providerSelectorType} />
+      {!hideBillerSelector && <ProviderSelector label="Select biller" providers={toProviderItems(billers, providerSelectorType)} selectedId={selectedBiller.billerCode} onSelect={onBillerChange} type={providerSelectorType} />}
       <SelectField name="productCode" label="Select product" required placeholder="Select a product" options={products.map((product) => ({ value: product.code, label: product.name }))} onValueChange={onProductChange} />
       {selectedProduct.formFields.filter((field) => field.type !== 'hidden' && field.path !== 'productCode').map((field) => <DynamicFormField key={field.path} field={field} />)}
+      {!selectedProduct.formFields.some((field) => field.path === 'email') && <TextField name="email" type="email" label="Email for receipt (optional)" placeholder="Enter your email address" startIcon={<Mail className="h-4 w-4" />} />}
       <SubmitButton className="w-full rounded-xl bg-[#FF9A62] py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#FF6500] hover:shadow-lg active:scale-[0.99]">Continue</SubmitButton>
     </Form>
   );
 }
 
-export default function ServicePaymentForm({ activeSlug, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0 }: ServicePaymentFormProps) {
-  const [selectedBillerCode, setSelectedBillerCode] = useState<string>();
+export default function ServicePaymentForm({ activeSlug, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0, initialBillerCode, hideBillerSelector = false, variant = 'marketplace', initialEmail = '' }: ServicePaymentFormProps) {
+  const [selectedBillerCode, setSelectedBillerCode] = useState<string | undefined>(initialBillerCode);
   const [selectedProductCode, setSelectedProductCode] = useState<string>();
   const selectedBiller = billers.find((biller) => biller.billerCode === selectedBillerCode) ?? billers[0];
   const availableBillerProducts = availableProducts(selectedBiller);
   const selectedProduct = availableBillerProducts.find((product) => product.code === selectedProductCode) ?? availableBillerProducts[0];
-  const initialValues = useMemo(() => (selectedBiller && selectedProduct ? buildInitialValues(selectedBiller, selectedProduct) : null), [selectedBiller, selectedProduct]);
+  const initialValues = useMemo(() => (selectedBiller && selectedProduct ? buildInitialValues(selectedBiller, selectedProduct, initialEmail) : null), [initialEmail, selectedBiller, selectedProduct]);
   const validationSchema = useMemo(
     () => (selectedProduct ? buildValidationSchema(selectedProduct) : undefined),
     [selectedProduct]
   );
 
   return (
-    <div className={`w-full max-w-xl rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl transition-all duration-300 ease-out sm:p-8 ${isFading ? 'scale-[0.99] opacity-30 blur-[0.4px]' : 'scale-100 opacity-100 blur-0'}`}>
+    <div className={variant === 'dashboard' ? 'w-full py-6' : `w-full max-w-xl rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl transition-all duration-300 ease-out sm:p-8 ${isFading ? 'scale-[0.99] opacity-30 blur-[0.4px]' : 'scale-100 opacity-100 blur-0'}`}>
       {isLoading ? <ServiceFormSkeleton /> : null}
       {isError ? <p className="py-14 text-center text-sm text-red-600">We could not load services right now. Please try again.</p> : null}
       {!isLoading && !isError && !initialValues ? <p className="py-14 text-center text-sm text-slate-500">No purchasable products are available for this service.</p> : null}
@@ -323,6 +333,8 @@ export default function ServicePaymentForm({ activeSlug, billers, isLoading = fa
           <DynamicFields
             activeSlug={activeSlug}
             billers={billers}
+            hideBillerSelector={hideBillerSelector}
+            variant={variant}
             onBillerChange={(billerCode) => {
               setSelectedBillerCode(billerCode);
               setSelectedProductCode(undefined);

@@ -354,6 +354,10 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
         onClose={() => {
           setIsProcessing(false);
           setPaystackRequest(null);
+          setIsConfirmModalOpen(false);
+          setPendingPayment(null);
+          setPaymentError('');
+          setFormResetKey((key) => key + 1);
         }}
       />
 

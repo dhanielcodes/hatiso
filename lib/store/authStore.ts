@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { AuthState, User } from '@/types';
 import { loginUser } from '@/lib/api/auth';
-import { clearAuthSession, persistAuthSession } from '@/lib/auth/session';
+import { clearAuthSession, persistAuthSession, persistUserEmail } from '@/lib/auth/session';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string'
@@ -25,6 +25,7 @@ export const useAuthStore = create<AuthState>()(
           const identifier = emailOrPhone.trim();
           const session = await loginUser({ identifier, password });
           persistAuthSession(session);
+          if (identifier.includes('@')) persistUserEmail(identifier);
 
           const user: User = {
             id: identifier,
