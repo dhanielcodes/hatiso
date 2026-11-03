@@ -1,4 +1,4 @@
-import { apiGet } from '@/lib/api/axios';
+import { apiClient, apiGet } from '@/lib/api/axios';
 
 export interface ApiResponse<T> {
   code: number;
@@ -8,6 +8,7 @@ export interface ApiResponse<T> {
 
 export type DigitalServiceCategory =
   | 'TELCO'
+  | 'INTERNET_SERVICES'
   | 'DISCO'
   | 'CABLE'
   | 'EDUCATION'
@@ -71,6 +72,146 @@ export interface DigitalServiceBiller {
   tenantId: string;
   category: DigitalServiceCategory;
   products: DigitalServiceProduct[];
+}
+
+export interface CreateDigitalServiceOrderInput {
+  productCode: string;
+  recipient: string;
+  fields: Record<string, unknown>;
+  amountMinor: number;
+  contactPhone?: string;
+  email?: string;
+}
+
+export interface DigitalServiceOrder {
+  reference: string;
+  tenantId: string;
+  productCode: string;
+  category: DigitalServiceCategory;
+  recipient: string;
+  amountMinor: number;
+  currency: string;
+  expiresAt: string;
+  fulfilmentStatus: string;
+  paymentReference: string | null;
+  providerReference: string | null;
+  customerName: string | null;
+  deliveryCode: string | null;
+  units: string | null;
+  quantity: number;
+  guestToken: string;
+  guestExpiresAt: string;
+}
+
+export interface CreateGuestPaymentQuoteInput {
+  orderRef: string;
+  provider: 'PAYSTACK';
+  email: string;
+}
+
+export interface GuestPaymentQuote {
+  orderRef: string;
+  provider: 'PAYSTACK';
+  currency: string;
+  amountMinor: number;
+  feeMinor: number;
+  totalMinor: number;
+}
+
+export interface CreateGuestPaymentInput {
+  orderRef: string;
+  provider: 'PAYSTACK';
+  expectedTotalMinor: number;
+}
+
+export interface GuestPayment {
+  txnRef: string;
+  tenantId: string;
+  orderRef: string;
+  provider: 'PAYSTACK';
+  status: string;
+  currency: string;
+  amountMinor: number;
+  feeMinor: number;
+  totalMinor: number;
+  checkoutUrl: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+}
+
+export interface VerifyGuestPaymentInput {
+  txnRef: string;
+}
+
+export interface VerifiedGuestPayment {
+  txnRef: string;
+  tenantId: string;
+  orderRef: string;
+  provider: 'PAYSTACK';
+  status: 'INITIATED' | 'PENDING' | 'FAILED' | 'SUCCESSFUL' | string;
+  currency: string;
+  amountMinor: number;
+  feeMinor: number;
+  totalMinor: number;
+  checkoutUrl: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+}
+
+function createIdempotencyKey() {
+  return globalThis.crypto?.randomUUID?.() ?? `hasito-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+export async function createDigitalServiceOrder(input: CreateDigitalServiceOrderInput) {
+  const response = await apiClient.post<ApiResponse<DigitalServiceOrder>>(
+    '/api/public/digital-services/orders',
+    input,
+    { headers: { 'Idempotency-Key': createIdempotencyKey() } }
+  );
+  return response.data;
+}
+
+export async function createGuestPaymentQuote(
+  input: CreateGuestPaymentQuoteInput,
+  guestToken: string
+) {
+  const response = await apiClient.post<ApiResponse<GuestPaymentQuote>>(
+    '/api/public/guest-payments/quote',
+    input,
+    { headers: { 'X-Guest-Token': guestToken } }
+  );
+  return response.data;
+}
+
+export async function createGuestPayment(
+  input: CreateGuestPaymentInput,
+  guestToken: string
+) {
+  const response = await apiClient.post<ApiResponse<GuestPayment>>(
+    '/api/public/guest-payments',
+    input,
+    {
+      headers: {
+        'Idempotency-Key': createIdempotencyKey(),
+        'X-Guest-Token': guestToken,
+      },
+    }
+  );
+  return response.data;
+}
+
+export async function verifyGuestPayment(
+  input: VerifyGuestPaymentInput,
+  guestToken: string
+) {
+  const response = await apiClient.post<ApiResponse<VerifiedGuestPayment>>(
+    '/api/public/guest-payments/verify',
+    input,
+    { headers: { 'X-Guest-Token': guestToken } }
+  );
+  return response.data;
 }
 
 export function getDigitalServiceCatalogues(category: DigitalServiceCategory, page: number = 0, size: number = 20) {

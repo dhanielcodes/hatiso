@@ -6,6 +6,7 @@ import * as Yup from 'yup';
 import { AlertCircle, Mail, Phone } from 'lucide-react';
 import {
   DateField,
+  MinorAmountField,
   NumberField,
   SelectField,
   SubmitButton,
@@ -17,7 +18,10 @@ import type {
   DigitalServiceFormField,
   DigitalServiceProduct,
 } from '@/lib/api/digitalServices';
-import ProviderSelector, { type ProviderItem } from './ProviderSelector';
+import ProviderSelector, {
+  type ProviderItem,
+  type ProviderSelectorType,
+} from './ProviderSelector';
 
 export type DynamicServiceFormValues = Record<string, unknown> & {
   billerCode: string;
@@ -31,6 +35,7 @@ export type PendingPayment = {
   providerImage?: string;
   recipientNumber: string;
   amount: number;
+  amountMinor: number;
   email: string;
   productCode: string;
   values: DynamicServiceFormValues;
@@ -41,8 +46,9 @@ interface ServicePaymentFormProps {
   billers: DigitalServiceBiller[];
   isLoading?: boolean;
   isError?: boolean;
+  submissionError?: string;
   isFading?: boolean;
-  onValidated: (payment: PendingPayment) => void;
+  onValidated: (payment: PendingPayment) => void | Promise<void>;
   formResetKey?: number;
 }
 
@@ -59,6 +65,31 @@ const providerImages: Record<string, string> = {
   jos: '/images/elec_jos.png',
   kaduna: '/images/elec_kaduna.png',
 };
+
+const providerSelectorType: ProviderSelectorType = 'name';
+
+function ServiceFormSkeleton() {
+  return (
+    <div className="animate-pulse space-y-6 py-1" aria-label="Loading available services" role="status">
+      <div className="space-y-2">
+        <div className="h-6 w-36 rounded-md bg-slate-200" />
+        <div className="h-4 w-56 rounded-md bg-slate-100" />
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        {Array.from({ length: 3 }, (_, index) => (
+          <div key={index} className="h-20 rounded-xl bg-slate-100" />
+        ))}
+      </div>
+      {Array.from({ length: 3 }, (_, index) => (
+        <div key={index} className="space-y-2">
+          <div className="h-3 w-24 rounded bg-slate-100" />
+          <div className="h-12 rounded-xl bg-slate-100" />
+        </div>
+      ))}
+      <div className="h-12 rounded-xl bg-slate-200" />
+    </div>
+  );
+}
 
 function valueAtPath(values: Record<string, unknown>, path: string): unknown {
   return path.split('.').reduce<unknown>((current, segment) => {
@@ -89,9 +120,35 @@ function buildInitialValues(biller: DigitalServiceBiller, product: DigitalServic
   return values as DynamicServiceFormValues;
 }
 
+function nairaLabel(amountMinor: number) {
+  return `₦${(amountMinor / 100).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
+}
+
+function normalizeNigerianPhone(value: unknown) {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  if (/^0\d{10}$/.test(digits)) return `+234${digits.slice(1)}`;
+  if (/^234\d{10}$/.test(digits)) return `+${digits}`;
+  return String(value ?? '').trim();
+}
+
 function fieldSchema(field: DigitalServiceFormField): Yup.AnySchema {
   let schema: Yup.AnySchema;
-  if (field.type === 'integer' || field.type === 'number') {
+  if (field.path === 'amountMinor') {
+    schema = Yup.number()
+      .transform((value, originalValue) => (originalValue === '' || originalValue == null ? undefined : value))
+      .typeError('Enter a valid amount in naira');
+    if (field.minimum !== null) {
+      schema = (schema as Yup.NumberSchema).min(field.minimum, `Amount must be ${nairaLabel(field.minimum)} or above`);
+    }
+    if (field.maximum !== null) {
+      schema = (schema as Yup.NumberSchema).max(field.maximum, `Amount cannot be more than ${nairaLabel(field.maximum)}`);
+    }
+  } else if (field.type === 'tel') {
+    schema = Yup.string()
+      .trim()
+      .transform((value, originalValue) => normalizeNigerianPhone(originalValue))
+      .matches(/^\+234\d{10}$/, 'Enter a valid 11-digit Nigerian phone number');
+  } else if (field.type === 'integer' || field.type === 'number') {
     schema = Yup.number()
       .transform((value, originalValue) => (originalValue === '' || originalValue == null ? undefined : value))
       .typeError(`${field.label} must be a number`);
@@ -142,11 +199,15 @@ function buildValidationSchema(product: DigitalServiceProduct) {
   return objectSchema(shape);
 }
 
-function toProviderItems(billers: DigitalServiceBiller[]): ProviderItem[] {
+function toProviderItems(
+  billers: DigitalServiceBiller[],
+  type: ProviderSelectorType
+): ProviderItem[] {
   return billers.map((biller) => ({
     id: biller.billerCode,
     name: biller.billerName,
-    imageSrc: providerImages[biller.billerCode.toLowerCase()],
+    imageSrc:
+      type === 'image' ? providerImages[biller.billerCode.toLowerCase()] : undefined,
   }));
 }
 
@@ -160,6 +221,16 @@ function DynamicFormField({ field }: { field: DigitalServiceFormField }) {
     placeholder: field.readOnly ? undefined : `Enter ${field.label.toLowerCase()}`,
   };
 
+  if (field.path === 'amountMinor') {
+    return (
+      <MinorAmountField
+        {...common}
+        label={field.label.replace(/\s*\(kobo\)/i, '')}
+        minimumMinor={field.minimum ?? undefined}
+        maximumMinor={field.maximum ?? undefined}
+      />
+    );
+  }
   if (field.type === 'integer' || field.type === 'number') {
     return <NumberField {...common} min={field.minimum ?? undefined} max={field.maximum ?? undefined} step={field.type === 'integer' ? 1 : 'any'} />;
   }
@@ -202,7 +273,7 @@ function DynamicFields({
         <p className="mt-1 text-xs text-slate-500 sm:text-sm">Choose a provider and product to continue.</p>
       </div>
       {typeof topLevelError === 'string' ? <div className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-600"><AlertCircle className="h-4 w-4 shrink-0" /><span>{topLevelError}</span></div> : null}
-      <ProviderSelector label="Select biller" providers={toProviderItems(billers)} selectedId={selectedBiller.billerCode} onSelect={onBillerChange} />
+      <ProviderSelector label="Select biller" providers={toProviderItems(billers, providerSelectorType)} selectedId={selectedBiller.billerCode} onSelect={onBillerChange} type={providerSelectorType} />
       <SelectField name="productCode" label="Select product" required placeholder="Select a product" options={products.map((product) => ({ value: product.code, label: product.name }))} onValueChange={onProductChange} />
       {selectedProduct.formFields.filter((field) => field.type !== 'hidden' && field.path !== 'productCode').map((field) => <DynamicFormField key={field.path} field={field} />)}
       <SubmitButton className="w-full rounded-xl bg-[#FF9A62] py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#FF6500] hover:shadow-lg active:scale-[0.99]">Continue</SubmitButton>
@@ -210,7 +281,7 @@ function DynamicFields({
   );
 }
 
-export default function ServicePaymentForm({ activeSlug, billers, isLoading = false, isError = false, isFading, onValidated, formResetKey = 0 }: ServicePaymentFormProps) {
+export default function ServicePaymentForm({ activeSlug, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0 }: ServicePaymentFormProps) {
   const [selectedBillerCode, setSelectedBillerCode] = useState<string>();
   const [selectedProductCode, setSelectedProductCode] = useState<string>();
   const selectedBiller = billers.find((biller) => biller.billerCode === selectedBillerCode) ?? billers[0];
@@ -224,9 +295,10 @@ export default function ServicePaymentForm({ activeSlug, billers, isLoading = fa
 
   return (
     <div className={`w-full max-w-xl rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl transition-all duration-300 ease-out sm:p-8 ${isFading ? 'scale-[0.99] opacity-30 blur-[0.4px]' : 'scale-100 opacity-100 blur-0'}`}>
-      {isLoading ? <p className="py-14 text-center text-sm text-slate-500">Loading available services…</p> : null}
+      {isLoading ? <ServiceFormSkeleton /> : null}
       {isError ? <p className="py-14 text-center text-sm text-red-600">We could not load services right now. Please try again.</p> : null}
       {!isLoading && !isError && !initialValues ? <p className="py-14 text-center text-sm text-slate-500">No purchasable products are available for this service.</p> : null}
+      {/* {submissionError && !isLoading && !isError ? <div className="mb-5 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs font-medium text-red-600"><AlertCircle className="h-4 w-4 shrink-0" />{submissionError}</div> : null} */}
       {initialValues && selectedBiller && selectedProduct && validationSchema ? (
         <Formik<DynamicServiceFormValues>
           key={`${selectedBiller.billerCode}-${selectedProduct.code}-${formResetKey}`}
@@ -238,7 +310,14 @@ export default function ServicePaymentForm({ activeSlug, billers, isLoading = fa
             const biller = billers.find((item) => item.billerCode === values.billerCode) ?? selectedBiller;
             const product = availableProducts(biller).find((item) => item.code === values.productCode) ?? selectedProduct;
             const amountMinor = Number(valueAtPath(values, 'amountMinor') ?? product.fixedAmountMinor ?? 0);
-            onValidated({ slug: activeSlug, providerId: biller.billerCode, providerName: biller.billerName, providerImage: providerImages[biller.billerCode.toLowerCase()], recipientNumber: String(valueAtPath(values, 'recipient') ?? ''), amount: Number.isFinite(amountMinor) ? amountMinor / 100 : 0, email: String(valueAtPath(values, 'email') ?? ''), productCode: product.code, values });
+            const recipientNumber = normalizeNigerianPhone(valueAtPath(values, 'recipient'));
+            const contactPhone = normalizeNigerianPhone(valueAtPath(values, 'contactPhone'));
+            const apiValues = {
+              ...values,
+              recipient: recipientNumber,
+              ...(contactPhone ? { contactPhone } : {}),
+            };
+            return onValidated({ slug: activeSlug, providerId: biller.billerCode, providerName: biller.billerName, providerImage: providerSelectorType === 'image' ? providerImages[biller.billerCode.toLowerCase()] : undefined, recipientNumber, amount: Number.isFinite(amountMinor) ? amountMinor / 100 : 0, amountMinor: Number.isFinite(amountMinor) ? amountMinor : 0, email: String(valueAtPath(values, 'email') ?? ''), productCode: product.code, values: apiValues });
           }}
         >
           <DynamicFields

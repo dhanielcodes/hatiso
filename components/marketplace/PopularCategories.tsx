@@ -194,11 +194,12 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   ),
 };
 
-const categoryCardConfig: Record<
+const categoryCardConfig: Partial<Record<
   DigitalServiceCategory,
   { label: string; slug: string; href: string }
-> = {
+>> = {
   TELCO: { label: 'Airtime & Data', slug: 'airtime', href: '/categories/airtime' },
+  INTERNET_SERVICES: { label: 'Internet Services', slug: 'data', href: '/categories/data' },
   DISCO: { label: 'Electricity', slug: 'electricity', href: '/categories/electricity' },
   CABLE: { label: 'Cable TV', slug: 'tv', href: '/categories/tv' },
   EDUCATION: { label: 'Education', slug: 'education', href: '/categories/education' },
@@ -238,6 +239,8 @@ export default function PopularCategories() {
             )}
             {serviceCategories?.map((serviceCategory) => {
               const category = categoryCardConfig[serviceCategory];
+              if (!category) return null;
+
               const icon = CategoryIconMap[category.slug] || CategoryIconMap.airtime;
 
               return (

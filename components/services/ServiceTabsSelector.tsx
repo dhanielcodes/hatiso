@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServiceCategories';
+import type { DigitalServiceCategory } from '@/lib/api/digitalServices';
 
 export interface ServiceItem {
   slug: string;
@@ -228,6 +230,22 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
   },
 ];
 
+const visualServiceBySlug = Object.fromEntries(
+  ALL_DIGITAL_SERVICES.map((service) => [service.slug, service])
+) as Record<string, ServiceItem>;
+
+const categoryTabConfig: Partial<
+  Record<DigitalServiceCategory, { slug: string; name: string; visualSlug: string }>
+> = {
+  TELCO: { slug: 'airtime', name: 'Airtime & Data', visualSlug: 'airtime' },
+  INTERNET_SERVICES: { slug: 'data', name: 'Internet Services', visualSlug: 'data' },
+  DISCO: { slug: 'electricity', name: 'Electricity', visualSlug: 'electricity' },
+  CABLE: { slug: 'tv', name: 'Cable TV', visualSlug: 'tv' },
+  EDUCATION: { slug: 'education', name: 'Education', visualSlug: 'education' },
+  INSURANCE: { slug: 'insurance', name: 'Insurance', visualSlug: 'government-services' },
+  OTHER_SERVICES: { slug: 'other-services', name: 'Other Services', visualSlug: 'shopping' },
+};
+
 interface ServiceTabsSelectorProps {
   activeSlug: string;
   onSelectService?: (slug: string) => void;
@@ -239,6 +257,14 @@ export default function ServiceTabsSelector({
 }: ServiceTabsSelectorProps) {
   const router = useRouter();
   const carouselRef = useRef<HTMLDivElement>(null);
+  const { data: categories, isLoading } = useDigitalServiceCategories();
+  const services = (categories ?? []).flatMap((category) => {
+    const config = categoryTabConfig[category];
+    const visualService = config ? visualServiceBySlug[config.visualSlug] : undefined;
+    return config && visualService
+      ? [{ ...visualService, slug: config.slug, name: config.name }]
+      : [];
+  });
 
   // Mouse drag-to-scroll state
   const isDown = useRef(false);
@@ -350,7 +376,10 @@ export default function ServiceTabsSelector({
             msOverflowStyle: 'none',
           }}
         >
-          {ALL_DIGITAL_SERVICES.map((srv) => {
+          {isLoading && Array.from({ length: 6 }, (_, index) => (
+            <div key={index} className="h-[125px] w-[105px] shrink-0 animate-pulse rounded-2xl bg-white/10 sm:h-[142px] sm:w-[124px]" />
+          ))}
+          {services.map((srv) => {
             const isActive = activeSlug === srv.slug;
 
             return (

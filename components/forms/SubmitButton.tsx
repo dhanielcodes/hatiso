@@ -25,10 +25,19 @@ export default function SubmitButton({
     <button
       type="submit"
       disabled={disabled || busy}
-      className={className}
+      aria-busy={busy}
+      className={`${className} disabled:cursor-not-allowed`}
       {...rest}
     >
-      {busy ? loadingLabel ?? children : children}
+      {busy ? (
+        <span className="inline-flex items-center justify-center" aria-live="polite">
+          <span
+            aria-hidden="true"
+            className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+          />
+          <span className="sr-only">{loadingLabel ?? 'Submitting form'}</span>
+        </span>
+      ) : children}
     </button>
   );
 }

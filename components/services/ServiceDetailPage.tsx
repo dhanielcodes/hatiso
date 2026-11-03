@@ -3,31 +3,97 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
+import { useMutation } from '@tanstack/react-query';
 import {
   Zap,
   ShieldCheck,
   CheckCircle2,
-  X,
   CreditCard,
+  Smartphone,
 } from 'lucide-react';
 import Navbar from '@/components/marketplace/Navbar';
 import Footer from '@/components/marketplace/Footer';
 import ServiceTabsSelector from './ServiceTabsSelector';
 import ServicePaymentForm, { PendingPayment } from './ServicePaymentForm';
 import { useDigitalServiceCatalogues } from '@/lib/queries/useDigitalServiceCategories';
-import { DigitalServiceCategory } from '@/lib/api/digitalServices';
+import {
+  createDigitalServiceOrder,
+  createGuestPayment,
+  createGuestPaymentQuote,
+  verifyGuestPayment,
+  type DigitalServiceCategory,
+  type DigitalServiceOrder,
+  type GuestPaymentQuote,
+} from '@/lib/api/digitalServices';
+import type { PaystackCheckoutRequest } from './PaystackCheckout';
+
+const PaystackCheckout = dynamic(() => import('./PaystackCheckout'), { ssr: false });
 
 interface ServiceDetailPageProps {
   initialSlug?: string;
 }
 
+type PreparedPayment = PendingPayment & {
+  order: DigitalServiceOrder;
+  quote: GuestPaymentQuote;
+};
+
+function formatNaira(amountMinor: number) {
+  return `₦${(amountMinor / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
+}
+
+function PaymentReview({ payment, isProcessing, error, onReset, onContinue }: {
+  payment: PreparedPayment;
+  isProcessing: boolean;
+  error: string;
+  onReset: () => void;
+  onContinue: () => void;
+}) {
+  const dateLabel = new Intl.DateTimeFormat('en-NG', { dateStyle: 'long', timeStyle: 'short' }).format(new Date());
+
+  return (
+    <article className="w-full max-w-xl overflow-hidden rounded-[24px] bg-white text-slate-900 shadow-2xl">
+      <header className="flex items-center justify-center gap-3 border-b border-slate-200 px-6 py-8 sm:py-10">
+        <Smartphone className="h-6 w-6 text-[#FF6500]" />
+        <h2 className="text-xl font-semibold sm:text-2xl">{payment.slug?.toUpperCase()} Payment Review</h2>
+      </header>
+      <div className="space-y-8 p-6 sm:p-7">
+        <div className="flex items-center justify-between gap-4 rounded-xl bg-[#EAF7FC] p-4 sm:p-5">
+          <div className="flex min-w-0 items-center gap-3">
+            {payment.providerImage ? <Image src={payment.providerImage} alt={payment.providerName} width={58} height={58} className="h-12 w-12 shrink-0 rounded-full object-contain sm:h-[58px] sm:w-[58px]" /> : <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#204657] text-xs font-bold text-white sm:h-[58px] sm:w-[58px]">{payment.providerName.slice(0, 2).toUpperCase()}</span>}
+            <div className="min-w-0"><p className="text-sm text-slate-500">Sending {payment.slug} to</p><p className="truncate text-xl font-semibold">{payment.recipientNumber}</p></div>
+          </div>
+          <span className="shrink-0 text-lg font-bold text-[#204657]">- {formatNaira(payment.quote.totalMinor)}</span>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-slate-700">Transaction Details</h3>
+          <dl className="mt-5 divide-y divide-slate-100 text-sm">
+            <div className="flex items-center justify-between gap-4 py-4"><dt className="text-slate-500">Transaction date</dt><dd className="text-right font-medium text-slate-700">{dateLabel}</dd></div>
+            <div className="flex items-center justify-between gap-4 py-4"><dt className="text-slate-500">Transfer to</dt><dd className="font-semibold text-slate-700">{payment.recipientNumber}</dd></div>
+            <div className="flex items-center justify-between gap-4 py-4"><dt className="text-slate-500">Transaction type</dt><dd className="font-semibold capitalize text-slate-700">{payment.slug}</dd></div>
+            <div className="flex items-center justify-between gap-4 py-4"><dt className="text-slate-500">Amount to send</dt><dd className="font-semibold text-slate-700">{formatNaira(payment.quote.amountMinor)}</dd></div>
+            <div className="flex items-center justify-between gap-4 py-4"><dt className="text-slate-500">Charges fee</dt><dd className="font-semibold text-slate-700">{formatNaira(payment.quote.feeMinor)}</dd></div>
+          </dl>
+        </div>
+        {/* {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-center text-xs font-medium text-red-600">{error}</p> : null} */}
+        <div className="flex flex-col-reverse gap-3 sm:flex-row">
+          <button type="button" onClick={onReset} disabled={isProcessing} className="rounded-xl border border-slate-200 px-7 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50">Reset</button>
+          <button type="button" onClick={onContinue} disabled={isProcessing} aria-busy={isProcessing} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#FF6500] py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#E04B14] disabled:cursor-not-allowed disabled:opacity-50">{isProcessing ? <><span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /><span className="sr-only">Preparing payment</span></> : <>Continue <CreditCard className="h-4 w-4" /></>}</button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 const categoryBySlug: Record<string, DigitalServiceCategory> = {
   airtime: 'TELCO',
-  data: 'TELCO',
+  data: 'INTERNET_SERVICES',
   electricity: 'DISCO',
   tv: 'CABLE',
   education: 'EDUCATION',
-  betting: 'OTHER_SERVICES',
+  insurance: 'INSURANCE',
+  'other-services': 'OTHER_SERVICES',
 };
 
 export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDetailPageProps) {
@@ -37,12 +103,28 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
   const [activeSlug, setActiveSlug] = useState(initialSlug);
   const [slugFromProp, setSlugFromProp] = useState(initialSlug);
   const [isFading, setIsFading] = useState(false);
-  const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(null);
+  const [pendingPayment, setPendingPayment] = useState<PreparedPayment | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transactionRef, setTransactionRef] = useState('');
   const [formResetKey, setFormResetKey] = useState(0);
+  const [paymentError, setPaymentError] = useState('');
+  const [paystackRequest, setPaystackRequest] = useState<PaystackCheckoutRequest | null>(null);
+  const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? '';
+  const createOrderMutation = useMutation({ mutationFn: createDigitalServiceOrder });
+  const quoteMutation = useMutation({
+    mutationFn: ({ orderRef, email, guestToken }: { orderRef: string; email: string; guestToken: string }) =>
+      createGuestPaymentQuote({ orderRef, provider: 'PAYSTACK', email }, guestToken),
+  });
+  const createPaymentMutation = useMutation({
+    mutationFn: ({ orderRef, expectedTotalMinor, guestToken }: { orderRef: string; expectedTotalMinor: number; guestToken: string }) =>
+      createGuestPayment({ orderRef, provider: 'PAYSTACK', expectedTotalMinor }, guestToken),
+  });
+  const verifyPaymentMutation = useMutation({
+    mutationFn: ({ txnRef, guestToken }: { txnRef: string; guestToken: string }) =>
+      verifyGuestPayment({ txnRef }, guestToken),
+  });
 
   if (initialSlug !== slugFromProp) {
     setSlugFromProp(initialSlug);
@@ -139,24 +221,75 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
     }, 150);
   };
 
-  const handleValidated = (payment: PendingPayment) => {
-    setPendingPayment(payment);
-    setIsConfirmModalOpen(true);
+  const handleValidated = async (payment: PendingPayment) => {
+    setPaymentError('');
+
+    if (!payment.email) {
+      setPaymentError('Enter an email address to receive your payment receipt.');
+      return;
+    }
+
+    try {
+      const fields = payment.values.fields;
+      const order = await createOrderMutation.mutateAsync({
+        productCode: payment.productCode,
+        recipient: payment.recipientNumber,
+        fields: fields && typeof fields === 'object' && !Array.isArray(fields)
+          ? fields as Record<string, unknown>
+          : {},
+        amountMinor: payment.amountMinor,
+        contactPhone: String(payment.values.contactPhone ?? payment.recipientNumber),
+        email: payment.email,
+      });
+      const quote = await quoteMutation.mutateAsync({
+        orderRef: order.data.reference,
+        email: payment.email,
+        guestToken: order.data.guestToken,
+      });
+
+      setPendingPayment({ ...payment, order: order.data, quote: quote.data });
+      setIsConfirmModalOpen(true);
+    } catch (error) {
+      setPaymentError(error instanceof Error ? error.message : 'Unable to prepare your payment. Please try again.');
+    }
   };
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
+    if (!pendingPayment) return;
+    if (!paystackPublicKey) {
+      setPaymentError('Paystack is not configured. Add NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY to your environment.');
+      return;
+    }
+
     setIsProcessing(true);
-    setTimeout(() => {
+    setPaymentError('');
+    try {
+      const payment = await createPaymentMutation.mutateAsync({
+        orderRef: pendingPayment.order.reference,
+        expectedTotalMinor: pendingPayment.quote.totalMinor,
+        guestToken: pendingPayment.order.guestToken,
+      });
+      const transaction = payment.data;
+      setTransactionRef(transaction.txnRef);
+      setPaystackRequest({
+        email: pendingPayment.email,
+        totalMinor: transaction.totalMinor,
+        txnRef: transaction.txnRef,
+        currency: transaction.currency,
+        orderRef: transaction.orderRef,
+        guestToken: pendingPayment.order.guestToken,
+      });
+    } catch (error) {
       setIsProcessing(false);
-      setIsConfirmModalOpen(false);
-      setTransactionRef('TXN-' + Math.random().toString(36).substring(2, 9).toUpperCase());
-      setIsSuccessModalOpen(true);
-    }, 1200);
+      setPaymentError(error instanceof Error ? error.message : 'Unable to initialise payment. Please try again.');
+    }
   };
 
   const handleReset = () => {
     setIsSuccessModalOpen(false);
     setPendingPayment(null);
+    setPaymentError('');
+    setPaystackRequest(null);
     setFormResetKey((k) => k + 1);
   };
 
@@ -190,6 +323,39 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
       </div>
 
       <Navbar />
+      <PaystackCheckout
+        request={paystackRequest}
+        publicKey={paystackPublicKey}
+        onSuccess={async (response) => {
+          if (!pendingPayment) return;
+
+          setIsProcessing(true);
+          setPaymentError('');
+          const txnRef = response?.reference ?? response?.trxref ?? pendingPayment.order.paymentReference ?? transactionRef;
+          try {
+            const verification = await verifyPaymentMutation.mutateAsync({
+              txnRef,
+              guestToken: pendingPayment.order.guestToken,
+            });
+            if (verification.data.status !== 'SUCCESSFUL') {
+              throw new Error('Your payment is still being confirmed. Please check again shortly.');
+            }
+            setTransactionRef(verification.data.txnRef);
+            setIsProcessing(false);
+            setPaystackRequest(null);
+            setIsConfirmModalOpen(false);
+            setIsSuccessModalOpen(true);
+          } catch (error) {
+            setIsProcessing(false);
+            setPaystackRequest(null);
+            setPaymentError(error instanceof Error ? error.message : 'We could not verify your payment. Please try again.');
+          }
+        }}
+        onClose={() => {
+          setIsProcessing(false);
+          setPaystackRequest(null);
+        }}
+      />
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 xl:px-0 pt-4 pb-24">
         <section
@@ -261,162 +427,65 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
         <ServiceTabsSelector activeSlug={activeSlug} onSelectService={handleServiceClick} />
 
         <section className="my-10 flex justify-center">
-          <ServicePaymentForm
-            activeSlug={activeSlug}
-            billers={serviceCatalogues ?? []}
-            isLoading={isLoading}
-            isError={hasCategoryRequestError}
-            isFading={isFading}
-            onValidated={handleValidated}
-            formResetKey={formResetKey}
-          />
+          {isConfirmModalOpen && pendingPayment ? (
+            <PaymentReview
+              payment={pendingPayment}
+              isProcessing={isProcessing}
+              error={paymentError}
+              onReset={() => {
+                setIsConfirmModalOpen(false);
+                setPendingPayment(null);
+                setPaymentError('');
+              }}
+              onContinue={handleConfirmPayment}
+            />
+          ) : (
+            <ServicePaymentForm
+              activeSlug={activeSlug}
+              billers={serviceCatalogues ?? []}
+              isLoading={isLoading}
+              isError={hasCategoryRequestError}
+              isFading={isFading}
+              submissionError={paymentError}
+              onValidated={handleValidated}
+              formResetKey={formResetKey}
+            />
+          )}
         </section>
       </main>
 
-      {isConfirmModalOpen && pendingPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <h3 className="text-lg font-bold text-slate-900 capitalize">
-                Review {pendingPayment.slug} Payment
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsConfirmModalOpen(false)}
-                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="my-5 space-y-3 text-sm">
-              <div className="flex items-center justify-between rounded-xl bg-[#EEF7FB] p-3.5">
-                <span className="text-slate-500">Service</span>
-                <span className="font-bold text-slate-900 capitalize">{pendingPayment.slug}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-xl bg-[#EEF7FB] p-3.5">
-                <span className="text-slate-500">Provider</span>
-                <div className="flex items-center gap-2">
-                  {pendingPayment.providerImage ? (
-                    <img
-                      src={pendingPayment.providerImage}
-                      alt={pendingPayment.providerName}
-                      className="h-6 w-6 rounded-full object-contain"
-                    />
-                  ) : (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#204657] text-[9px] font-bold text-white">
-                      {pendingPayment.providerName.slice(0, 2).toUpperCase()}
-                    </span>
-                  )}
-                  <span className="font-bold text-slate-900">{pendingPayment.providerName}</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between rounded-xl bg-[#EEF7FB] p-3.5">
-                <span className="text-slate-500">Recipient / Identifier</span>
-                <span className="font-bold text-slate-900">{pendingPayment.recipientNumber}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-xl bg-[#EEF7FB] p-3.5">
-                <span className="text-slate-500">Total Amount</span>
-                <span className="text-base font-extrabold text-[#FF6500]">
-                  ₦
-                  {pendingPayment.amount.toLocaleString('en-NG', {
-                    minimumFractionDigits: 2,
-                  })}
-                </span>
-              </div>
-              {pendingPayment.email && (
-                <div className="flex items-center justify-between rounded-xl bg-[#EEF7FB] p-3.5">
-                  <span className="text-slate-500">Receipt Email</span>
-                  <span className="font-medium text-slate-800">{pendingPayment.email}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={handleConfirmPayment}
-                disabled={isProcessing}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF6500] py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-[#E04B14] active:scale-[0.99] disabled:opacity-50"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    <span>Processing Transaction...</span>
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="h-4 w-4" />
-                    <span>
-                      Confirm & Pay ₦{pendingPayment.amount.toLocaleString()}
-                    </span>
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsConfirmModalOpen(false)}
-                className="w-full rounded-xl py-2.5 text-center text-xs font-semibold text-slate-500 hover:text-slate-800"
-              >
-                Edit Details
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {isSuccessModalOpen && pendingPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 text-center text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-              <CheckCircle2 className="h-9 w-9 stroke-[2.5]" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102A36]/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg overflow-hidden rounded-[28px] bg-white text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="border-b border-slate-100 px-6 pb-7 pt-8 text-center sm:px-9 sm:pt-10">
+              <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#E6F7ED] text-[#009447] ring-8 ring-[#F2FBF6]">
+                <CheckCircle2 className="h-10 w-10 stroke-[2.4]" />
+              </div>
+              <span className="mt-5 inline-flex rounded-full bg-[#E8F7EE] px-3 py-1 text-[11px] font-bold tracking-wide text-[#008A46]">PAYMENT CONFIRMED</span>
+              <h3 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#102A36]">Payment successful</h3>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">Your {pendingPayment.slug} transaction has been completed. The service will be delivered shortly.</p>
             </div>
 
-            <h3 className="mt-4 text-xl font-black text-slate-900">Payment Successful!</h3>
-            <p className="mt-1 text-xs text-slate-500">
-              Your {pendingPayment.slug} transaction has been processed instantly.
-            </p>
+            <div className="space-y-6 px-6 py-7 sm:px-9 sm:py-8">
+              <div className="rounded-2xl bg-[#EAF7FC] px-5 py-4 text-center">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#55707D]">Total paid</p>
+                <p className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[#204657]">{formatNaira(pendingPayment.quote.totalMinor)}</p>
+                <p className="mt-1 text-xs text-slate-500">including {formatNaira(pendingPayment.quote.feeMinor)} service fee</p>
+              </div>
 
-            <div className="my-5 rounded-2xl bg-[#EEF7FB] p-4 text-left text-xs space-y-2">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Amount Paid:</span>
-                <span className="font-bold text-slate-900">
-                  ₦
-                  {pendingPayment.amount.toLocaleString('en-NG', {
-                    minimumFractionDigits: 2,
-                  })}
-                </span>
+              <div>
+                <div className="mb-3 flex items-center justify-between"><h4 className="text-sm font-semibold text-[#304A57]">Receipt details</h4><span className="text-xs text-slate-400">{pendingPayment.providerName}</span></div>
+                <dl className="divide-y divide-slate-100 rounded-xl border border-slate-100 px-4">
+                  <div className="flex items-center justify-between gap-5 py-3.5 text-sm"><dt className="text-slate-500">Recipient</dt><dd className="text-right font-semibold text-slate-700">{pendingPayment.recipientNumber}</dd></div>
+                  <div className="flex items-center justify-between gap-5 py-3.5 text-sm"><dt className="text-slate-500">Service</dt><dd className="font-semibold capitalize text-slate-700">{pendingPayment.slug}</dd></div>
+                  <div className="flex items-center justify-between gap-5 py-3.5 text-sm"><dt className="text-slate-500">Transaction reference</dt><dd className="max-w-[190px] break-all text-right font-mono text-xs font-semibold text-[#204657]">{transactionRef}</dd></div>
+                </dl>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Provider:</span>
-                <span className="font-bold text-slate-900">{pendingPayment.providerName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Identifier:</span>
-                <span className="font-bold text-slate-900">
-                  {pendingPayment.recipientNumber}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Transaction Ref:</span>
-                <span className="font-mono font-bold text-slate-800">{transactionRef}</span>
-              </div>
-            </div>
 
-            <div className="space-y-2.5">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="w-full rounded-xl bg-[#FF6500] py-3 text-sm font-bold text-white shadow transition hover:bg-[#E04B14]"
-              >
-                Make Another Payment
-              </button>
-              <Link
-                href="/"
-                className="block w-full rounded-xl border border-slate-200 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Return to Marketplace
-              </Link>
+              <div className="space-y-3 pt-1">
+                <button type="button" onClick={handleReset} className="w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#FF6500]/20 transition hover:bg-[#E04B14] active:scale-[0.98]">Make another payment</button>
+                <Link href="/" className="block w-full rounded-xl border border-slate-200 py-3 text-center text-sm font-semibold text-[#304A57] transition hover:bg-slate-50 active:scale-[0.98]">Return to marketplace</Link>
+              </div>
             </div>
           </div>
         </div>

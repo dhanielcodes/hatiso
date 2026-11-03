@@ -4,7 +4,19 @@ import axios, {
   InternalAxiosRequestConfig,
   AxiosResponse,
 } from 'axios';
+import { toast } from 'sonner';
 import { ApiError } from '@/types';
+
+interface BackendErrorDetails {
+  message?: string;
+  validationErrors?: Record<string, string[]> | null;
+}
+
+interface BackendErrorResponse {
+  message?: string;
+  errors?: Record<string, string[]>;
+  data?: BackendErrorDetails;
+}
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') ||
@@ -62,20 +74,23 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
-  (error: AxiosError<{ message?: string; errors?: Record<string, string[]> }>) => {
+  (error: AxiosError<BackendErrorResponse>) => {
     const status = error.response?.status;
     const responseData = error.response?.data;
 
     const formattedError: ApiError = {
       message:
+        responseData?.data?.message ||
         responseData?.message ||
         error.message ||
         'An unexpected network error occurred. Please try again.',
       statusCode: status,
-      errors: responseData?.errors,
+      errors: responseData?.data?.validationErrors || responseData?.errors,
     };
 
     if (typeof window !== 'undefined') {
+      toast.error(formattedError.message);
+
       if (status === 401) {
         // Token expired or invalid
         localStorage.removeItem('hasito_auth_token');
