@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowUpRight, ArrowRight } from 'lucide-react';
 
 interface BankItem {
@@ -8,8 +10,9 @@ interface BankItem {
   name: string;
   slug: string;
   code: string;
-  logo: React.ReactNode;
-  url?: string;
+  logo: string;
+  url: string;
+  description: string;
 }
 
 const BANKS_LIST: BankItem[] = [
@@ -18,144 +21,90 @@ const BANKS_LIST: BankItem[] = [
     name: 'IBILE MFB',
     slug: 'ibile-mfb',
     code: 'IBILE',
-    logo: (
-      <div className="flex flex-col items-center justify-center text-center">
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#5EB533] text-white font-black text-sm">
-          i
-        </div>
-        <span className="text-[7px] font-black tracking-tight text-[#2D5A1B] mt-0.5">IBILE</span>
-      </div>
-    ),
+    logo: '/images/bank_ibile_hq.png',
+    url: 'https://ibilemfb.com',
+    description: 'Licensed by the Central Bank of Nigeria to deliver innovative microfinance and retail banking services.',
   },
   {
     id: 'ab',
     name: 'AB MFB',
     slug: 'ab-mfb',
     code: 'AB',
-    logo: (
-      <div className="flex items-center justify-center gap-0.5">
-        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-tr from-[#0284C7] to-[#38BDF8] text-white font-bold text-[9px] shadow-xs">
-          🌐
-        </div>
-        <span className="font-serif font-black text-xs tracking-tight text-[#0369A1]">AB</span>
-      </div>
-    ),
+    logo: '/images/bank_ab_mfb_hq.png',
+    url: 'https://ab-mfb.com',
+    description: 'Providing accessible financial solutions, digital transfers, and business credit across Nigeria.',
   },
   {
     id: 'moneytrust',
     name: 'Moneytrust MFB',
     slug: 'moneytrust-mfb',
     code: 'MONEYTRUST',
-    logo: (
-      <div className="flex items-center justify-center">
-        <svg viewBox="0 0 32 32" className="h-7 w-7" fill="none">
-          <path d="M6 24L16 6L26 24H21L16 14L11 24H6Z" fill="#F97316" />
-          <path d="M16 15L21 24H11L16 15Z" fill="#10B981" />
-        </svg>
-      </div>
-    ),
-  },
-  {
-    id: 'boa',
-    name: 'BOA',
-    slug: 'boa',
-    code: 'BOA',
-    logo: (
-      <div className="flex flex-col items-center justify-center">
-        <div className="flex items-center -space-x-1">
-          <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#15803D] text-[7px] font-bold text-white">B</div>
-          <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#15803D] text-[7px] font-bold text-white ring-1 ring-white">O</div>
-          <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#15803D] text-[7px] font-bold text-white">A</div>
-        </div>
-        <span className="text-[6px] font-semibold text-[#15803D] mt-0.5 scale-90">AGRICULTURE</span>
-      </div>
-    ),
+    logo: '/images/bank_moneytrust.png',
+    url: 'https://moneytrustmfb.com',
+    description: 'Secure, modern digital banking tailored for individuals and emerging commercial enterprises.',
   },
   {
     id: 'fastcredit',
     name: 'Fast Credit',
     slug: 'fast-credit',
     code: 'FASTCREDIT',
-    logo: (
-      <div className="flex items-center justify-center">
-        <div className="flex items-center gap-0.5">
-          <div className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#DC2626] text-[8px] font-bold text-white">FC</div>
-          <span className="text-[8px] font-black tracking-tighter text-[#1E3A8A]">FASTCREDIT</span>
-        </div>
-      </div>
-    ),
+    logo: '/images/bank_fastcredit.png',
+    url: 'https://fastcredit-ng.com',
+    description: 'Fast digital lending, account top-ups, and frictionless bill settlement solutions.',
+  },
+  {
+    id: 'fastcredit_degraded',
+    name: 'Fast Credit',
+    slug: 'fast-credit-2',
+    code: 'FASTCREDIT',
+    logo: '/images/bank_fastcredit_degraded.png',
+    url: 'https://fastcredit-ng.com',
+    description: 'Secondary settlement gateway experiencing occasional network latency.',
   },
   {
     id: 'koins',
     name: 'Koins MFB',
     slug: 'koins-mfb',
     code: 'KOINS',
-    logo: (
-      <div className="flex items-center justify-center">
-        <div className="flex items-center gap-0.5 rounded-full bg-[#16A34A] px-2 py-0.5 text-white">
-          <span className="text-[7px]">◖</span>
-          <span className="text-[9px] font-black tracking-tight">Koins</span>
-        </div>
-      </div>
-    ),
+    logo: '/images/bank_koins.png',
+    url: 'https://koinsmfb.com',
+    description: 'Next-generation digital microfinance platform supporting smart savings, cards, and daily transactions.',
   },
   {
     id: 'hasal',
     name: 'Hasal MFB',
     slug: 'hasal-mfb',
     code: 'HASAL',
-    logo: (
-      <div className="flex flex-col items-center justify-center border border-[#DC2626] bg-[#DC2626]/5 px-1 py-0.5 rounded">
-        <div className="flex items-center gap-0.5">
-          <span className="bg-[#DC2626] px-1 text-[8px] font-black text-white rounded-[1px]">H</span>
-          <span className="text-[8px] font-bold text-[#1E3A8A]">HASAL</span>
-        </div>
-      </div>
-    ),
+    logo: '/images/bank_hasal.png',
+    url: 'https://hasalmfb.com',
+    description: 'Serving businesses and households with tailored deposit accounts and instant merchant settlement.',
   },
   {
     id: 'alert',
     name: 'Alert Group',
     slug: 'alert-group',
     code: 'ALERT',
-    logo: (
-      <div className="flex items-center justify-center gap-1">
-        <div className="h-0 w-0 border-x-4 border-x-transparent border-b-[9px] border-b-[#EA580C]" />
-        <div className="flex flex-col text-left leading-none">
-          <span className="text-[7px] font-black tracking-tight text-slate-900">ALERT</span>
-          <span className="text-[5px] font-semibold text-slate-500">GROUP</span>
-        </div>
-      </div>
-    ),
+    logo: '/images/bank_alert_group.png',
+    url: 'https://alertgroup.com.ng',
+    description: 'Specialized retail micro-lending and automated virtual account management services.',
   },
   {
     id: 'ajo',
     name: 'Ajo Card',
     slug: 'ajo-card',
     code: 'AJO',
-    logo: (
-      <div className="flex items-center justify-center">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FEF3C7] text-[#D97706]">
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="M12 4V20" />
-            <path d="M6 12L12 18L18 12" />
-            <path d="M4 8L12 16L20 8" />
-          </svg>
-        </div>
-      </div>
-    ),
+    logo: '/images/bank_ajo_card.png',
+    url: 'https://ajocard.com',
+    description: 'Smart cooperative contributions, digital debit cards, and wallet services.',
   },
   {
     id: 'bowen',
     name: 'Bowen MFB',
     slug: 'bowen-mfb',
     code: 'BOWEN',
-    logo: (
-      <div className="flex items-center justify-center gap-0.5">
-        <div className="flex h-4 w-4 items-center justify-center rounded bg-[#1E3A8A] text-[9px] font-black text-[#F59E0B]">B</div>
-        <span className="text-[8px] font-black tracking-tight text-[#1E3A8A]">BOWEN</span>
-      </div>
-    ),
+    logo: '/images/bank_bowen.png',
+    url: 'https://bowenmicrofinancebank.com',
+    description: 'Pioneering community-first commercial microfinance and student educational financial services.',
   },
 ];
 
@@ -178,7 +127,6 @@ function LockIcon() {
   );
 }
 
-/* ─── Section header label ──────────────────────────────────────────────── */
 export default function BanksSection() {
   const [selectedBank, setSelectedBank] = useState<BankItem | null>(null);
 
@@ -211,48 +159,65 @@ export default function BanksSection() {
               key={bank.id}
               onClick={() => setSelectedBank(bank)}
               type="button"
-              className="group relative flex flex-col items-center justify-between rounded-2xl bg-[#EAEFF2] p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:bg-[#E2E8EC] hover:ring-2 hover:ring-[#FF6500]/30 active:scale-95"
-              style={{ minHeight: '200px' }}
+              className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs text-left transition-shadow duration-200 hover:shadow-md hover:border-slate-300 h-[200px] sm:h-[220px]"
             >
-              <div className="absolute top-3 right-3 text-[#FF6500] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
-                <ArrowUpRight className="h-4 w-4" />
+              {/* Logo taking full space of card */}
+              <div className="relative flex-1 w-full bg-white p-5 flex items-center justify-center">
+                <div className="relative h-full w-full">
+                  <Image
+                    src={bank.logo}
+                    alt={bank.name}
+                    fill
+                    quality={95}
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    className="object-contain p-2"
+                  />
+                </div>
               </div>
-              <div className="my-auto flex h-14 w-14 items-center justify-center rounded-xl bg-white p-2 shadow-xs transition-transform duration-200 group-hover:scale-105">
-                {bank.logo}
+
+              {/* Bottom opaque bar with Bank Name and Arrow */}
+              <div className="w-full bg-slate-50/95 border-t border-slate-100 px-3.5 py-2.5 flex items-center justify-between backdrop-blur-xs">
+                <span className="text-xs sm:text-[13px] font-bold text-[#0F2833] truncate">
+                  {bank.name}
+                </span>
+                <div className="flex-shrink-0 ml-1 text-[#FF6500]">
+                  <ArrowUpRight className="h-4 w-4 stroke-[2.2]" />
+                </div>
               </div>
-              <span className="text-xs font-semibold text-[#0F2833] transition-colors group-hover:text-[#FF6500] sm:text-sm">
-                {bank.name}
-              </span>
             </button>
           ))}
         </div>
 
         {/* See all Banks */}
         <div className="mt-10 flex justify-center">
-          <button
-            onClick={() => setSelectedBank(BANKS_LIST[0])}
+          <Link
+            href="/banks"
             className="group inline-flex items-center gap-2 rounded-xl bg-[#102A36] px-6 py-3.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:bg-[#183946] active:scale-95"
           >
             <span>See all Banks</span>
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </button>
+          </Link>
         </div>
       </div>
 
       {/* ── Bank Opening Modal ─────────────────────────────────────────────── */}
       {selectedBank && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-          style={{ background: 'rgba(90,100,105,0.50)', backdropFilter: 'blur(3px)' }}
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           onClick={(e) => e.target === e.currentTarget && setSelectedBank(null)}
         >
           {/* Card */}
-          <div className="w-full max-w-sm rounded-3xl bg-white px-6 pt-8 pb-5 shadow-2xl text-slate-900">
-
+          <div className="w-full max-w-sm rounded-3xl bg-white px-6 pt-8 pb-5 shadow-2xl text-slate-900 animate-in fade-in zoom-in-95 duration-200">
             {/* Bank logo — left-aligned */}
             <div className="flex mb-5">
-              <div className="flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-[#F4F7F9]">
-                <div className="scale-[1.7]">{selectedBank.logo}</div>
+              <div className="relative flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-[#F4F7F9] p-2.5 border border-slate-100">
+                <Image
+                  src={selectedBank.logo}
+                  alt={selectedBank.name}
+                  fill
+                  sizes="72px"
+                  className="object-contain p-2"
+                />
               </div>
             </div>
 
@@ -287,16 +252,17 @@ export default function BanksSection() {
 
             {/* Stacked buttons */}
             <div className="flex flex-col gap-3">
-              <button
-                onClick={() => {
-                  alert(`Redirecting to ${selectedBank.name} online portal…`);
-                  setSelectedBank(null);
-                }}
-                className="w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-bold text-white hover:bg-[#E84D15] active:scale-[0.98] transition-all duration-150"
+              <a
+                href={selectedBank.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setSelectedBank(null)}
+                className="w-full rounded-xl bg-[#FF6500] py-3.5 text-center text-sm font-bold text-white hover:bg-[#E84D15] active:scale-[0.98] transition-all duration-150"
               >
                 Continue to bank
-              </button>
+              </a>
               <button
+                type="button"
                 onClick={() => setSelectedBank(null)}
                 className="w-full rounded-xl border border-slate-200 py-3.5 text-sm font-semibold text-[#0F2833] hover:bg-slate-50 active:scale-[0.98] transition-all duration-150"
               >

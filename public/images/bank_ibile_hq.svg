@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+      <g transform="translate(160, 85)">
+        <!-- Circle -->
+        <circle cx="0" cy="0" r="42" fill="none" stroke="#5EB533" stroke-width="9" />
+        <!-- Dot -->
+        <circle cx="0" cy="-16" r="6.5" fill="#5EB533" />
+        <!-- Stem -->
+        <rect x="-5" y="-4" width="10" height="28" rx="5" fill="#5EB533" />
+      </g>
+      <!-- Text -->
+      <text x="160" y="160" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="24" fill="#2D5A1B" text-anchor="middle" letter-spacing="1.5">IBILE</text>
+      <text x="160" y="178" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="9" fill="#5EB533" text-anchor="middle" letter-spacing="1">MICROFINANCE BANK</text>
+    </svg>

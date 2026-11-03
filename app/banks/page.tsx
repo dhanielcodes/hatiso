@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import {
   Search,
@@ -12,12 +11,8 @@ import {
   CreditCard,
   ArrowLeftRight,
   Menu,
-  Check,
   ExternalLink,
   X,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
 } from 'lucide-react';
 import Navbar from '@/components/marketplace/Navbar';
 import Footer from '@/components/marketplace/Footer';
@@ -213,7 +208,7 @@ export default function BanksPage() {
       <div className="relative overflow-hidden bg-[#1B3C4A] pb-16 sm:pb-20">
         <Navbar />
 
-        <div className="relative z-10 mx-auto max-w-7xl px-4 xl:px-0 pt-6 ">
+        <div className="relative z-10 mx-auto max-w-7xl px-4 xl:px-0 pt-6">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-14">
             {/* Left Column: Heading & Description */}
             <div className="flex flex-col lg:col-span-7">
@@ -225,7 +220,7 @@ export default function BanksPage() {
               <p className="mt-4 text-sm leading-relaxed text-slate-300 sm:text-base max-w-xl">
                 Discover digital services from trusted providers, manage your banking.
                 Browse banks and fintechs, then tap any one to visit its official website.
-                Hatisto takes you straight to the bank&apos;s own domain.
+                Hasito takes you straight to the bank&apos;s own domain.
               </p>
             </div>
 
@@ -456,51 +451,45 @@ export default function BanksPage() {
                       <div
                         key={`${bank.id}-${index}`}
                         onClick={() => setSelectedBankModal(bank)}
-                        className="relative flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs cursor-pointer"
+                        className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs cursor-pointer transition-shadow duration-200 hover:shadow-md hover:border-slate-300"
                       >
-                        {/* Top Area: Logo, Name, Status, and External Arrow */}
-                        <div>
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3.5">
-                              {/* Bank Logo: directly placed on white card without grey container */}
-                              <div className="relative h-11 w-11 sm:h-12 sm:w-12 flex-shrink-0">
-                                <Image
-                                  src={bank.logo}
-                                  alt={bank.name}
-                                  fill
-                                  sizes="48px"
-                                  className="object-contain"
-                                />
-                              </div>
+                        {/* Top Area: Logo taking full space + Status badge */}
+                        <div className="relative h-44 w-full bg-white p-5 flex items-center justify-center">
+                          {/* Status Badge floating at top-left */}
+                          <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-xs border border-slate-200/80 backdrop-blur-sm">
+                            <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />
+                            <span>{bank.status}</span>
+                          </div>
 
-                              {/* Bank Name & Status Badge */}
-                              <div>
-                                <h4 className="text-base font-bold text-slate-900 tracking-tight">
-                                  {bank.name}
-                                </h4>
-                                <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#EAEDEF] px-2.5 py-0.5 text-[11px] font-semibold text-slate-700">
-                                  <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />
-                                  <span>{bank.status}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* External Arrow Indicator */}
-                            <div className="text-[#FF5A1F] pt-0.5">
-                              <ArrowUpRight className="h-5 w-5 stroke-[2.2]" />
-                            </div>
+                          {/* Full space Bank Logo */}
+                          <div className="relative h-full w-full">
+                            <Image
+                              src={bank.logo}
+                              alt={bank.name}
+                              fill
+                              quality={95}
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                              className="object-contain p-2"
+                            />
                           </div>
                         </div>
 
-                        {/* Divider Line */}
-                        <div className="my-4 border-t border-slate-100" />
+                        {/* Middle Area: Opaque Bar with Name and Arrow */}
+                        <div className="w-full bg-slate-50/95 border-t border-slate-100 px-4 py-2.5 flex items-center justify-between backdrop-blur-xs">
+                          <h4 className="text-sm font-bold text-slate-900 tracking-tight truncate">
+                            {bank.name}
+                          </h4>
+                          <div className="flex-shrink-0 ml-1.5 text-[#FF5A1F]">
+                            <ArrowUpRight className="h-4 w-4 stroke-[2.2]" />
+                          </div>
+                        </div>
 
                         {/* Bottom Area: Service Supported Pills */}
-                        <div className="flex flex-wrap gap-2">
+                        <div className="px-4 py-3 bg-white border-t border-slate-100 flex flex-wrap gap-1.5">
                           {bank.services.map((srv) => (
                             <span
                               key={srv}
-                              className="rounded-lg bg-[#F8ECE5] px-2.5 py-1 text-xs font-medium text-slate-800"
+                              className="rounded-lg bg-[#F8ECE5] px-2.5 py-1 text-[11px] font-medium text-slate-800"
                             >
                               {srv}
                             </span>
@@ -617,4 +606,3 @@ export default function BanksPage() {
     </div>
   );
 }
-
