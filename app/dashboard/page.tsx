@@ -127,7 +127,49 @@ export default function DashboardPage() {
           <article className="relative min-h-[247px] overflow-hidden rounded-xl bg-[#FFE5D5] p-6 sm:p-7"><span className="inline-flex rounded-full bg-[#FFD0B2] px-3 py-1.5 text-[10px] font-semibold text-[#F65A08]">THIS WEEK</span><h2 className="mt-5 max-w-[250px] text-[23px] font-semibold leading-[1.24] tracking-[-0.03em]">Get 5× points on every data bundle</h2><p className="mt-2 max-w-[180px] text-[13px] leading-4 text-[#967D79]">More data, more rewards.<br />Ends Sunday.</p><Link href="/dashboard/services" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#F65A08]">Buy Data <ArrowRight className="h-4 w-4" /></Link><div className="absolute right-7 top-1/2 flex h-32 w-32 -translate-y-1/2 rotate-12 items-center justify-center rounded-full border-[8px] border-[#FA925A] bg-[#F57128] text-center text-white shadow-sm"><span className="text-3xl font-semibold leading-none">5×<small className="mt-1 block text-[11px] font-medium tracking-wide">POINTS</small></span></div></article>
         </section>
 
-        <section><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-medium text-[#847D7E]">Metrics</h2><div className="flex flex-wrap gap-2"><label className="relative"><span className="sr-only">Select period</span><select value={period} onChange={(event) => setPeriod(event.target.value)} className="appearance-none rounded-xl border border-[#DED8D4] bg-white py-2.5 pl-3 pr-9 text-xs text-[#343238] outline-none"><option>Last 7 days</option><option>Last 30 days</option><option>Last 6 months</option></select><ChevronDown className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-slate-500" /></label><div className="flex items-center gap-2 rounded-xl border border-[#DED8D4] bg-white px-3 py-2.5 text-xs text-[#343238]"><CalendarDays className="h-4 w-4 text-[#807A7B]" />{data ? formatRange(data.from, data.to) : 'Loading range'}</div></div></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{isLoading ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} />) : metrics.map((metric) => <article key={metric.label} className="rounded-xl border border-[#E6E3E0] bg-white px-5 py-6"><p className="text-[15px] text-[#52617A]">{metric.label}</p><p className="mt-3 text-[27px] font-medium tracking-[-0.04em] text-[#364259]">{metric.value}</p><p className="mt-2 text-sm"><span className={`font-medium ${metric.positive ? 'text-[#009447]' : 'text-[#E22E41]'}`}>{metric.change}</span><span className="text-[#A29B9C]"> {metric.detail}</span></p></article>)}</div>{isError && <p className="mt-3 text-sm text-rose-600">We couldn&apos;t load dashboard data. Please try again.</p>}</section>
+        <section>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-medium text-[#847D7E]">Metrics</h2>
+            <div className="flex flex-wrap gap-2">
+              <label className="relative">
+                <span className="sr-only">Select period</span>
+                <select
+                  value={period}
+                  onChange={(event) => {
+                    if (event.target.value !== 'Custom range') {
+                      setPeriod(event.target.value);
+                      setCustomRange(null);
+                    }
+                  }}
+                  className="appearance-none rounded-xl border border-[#DED8D4] bg-white py-2.5 pl-3 pr-9 text-xs text-[#343238] outline-none"
+                >
+                  <option>Last 7 days</option>
+                  <option>Last 30 days</option>
+                  <option>Last 6 months</option>
+                  {customRange && <option>Custom range</option>}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-slate-500" />
+              </label>
+              <div className="relative">
+                <button type="button" onClick={openRangePicker} className="flex items-center gap-2 rounded-xl border border-[#DED8D4] bg-white px-3 py-2.5 text-xs text-[#343238] transition hover:border-[#FF6500]/50 active:scale-[0.98]">
+                  <CalendarDays className="h-4 w-4 text-[#807A7B]" />
+                  {from && to ? formatRange(from, to) : 'Choose range'}
+                </button>
+                {isRangePickerOpen && <div className="absolute right-0 z-20 mt-2 w-[min(22rem,calc(100vw-2.5rem))] rounded-xl border border-[#E6E3E0] bg-white p-4 shadow-xl shadow-slate-900/10">
+                  <p className="text-sm font-semibold text-[#34425D]">Custom date range</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <label className="text-xs font-medium text-slate-600">From<input type="date" value={pendingFrom} max={pendingTo || today || undefined} onChange={(event) => setPendingFrom(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-[#FF6500]" /></label>
+                    <label className="text-xs font-medium text-slate-600">To<input type="date" value={pendingTo} min={pendingFrom || undefined} max={today || undefined} onChange={(event) => setPendingTo(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-[#FF6500]" /></label>
+                  </div>
+                  {pendingFrom && pendingTo && pendingFrom > pendingTo && <p className="mt-3 text-xs text-rose-600">The end date must be after the start date.</p>}
+                  <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setIsRangePickerOpen(false)} className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Cancel</button><button type="button" onClick={applyCustomRange} disabled={!pendingFrom || !pendingTo || pendingFrom > pendingTo} className="rounded-lg bg-[#FF6500] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#E95312] disabled:cursor-not-allowed disabled:opacity-50">Apply range</button></div>
+                </div>}
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{isLoading ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} />) : metrics.map((metric) => <article key={metric.label} className="rounded-xl border border-[#E6E3E0] bg-white px-5 py-6"><p className="text-[15px] text-[#52617A]">{metric.label}</p><p className="mt-3 text-[27px] font-medium tracking-[-0.04em] text-[#364259]">{metric.value}</p><p className="mt-2 text-sm"><span className={`font-medium ${metric.positive ? 'text-[#009447]' : 'text-[#E22E41]'}`}>{metric.change}</span><span className="text-[#A29B9C]"> {metric.detail}</span></p></article>)}</div>
+          {isError && <p className="mt-3 text-sm text-rose-600">We couldn&apos;t load dashboard data. Please try again.</p>}
+        </section>
 
         <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]"><article className="rounded-xl border border-[#E6E3E0] bg-white p-5 sm:p-6"><div><h2 className="text-xl font-medium text-[#53637C]">Spending overview</h2><p className="mt-2 text-[26px] font-semibold tracking-[-0.04em] text-[#20232A]">{data ? formatNaira(data.summary.spending.amountMinor) : '—'}</p><p className="mt-1 text-xs text-[#9C9697]">{data ? `${data.summary.spending.changePercent >= 0 ? '+' : ''}${data.summary.spending.changePercent.toFixed(1)}% vs previous period` : 'Loading spending overview'}</p></div><div className="mt-6 h-[270px] sm:h-[310px]">{isLoading ? <div className="h-full animate-pulse rounded-xl bg-slate-50" /> : spendingData.length ? <SpendingChart data={spendingData} /> : <p className="pt-24 text-center text-sm text-slate-500">No spending data for this period.</p>}</div></article><article className="rounded-xl border border-[#E6E3E0] bg-white p-5 sm:p-6"><h2 className="text-xl font-medium">Digital Services usage</h2><div className="relative mx-auto mt-4 h-[240px] max-w-[310px]">{isLoading ? <div className="h-full animate-pulse rounded-full bg-slate-100" /> : usageData.length ? <ServiceUsageChart data={usageData} /> : <p className="pt-24 text-center text-sm text-slate-500">No service usage yet.</p>}</div><div className="mt-2 space-y-2.5">{usageData.map((service) => <div key={service.name} className="flex items-center gap-3 text-sm"><span className="h-5 w-5 rounded" style={{ backgroundColor: service.color }} /><span className="flex-1">{service.name}</span><span className="text-[#647188]">{service.value.toFixed(1)}%</span></div>)}</div></article></section>
 
