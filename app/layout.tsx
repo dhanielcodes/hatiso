@@ -13,6 +13,14 @@ const beVietnamPro = Be_Vietnam_Pro({
 export const metadata: Metadata = {
   title: "Hasito – Your One-Stop Digital Marketplace",
   description: "Pay bills, buy airtime, data, and more – instantly and securely.",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -45,13 +45,13 @@ export default function Navbar() {
           {/* Desktop Navigation Links */}
           <nav className="hidden items-center gap-7 md:flex">
             <Link
-              href="/"
+              href="/#solutions"
               className="text-sm font-medium text-white transition-colors hover:text-[#FF6500]"
             >
               Personal
             </Link>
             <Link
-              href="/categories/government-services"
+              href="/#solutions"
               className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
             >
               Business
@@ -202,14 +202,14 @@ export default function Navbar() {
         <div className="mt-4 rounded-2xl border border-slate-700/80 bg-[#142C37]/95 p-5 shadow-2xl backdrop-blur-xl md:hidden">
           <nav className="flex flex-col gap-3">
             <Link
-              href="/"
+              href="/#solutions"
               onClick={() => setMobileMenuOpen(false)}
               className="rounded-lg px-3 py-2 text-sm font-medium text-white hover:bg-slate-700/40"
             >
               Personal
             </Link>
             <Link
-              href="/categories/government-services"
+              href="/#solutions"
               onClick={() => setMobileMenuOpen(false)}
               className="rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white"
             >

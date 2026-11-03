@@ -102,7 +102,7 @@ export default function SolutionsSection() {
   };
 
   return (
-    <section className="relative bg-white px-4 py-20 sm:px-8 lg:px-20 xl:px-28 text-slate-900 overflow-hidden lg:overflow-visible">
+    <section id='solutions' className="relative bg-white px-4 py-20 sm:px-8 lg:px-20 xl:px-28 text-slate-900 overflow-hidden lg:overflow-visible">
       <div className="mx-auto max-w-7xl">
         {/* Segmented Control Pill: [ Personal | Business ] */}
         <div className="mb-12 flex items-center justify-start">
@@ -110,8 +110,8 @@ export default function SolutionsSection() {
             <button
               onClick={() => handleTabChange('personal')}
               className={`rounded-lg px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${activeTab === 'personal'
-                  ? 'bg-white text-[#102A36] shadow-sm'
-                  : 'text-slate-500 hover:text-[#102A36]'
+                ? 'bg-white text-[#102A36] shadow-sm'
+                : 'text-slate-500 hover:text-[#102A36]'
                 }`}
             >
               Personal
@@ -119,8 +119,8 @@ export default function SolutionsSection() {
             <button
               onClick={() => handleTabChange('business')}
               className={`rounded-lg px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${activeTab === 'business'
-                  ? 'bg-white text-[#102A36] shadow-sm'
-                  : 'text-slate-500 hover:text-[#102A36]'
+                ? 'bg-white text-[#102A36] shadow-sm'
+                : 'text-slate-500 hover:text-[#102A36]'
                 }`}
             >
               Business
@@ -148,8 +148,8 @@ export default function SolutionsSection() {
                 <div
                   key={index}
                   className={`w-full grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-8 transition-all duration-700 ease-in-out ${isActive
-                      ? 'opacity-100 translate-x-0 relative z-10 pointer-events-auto'
-                      : 'opacity-0 absolute inset-0 p-8 sm:p-12 lg:px-14 lg:py-16 z-0 pointer-events-none'
+                    ? 'opacity-100 translate-x-0 relative z-10 pointer-events-auto'
+                    : 'opacity-0 absolute inset-0 p-8 sm:p-12 lg:px-14 lg:py-16 z-0 pointer-events-none'
                     }`}
                 >
                   {/* SLIDE 1 (Built around your everyday life): Visual on Left, Text on Right (NO POP OUT, standard layout) */}
@@ -303,8 +303,8 @@ export default function SolutionsSection() {
                   onClick={() => setIndividualSlide(i)}
                   aria-label={`Go to individual slide ${i + 1}`}
                   className={`h-1.5 rounded-full transition-all duration-300 ${individualSlide === i
-                      ? 'w-6 bg-[#FF6500]'
-                      : 'w-2 bg-slate-300 hover:bg-slate-400'
+                    ? 'w-6 bg-[#FF6500]'
+                    : 'w-2 bg-slate-300 hover:bg-slate-400'
                     }`}
                 />
               ))}
@@ -328,8 +328,8 @@ export default function SolutionsSection() {
                 <div
                   key={index}
                   className={`w-full grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-8 transition-all duration-700 ease-in-out ${isActive
-                      ? 'opacity-100 translate-x-0 relative z-10 pointer-events-auto'
-                      : 'opacity-0 absolute inset-0 p-8 sm:p-12 lg:px-14 lg:py-16 z-0 pointer-events-none'
+                    ? 'opacity-100 translate-x-0 relative z-10 pointer-events-auto'
+                    : 'opacity-0 absolute inset-0 p-8 sm:p-12 lg:px-14 lg:py-16 z-0 pointer-events-none'
                     }`}
                 >
                   {/* SLIDE 1 (Manage your transactions): DRAMATIC POP OUT ON LEFT (extending top, bottom, and BEYOND LEFT EDGE) */}
@@ -431,8 +431,8 @@ export default function SolutionsSection() {
                   onClick={() => setBusinessSlide(i)}
                   aria-label={`Go to business slide ${i + 1}`}
                   className={`h-1.5 rounded-full transition-all duration-300 ${businessSlide === i
-                      ? 'w-6 bg-[#FF6500]'
-                      : 'w-2 bg-slate-300 hover:bg-slate-400'
+                    ? 'w-6 bg-[#FF6500]'
+                    : 'w-2 bg-slate-300 hover:bg-slate-400'
                     }`}
                 />
               ))}
