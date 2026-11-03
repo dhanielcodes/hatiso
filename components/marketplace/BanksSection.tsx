@@ -229,7 +229,7 @@ export default function BanksSection() {
             {/* Privacy copy */}
             <p className="text-sm text-slate-500 leading-relaxed mb-6">
               You&apos;re about to open {selectedBank.name}&apos;s secure banking service.
-              Hasito will never see your username, password, PIN, or account details.
+              Hatiso will never see your username, password, PIN, or account details.
             </p>
 
             {/* Secure destination card */}

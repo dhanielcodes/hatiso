@@ -36,7 +36,7 @@ export default function LoginPage() {
                 Welcome back.
               </h1>
               <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-relaxed text-slate-500">
-                Sign in to continue your Hasito experience, built around the way you use services.
+                Sign in to continue your Hatiso experience, built around the way you use services.
               </p>
             </div>
 
@@ -116,7 +116,7 @@ export default function LoginPage() {
             </Formik>
 
             <p className="mt-6 text-center text-[13px] text-slate-500">
-              Don&apos;t have an account with Hasito?{' '}
+              Don&apos;t have an account with Hatiso?{' '}
               <Link
                 href="/auth/register"
                 className="font-semibold text-[#FF6500] transition-colors hover:text-[#E84D15]"

@@ -36,7 +36,7 @@ const ORANGE_BTN =
   'w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(255,101,0,0.3)] transition-colors hover:bg-[#E84D15] active:scale-[0.99] disabled:opacity-50';
 
 /* ─── Phone input component ─────────────────────────────────────── */
-function PhoneInputField({ name, ...rest }: { name: string; [k: string]: unknown }) {
+function PhoneInputField({ name, ...rest }: { name: string;[k: string]: unknown }) {
   const [field, meta] = useField(name);
   const hasError = Boolean(meta.touched && meta.error);
   return (
@@ -45,11 +45,10 @@ function PhoneInputField({ name, ...rest }: { name: string; [k: string]: unknown
         Phone Number <span className="text-[#FF6500]">*</span>
       </label>
       <div
-        className={`flex items-center rounded-xl border bg-white px-4 py-3.5 transition focus-within:ring-1 ${
-          hasError
+        className={`flex items-center rounded-xl border bg-white px-4 py-3.5 transition focus-within:ring-1 ${hasError
             ? 'border-rose-400 focus-within:border-rose-500 focus-within:ring-rose-500'
             : 'border-[#E8E4DE] focus-within:border-[#FF6500] focus-within:ring-[#FF6500]'
-        }`}
+          }`}
       >
         <span className="mr-2 select-none text-sm font-medium text-slate-600">+234</span>
         <input
@@ -268,7 +267,7 @@ export default function ForgotPasswordPage() {
                     Create New Password
                   </h1>
                   <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-relaxed text-slate-500">
-                    Choose a password that you will use to log in to your Hasito account
+                    Choose a password that you will use to log in to your Hatiso account
                   </p>
                 </div>
 

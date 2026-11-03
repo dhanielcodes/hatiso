@@ -4,6 +4,8 @@ const accessTokenKey = 'hasito_auth_token';
 const refreshTokenKey = 'hasito_refresh_token';
 const userEmailKey = 'hasito_user_email';
 const accessTokenCookie = 'hasito_auth_token';
+// The key zustand/persist uses for the auth store
+const zustandAuthKey = 'hasito-auth-storage';
 
 function cookieAttributes(maxAge: number) {
   const secure = typeof window !== 'undefined' && window.location.protocol === 'https:';
@@ -31,10 +33,17 @@ export function getStoredUserEmail() {
 export function clearAuthSession() {
   if (typeof window === 'undefined') return;
 
+  // Raw session keys
   localStorage.removeItem(accessTokenKey);
   localStorage.removeItem(refreshTokenKey);
   localStorage.removeItem(userEmailKey);
   localStorage.removeItem('hasito_user');
   sessionStorage.removeItem(accessTokenKey);
+
+  // ✅ Also wipe the Zustand persist store so the old token is never rehydrated
+  localStorage.removeItem(zustandAuthKey);
+
+  // Expire the auth cookie
   document.cookie = `${accessTokenCookie}=; ${cookieAttributes(0)}`;
 }
+

@@ -20,7 +20,9 @@ export const useAuthStore = create<AuthState>()(
       error: null,
 
       login: async ({ emailOrPhone, password }) => {
-        set({ isLoading: true, error: null });
+        // ✅ Always start from clean state — wipe any stale persisted token first
+        clearAuthSession();
+        set({ isLoading: true, error: null, user: null, token: null, isAuthenticated: false });
         try {
           const identifier = emailOrPhone.trim();
           const session = await loginUser({ identifier, password });
@@ -47,7 +49,7 @@ export const useAuthStore = create<AuthState>()(
               name: profile.displayName || `${profile.firstName} ${profile.lastName}`.trim() || fallbackUser.name,
               avatar: profile.avatarUrl ?? undefined,
             };
-          } catch {}
+          } catch { }
 
           set({
             user,
@@ -78,8 +80,8 @@ export const useAuthStore = create<AuthState>()(
             const nationalDigits = rawDigits.startsWith('234')
               ? rawDigits.slice(3)
               : rawDigits.startsWith('0')
-              ? rawDigits.slice(1)
-              : rawDigits;
+                ? rawDigits.slice(1)
+                : rawDigits;
             if (nationalDigits) {
               formattedPhone = `+234${nationalDigits}`;
             }
@@ -120,7 +122,7 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set({ user, isAuthenticated: !!user }),
     }),
     {
-      name: 'hasito-auth-storage',
+      name: 'hatiso-auth-storage',
       storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : {
         getItem: () => null,
         setItem: () => null,

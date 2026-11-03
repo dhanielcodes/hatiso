@@ -24,7 +24,7 @@ const BASE_URL =
   'https://f866-154-120-96-18.ngrok-free.app';
 
 /**
- * Global Axios Instance for Hasito Marketplace & Banking
+ * Global Axios Instance for Hatiso Marketplace & Banking
  */
 export const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -93,15 +93,21 @@ apiClient.interceptors.response.use(
       toast.error(formattedError.message);
 
       if (status === 401) {
-        // Token expired or invalid
+        // Clear raw session keys AND the Zustand persist store
         clearAuthSession();
+
+        // Also reset the Zustand auth store in-memory so no stale state survives
+        // We import lazily to avoid a circular dependency
+        import('@/lib/store/authStore').then(({ useAuthStore }) => {
+          useAuthStore.getState().logout();
+        });
+
         console.warn('[Axios Interceptor] Unauthorized (401). Session invalidated.');
 
-        // Notify listeners or redirect if not already on an auth page
+        // Redirect to login if not already on an auth page
         const currentPath = window.location.pathname;
         if (!currentPath.startsWith('/auth')) {
-          // Can redirect or trigger login modal
-          // window.location.href = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
+          window.location.href = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
         }
       } else if (status === 403) {
         console.error('[Axios Interceptor] Forbidden (403): Access denied.');

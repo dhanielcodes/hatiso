@@ -11,7 +11,7 @@ const beVietnamPro = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "Hasito – Your One-Stop Digital Marketplace",
+  title: "Hatiso – Your One-Stop Digital Marketplace",
   description: "Pay bills, buy airtime, data, and more – instantly and securely.",
   icons: {
     icon: [

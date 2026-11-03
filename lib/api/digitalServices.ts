@@ -161,7 +161,7 @@ export interface VerifiedGuestPayment {
 }
 
 function createIdempotencyKey() {
-  return globalThis.crypto?.randomUUID?.() ?? `hasito-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return globalThis.crypto?.randomUUID?.() ?? `hatiso-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 export async function createDigitalServiceOrder(input: CreateDigitalServiceOrderInput) {

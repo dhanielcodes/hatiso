@@ -54,7 +54,7 @@ export default function AuthBrandPanel() {
           <span className="text-[#FF6500]">in one place.</span>
         </h2>
         <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/75">
-          Join Hasito to explore trusted services and businesses, connect with your bank
+          Join Hatiso to explore trusted services and businesses, connect with your bank
           and enjoy an experience built around you. Unified in a single app.
         </p>
       </div>
@@ -73,9 +73,8 @@ export default function AuthBrandPanel() {
               fill
               priority={i === 0}
               sizes="420px"
-              className={`object-cover object-[center_20%] transition-opacity duration-700 ease-out ${
-                i === active ? 'opacity-100' : 'opacity-0'
-              }`}
+              className={`object-cover object-[center_20%] transition-opacity duration-700 ease-out ${i === active ? 'opacity-100' : 'opacity-0'
+                }`}
             />
           ))}
         </div>
@@ -101,9 +100,8 @@ export default function AuthBrandPanel() {
             type="button"
             aria-label={`Show slide ${i + 1}`}
             onClick={() => setActive(i)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              i === active ? 'w-6 bg-white' : 'w-3 bg-white/35 hover:bg-white/55'
-            }`}
+            className={`h-1.5 rounded-full transition-all duration-300 ${i === active ? 'w-6 bg-white' : 'w-3 bg-white/35 hover:bg-white/55'
+              }`}
           />
         ))}
       </div>

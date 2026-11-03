@@ -52,7 +52,7 @@ const BTN =
   'w-full rounded-xl bg-[#F5A56B] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
 
 /* ─── Phone input ───────────────────────────────────────────────── */
-function PhoneInputField({ name, ...rest }: { name: string; [k: string]: unknown }) {
+function PhoneInputField({ name, ...rest }: { name: string;[k: string]: unknown }) {
   const [field, meta] = useField(name);
   const hasError = Boolean(meta.touched && meta.error);
   return (
@@ -61,11 +61,10 @@ function PhoneInputField({ name, ...rest }: { name: string; [k: string]: unknown
         Phone Number <span className="text-[#FF6500]">*</span>
       </label>
       <div
-        className={`flex items-center rounded-xl border bg-white px-4 py-3.5 transition focus-within:ring-1 ${
-          hasError
+        className={`flex items-center rounded-xl border bg-white px-4 py-3.5 transition focus-within:ring-1 ${hasError
             ? 'border-rose-400 focus-within:border-rose-500 focus-within:ring-rose-500'
             : 'border-[#E8E4DE] focus-within:border-[#FF6500] focus-within:ring-[#FF6500]'
-        }`}
+          }`}
       >
         <span className="mr-2 select-none text-sm font-medium text-slate-600">+234</span>
         <input
@@ -91,8 +90,8 @@ function formatNigerianPhone(phone: string): string | null {
   const national = digits.startsWith('234')
     ? digits.slice(3)
     : digits.startsWith('0')
-    ? digits.slice(1)
-    : digits;
+      ? digits.slice(1)
+      : digits;
 
   return national ? `+234${national}` : null;
 }
@@ -234,7 +233,7 @@ export default function RegisterPage() {
                     Create your account
                   </h1>
                   <p className="mt-1.5 text-[13px] text-slate-500">
-                    Join Hasito today. It takes few minutes to set up your profile
+                    Join Hatiso today. It takes few minutes to set up your profile
                   </p>
                 </div>
 
@@ -320,7 +319,7 @@ export default function RegisterPage() {
                     Create Password
                   </h1>
                   <p className="mt-1.5 text-[13px] text-slate-500">
-                    Choose a password that you will use to log in to your Hasito account
+                    Choose a password that you will use to log in to your Hatiso account
                   </p>
                 </div>
 
@@ -358,9 +357,9 @@ export default function RegisterPage() {
                     } catch (err: unknown) {
                       const msg =
                         typeof err === 'object' &&
-                        err !== null &&
-                        'message' in err &&
-                        typeof err.message === 'string'
+                          err !== null &&
+                          'message' in err &&
+                          typeof err.message === 'string'
                           ? err.message
                           : 'Registration failed. Please verify your details.';
                       setRegisterError(msg);
@@ -537,7 +536,7 @@ export default function RegisterPage() {
               Welcome aboard, {createdName}.
             </h2>
             <p className="mx-auto mt-2 max-w-[260px] text-[13px] leading-relaxed text-slate-500">
-              Your Hasito account is all set. Step into your dashboard and discover what&apos;s
+              Your Hatiso account is all set. Step into your dashboard and discover what&apos;s
               waiting for you.
             </p>
 

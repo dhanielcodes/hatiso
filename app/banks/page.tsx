@@ -220,7 +220,7 @@ export default function BanksPage() {
               <p className="mt-4 text-sm leading-relaxed text-slate-300 sm:text-base max-w-xl">
                 Discover digital services from trusted providers, manage your banking.
                 Browse banks and fintechs, then tap any one to visit its official website.
-                Hasito takes you straight to the bank&apos;s own domain.
+                Hatiso takes you straight to the bank&apos;s own domain.
               </p>
             </div>
 
