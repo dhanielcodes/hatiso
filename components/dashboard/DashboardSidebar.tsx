@@ -15,9 +15,11 @@ import {
   HelpCircle,
   Search,
   Headphones,
+  LogOut,
   X,
 } from 'lucide-react';
 import XnettLogo from '@/components/auth/XnettLogo';
+import { useAuthStore } from '@/lib/store/authStore';
 
 /* ── nav structure ─────────────────────────────────────────────── */
 interface NavItem {
@@ -122,11 +124,10 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   return (
     <Link
       href={item.href}
-      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-        active
-          ? 'bg-[#1E3D4E] text-white'
-          : 'text-slate-400 hover:bg-[#1A3848] hover:text-slate-200'
-      }`}
+      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${active
+        ? 'bg-[#1E3D4E] text-white'
+        : 'text-slate-400 hover:bg-[#1A3848] hover:text-slate-200'
+        }`}
     >
       <span className={active ? 'text-[#FF6500]' : 'text-slate-500 group-hover:text-slate-300'}>
         {item.icon}
@@ -148,7 +149,9 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
   const router = useRouter();
   const searchRef = useRef<HTMLInputElement>(null);
   const [helpDismissed, setHelpDismissed] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const logout = useAuthStore((state) => state.logout);
 
   useSearchShortcut(searchRef);
 
@@ -157,6 +160,13 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
       href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href),
     [pathname]
   );
+
+  const handleLogout = () => {
+    logout();
+    setIsLogoutConfirmOpen(false);
+    onClose?.();
+    router.replace('/auth/login');
+  };
 
   return (
     <>
@@ -178,7 +188,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
         `}
       >
         {/* ── Logo ── */}
-        <div className="flex items-center justify-center px-5 pt-7 pb-5">
+        <div className="flex items-start justify-start px-5 pt-7 pb-5">
           <XnettLogo />
           {/* Close button (mobile only) */}
           {onClose && (
@@ -262,9 +272,35 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
           </div>
         )}
 
-        {/* ── Bottom spacer ── */}
+        <div className="px-4 pb-4">
+          <button
+            type="button"
+            onClick={() => setIsLogoutConfirmOpen(true)}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-300 active:scale-[0.98]"
+          >
+            <LogOut className="h-[18px] w-[18px]" strokeWidth={2.2} />
+            Log out
+          </button>
+        </div>
+
         <div className="h-4" />
       </aside>
+
+      {isLogoutConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102A36]/70 p-4 backdrop-blur-sm">
+          <div role="dialog" aria-modal="true" aria-labelledby="logout-title" className="w-full max-w-sm rounded-2xl bg-white p-6 text-[#18202A] shadow-2xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FFF1E8] text-[#FF6500]">
+              <LogOut className="h-5 w-5" />
+            </div>
+            <h2 id="logout-title" className="mt-4 text-xl font-semibold tracking-[-0.03em]">Log out?</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">Are you sure you want to log out of your account?</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setIsLogoutConfirmOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Cancel</button>
+              <button type="button" onClick={handleLogout} className="rounded-xl bg-[#FF6500] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E95312] active:scale-[0.98]">Yes, log out</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
