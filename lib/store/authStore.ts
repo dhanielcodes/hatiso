@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { AuthState, User } from '@/types';
-import { getCurrentUser, loginUser } from '@/lib/api/auth';
+import { getCurrentUser, loginUser, registerUser } from '@/lib/api/auth';
 import { clearAuthSession, persistAuthSession, persistUserEmail } from '@/lib/auth/session';
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -65,35 +65,37 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async ({ fullName, email, phone, accountType }) => {
+      register: async ({ fullName, email, phone, accountType, password }) => {
         set({ isLoading: true, error: null });
         try {
-          await new Promise((resolve) => setTimeout(resolve, 900));
+          const parts = fullName.trim().split(/\s+/);
+          const firstName = parts[0] || '';
+          const lastName = parts.slice(1).join(' ') || parts[0] || '';
 
-          const newUser: User = {
-            id: 'usr_' + Date.now(),
-            name: fullName,
-            email,
-            phone,
-            accountType,
-            balance: 5000.0,
-            currency: 'NGN',
-            isVerified: false,
-          };
-
-          const token = 'jwt_token_reg_' + Math.random().toString(36).substring(2);
-
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('hasito_auth_token', token);
+          let formattedPhone: string | null = null;
+          const rawDigits = (phone || '').replace(/\D/g, '');
+          if (rawDigits) {
+            const nationalDigits = rawDigits.startsWith('234')
+              ? rawDigits.slice(3)
+              : rawDigits.startsWith('0')
+              ? rawDigits.slice(1)
+              : rawDigits;
+            if (nationalDigits) {
+              formattedPhone = `+234${nationalDigits}`;
+            }
           }
 
-          set({
-            user: newUser,
-            token,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
+          const result = await registerUser({
+            type: accountType === 'business' ? 'BUSINESS' : 'INDIVIDUAL',
+            email: email.trim().toLowerCase(),
+            phone: formattedPhone,
+            password: password || '',
+            firstName,
+            lastName,
           });
+
+          set({ isLoading: false, error: null });
+          return result;
         } catch (err: unknown) {
           set({
             isLoading: false,

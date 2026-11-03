@@ -23,7 +23,7 @@ export interface AuthState {
     phone: string;
     accountType: 'personal' | 'business';
     password: string;
-  }) => Promise<void>;
+  }) => Promise<any>;
   logout: () => void;
   clearError: () => void;
   setUser: (user: User | null) => void;

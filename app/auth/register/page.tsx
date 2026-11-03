@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Formik, Form, useField } from 'formik';
 import * as Yup from 'yup';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
+import { registerUser, resendVerification, verifyUser } from '@/lib/api/auth';
 import { TextField, PasswordField, CheckboxField, SubmitButton } from '@/components/forms';
 import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
 import StepIndicator from '@/components/auth/StepIndicator';
@@ -15,8 +16,19 @@ import PasswordStrength from '@/components/auth/PasswordStrength';
 
 /* ─── Step schemas ─────────────────────────────────────────────── */
 const step1Schema = Yup.object({
-  fullName: Yup.string().trim().min(2, 'Name is too short').required('Full name is required'),
-  email: Yup.string().trim().email('Enter a valid email address').required('Email is required'),
+  fullName: Yup.string()
+    .trim()
+    .min(2, 'Name is too short')
+    .test('has-last-name', 'Please enter your first and last name', (val) => {
+      if (!val) return false;
+      const parts = val.trim().split(/\s+/);
+      return parts.length >= 2 && parts[1].length > 0;
+    })
+    .required('Full name is required'),
+  email: Yup.string()
+    .trim()
+    .email('Enter a valid email address')
+    .required('Email is required'),
   phone: Yup.string()
     .trim()
     .min(7, 'Phone number is too short')
@@ -24,7 +36,7 @@ const step1Schema = Yup.object({
   agreeTerms: Yup.boolean().oneOf([true], 'You must agree to the Terms of Service').required(),
 });
 
-const step3Schema = Yup.object({
+const step2Schema = Yup.object({
   password: Yup.string()
     .min(8, 'At least 8 characters')
     .matches(/[A-Z]/, 'At least 1 uppercase letter')
@@ -71,6 +83,20 @@ function PhoneInputField({ name, ...rest }: { name: string; [k: string]: unknown
   );
 }
 
+/* ─── Format phone to E.164 (+234...) ───────────────────────────── */
+function formatNigerianPhone(phone: string): string | null {
+  const digits = (phone || '').replace(/\D/g, '');
+  if (!digits) return null;
+
+  const national = digits.startsWith('234')
+    ? digits.slice(3)
+    : digits.startsWith('0')
+    ? digits.slice(1)
+    : digits;
+
+  return national ? `+234${national}` : null;
+}
+
 /* ─── Saved step-1 data ─────────────────────────────────────────── */
 interface Step1Data {
   fullName: string;
@@ -81,20 +107,29 @@ interface Step1Data {
 /* ═══════════════════════════════════════════════════════════════ */
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, isLoading, error, clearError } = useAuthStore();
+  const { login } = useAuthStore();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [step1Data, setStep1Data] = useState<Step1Data>({ fullName: '', email: '', phone: '' });
+  const [savedPassword, setSavedPassword] = useState('');
+  const [userId, setUserId] = useState('');
+
+  const [registerError, setRegisterError] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
-  const [resendCount, setResendCount] = useState(52);
-  const [otpVerified, setOtpVerified] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [resendCount, setResendCount] = useState(60);
+  const [isResending, setIsResending] = useState(false);
+  const [resendFeedback, setResendFeedback] = useState('');
+
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdName, setCreatedName] = useState('');
 
-  /* Countdown timer (starts when step 2 mounts) */
+  /* Countdown timer for resend OTP */
   const startCountdown = useCallback(() => {
-    setResendCount(52);
+    setResendCount(60);
     const id = setInterval(() => {
       setResendCount((n) => {
         if (n <= 1) {
@@ -107,6 +142,76 @@ export default function RegisterPage() {
     return () => clearInterval(id);
   }, []);
 
+  /* Cleanup on unmount */
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (resendFeedback) {
+      timer = setTimeout(() => setResendFeedback(''), 5000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [resendFeedback]);
+
+  /* ── Handle Resend Verification Code ── */
+  const handleResendOtp = async () => {
+    if (!userId || resendCount > 0 || isResending) return;
+    setIsResending(true);
+    setOtpError('');
+    setResendFeedback('');
+    try {
+      const res = await resendVerification({ userId });
+      setResendFeedback(res.message || 'A new verification code has been sent to your email.');
+      startCountdown();
+    } catch (err: unknown) {
+      const msg =
+        typeof err === 'object' && err !== null && 'message' in err && typeof err.message === 'string'
+          ? err.message
+          : 'Unable to resend verification code. Please try again later.';
+      setOtpError(msg);
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  /* ── Handle Verify Code ── */
+  const handleVerifyOtp = async () => {
+    if (otp.length < 6) {
+      setOtpError('Please enter the 6-digit code sent to your email.');
+      return;
+    }
+    setIsVerifying(true);
+    setOtpError('');
+    try {
+      await verifyUser({
+        purpose: 'VERIFY_EMAIL',
+        userId,
+        code: otp.trim(),
+      });
+
+      // Verification succeeded! Auto-login the user into dashboard session
+      try {
+        await login({
+          emailOrPhone: step1Data.email,
+          password: savedPassword,
+        });
+      } catch (loginErr) {
+        console.warn('Auto-login note:', loginErr);
+      }
+
+      setCreatedName(step1Data.fullName.split(' ')[0] || 'there');
+      setShowSuccess(true);
+    } catch (err: unknown) {
+      const msg =
+        typeof err === 'object' && err !== null && 'message' in err && typeof err.message === 'string'
+          ? err.message
+          : 'Invalid verification code. Please check and try again.';
+      setOtpError(msg);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   return (
     <div className="grid min-h-screen bg-[#F7F4EF] lg:grid-cols-2">
       <AuthBrandPanel />
@@ -118,7 +223,7 @@ export default function RegisterPage() {
             {/* Step indicator */}
             <StepIndicator currentStep={step} />
 
-            {/* ══ STEP 1 ══════════════════════════════════════════ */}
+            {/* ══ STEP 1: CREATE ACCOUNT ══════════════════════════ */}
             {step === 1 && (
               <>
                 <div className="mb-6 text-center">
@@ -143,13 +248,12 @@ export default function RegisterPage() {
                   validationSchema={step1Schema}
                   onSubmit={(values) => {
                     setStep1Data({
-                      fullName: values.fullName,
-                      email: values.email,
-                      phone: values.phone,
+                      fullName: values.fullName.trim(),
+                      email: values.email.trim(),
+                      phone: values.phone.trim(),
                     });
+                    setRegisterError('');
                     setStep(2);
-                    // start countdown after brief delay (let step 2 mount)
-                    setTimeout(startCountdown, 100);
                   }}
                 >
                   <Form className="space-y-4" noValidate>
@@ -205,109 +309,63 @@ export default function RegisterPage() {
               </>
             )}
 
-            {/* ══ STEP 2 ══════════════════════════════════════════ */}
+            {/* ══ STEP 2: CREATE PASSWORD & REGISTER ══════════════ */}
             {step === 2 && (
-              <>
-                <div className="mb-8 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#FF6500]">
-                    STEP 2
-                  </p>
-                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
-                    Phone Number Verification
-                  </h1>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500">
-                    An OTP (One-Time Password) has been sent to your phone number.
-                    <br />
-                    Enter OTP below to verify your phone number.
-                  </p>
-                </div>
-
-                {otpError && (
-                  <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-center text-xs text-rose-600">
-                    {otpError}
-                  </div>
-                )}
-
-                <OtpInput
-                  value={otp}
-                  onChange={(val) => {
-                    setOtp(val);
-                    setOtpError('');
-                  }}
-                  hasError={Boolean(otpError)}
-                />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (otp.length < 6) {
-                      setOtpError('Please enter the 6-digit code sent to your phone.');
-                      return;
-                    }
-                    // Mock verify — accept any 6-digit code
-                    setOtpVerified(true);
-                    setStep(3);
-                  }}
-                  className={`${BTN} mt-8`}
-                >
-                  Verify
-                </button>
-
-                <p className="mt-5 text-center text-[13px] text-slate-500">
-                  Resend code in {resendCount}s?{' '}
-                  <button
-                    type="button"
-                    disabled={resendCount > 0}
-                    onClick={() => {
-                      setOtp('');
-                      startCountdown();
-                    }}
-                    className="font-semibold text-[#FF6500] hover:text-[#E84D15] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Click to resend code
-                  </button>
-                </p>
-              </>
-            )}
-
-            {/* ══ STEP 3 ══════════════════════════════════════════ */}
-            {step === 3 && (
               <>
                 <div className="mb-6 text-center">
                   <p className="text-xs font-bold uppercase tracking-widest text-[#FF6500]">
-                    STEP 3
+                    STEP 2
                   </p>
                   <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
                     Create Password
                   </h1>
                   <p className="mt-1.5 text-[13px] text-slate-500">
-                    Choose a password that you will use to log in to your Hatiso account
+                    Choose a password that you will use to log in to your Hasito account
                   </p>
                 </div>
 
-                {error && (
+                {registerError && (
                   <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-600">
-                    {error}
+                    {registerError}
                   </div>
                 )}
 
                 <Formik
-                  initialValues={{ password: '', confirmPassword: '' }}
-                  validationSchema={step3Schema}
+                  initialValues={{ password: savedPassword, confirmPassword: savedPassword }}
+                  validationSchema={step2Schema}
                   onSubmit={async (values) => {
-                    clearError();
+                    setRegisterError('');
+                    setIsRegistering(true);
                     try {
-                      await register({
-                        fullName: step1Data.fullName,
-                        email: step1Data.email,
-                        phone: step1Data.phone,
-                        accountType: 'personal',
+                      const parts = step1Data.fullName.trim().split(/\s+/);
+                      const firstName = parts[0] || 'User';
+                      const lastName = parts.slice(1).join(' ') || parts[0] || 'User';
+                      const formattedPhone = formatNigerianPhone(step1Data.phone);
+
+                      const res = await registerUser({
+                        type: 'INDIVIDUAL',
+                        email: step1Data.email.trim().toLowerCase(),
+                        phone: formattedPhone,
                         password: values.password,
+                        firstName,
+                        lastName,
                       });
-                      setCreatedName(step1Data.fullName.split(' ')[0]);
-                      setShowSuccess(true);
-                    } catch {
-                      // Handled in store
+
+                      setUserId(res.userId);
+                      setSavedPassword(values.password);
+                      setStep(3);
+                      startCountdown();
+                    } catch (err: unknown) {
+                      const msg =
+                        typeof err === 'object' &&
+                        err !== null &&
+                        'message' in err &&
+                        typeof err.message === 'string'
+                          ? err.message
+                          : 'Registration failed. Please verify your details.';
+                      setRegisterError(msg);
+                    } finally {
+                      setIsRegistering(false);
                     }
                   }}
                 >
@@ -324,7 +382,7 @@ export default function RegisterPage() {
 
                       <PasswordField
                         name="confirmPassword"
-                        label="Password"
+                        label="Confirm Password"
                         required
                         variant="auth"
                         placeholder="••••••••••"
@@ -335,7 +393,7 @@ export default function RegisterPage() {
                       {values.password && <PasswordStrength password={values.password} />}
 
                       <SubmitButton
-                        disabled={isLoading}
+                        disabled={isRegistering}
                         className={`${BTN} mt-2`}
                         loadingLabel={
                           <span className="inline-flex items-center justify-center gap-2">
@@ -346,9 +404,120 @@ export default function RegisterPage() {
                       >
                         Create Password
                       </SubmitButton>
+
+                      <div className="pt-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRegisterError('');
+                            setStep(1);
+                          }}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800"
+                        >
+                          <ArrowLeft className="h-3.5 w-3.5" /> Back to account details
+                        </button>
+                      </div>
                     </Form>
                   )}
                 </Formik>
+              </>
+            )}
+
+            {/* ══ STEP 3: OTP VERIFICATION ════════════════════════ */}
+            {step === 3 && (
+              <>
+                <div className="mb-8 text-center">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#FF6500]">
+                    STEP 3
+                  </p>
+                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
+                    Account Verification
+                  </h1>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500">
+                    An OTP (One-Time Password) has been sent to{' '}
+                    <span className="font-semibold text-slate-800">{step1Data.email}</span>.
+                    <br />
+                    Enter OTP below to verify your account.
+                  </p>
+                </div>
+
+                {otpError && (
+                  <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-center text-xs text-rose-600">
+                    {otpError}
+                  </div>
+                )}
+
+                {resendFeedback && (
+                  <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-center text-xs text-emerald-700">
+                    {resendFeedback}
+                  </div>
+                )}
+
+                <OtpInput
+                  value={otp}
+                  onChange={(val) => {
+                    setOtp(val);
+                    setOtpError('');
+                  }}
+                  hasError={Boolean(otpError)}
+                />
+
+                <button
+                  type="button"
+                  disabled={isVerifying || otp.length < 6}
+                  onClick={handleVerifyOtp}
+                  className={`${BTN} mt-8`}
+                >
+                  {isVerifying ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Verifying...
+                    </span>
+                  ) : (
+                    'Verify'
+                  )}
+                </button>
+
+                <p className="mt-5 text-center text-[13px] text-slate-500">
+                  {resendCount > 0 ? (
+                    <>
+                      Resend code in {resendCount}s?{' '}
+                      <button
+                        type="button"
+                        disabled
+                        className="font-semibold text-slate-400 cursor-not-allowed opacity-60"
+                      >
+                        Click to resend code
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      Didn&apos;t receive code?{' '}
+                      <button
+                        type="button"
+                        disabled={isResending}
+                        onClick={handleResendOtp}
+                        className="font-semibold text-[#FF6500] hover:text-[#E84D15] disabled:opacity-50"
+                      >
+                        {isResending ? 'Sending...' : 'Click to resend code'}
+                      </button>
+                    </>
+                  )}
+                </p>
+
+                <div className="mt-6 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtp('');
+                      setOtpError('');
+                      setStep(1);
+                    }}
+                    className="text-xs text-slate-500 hover:text-slate-800 underline"
+                  >
+                    Change email or details
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -368,7 +537,7 @@ export default function RegisterPage() {
               Welcome aboard, {createdName}.
             </h2>
             <p className="mx-auto mt-2 max-w-[260px] text-[13px] leading-relaxed text-slate-500">
-              Your Hatiso account is all set. Step into your dashboard and discover what&apos;s
+              Your Hasito account is all set. Step into your dashboard and discover what&apos;s
               waiting for you.
             </p>
 

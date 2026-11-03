@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { UserPlus, Smartphone, Lock } from 'lucide-react';
+import { UserPlus, Lock, Smartphone } from 'lucide-react';
 
 export interface StepDef {
   label: string;
@@ -10,8 +10,8 @@ export interface StepDef {
 
 const STEPS: StepDef[] = [
   { label: 'Create account', icon: <UserPlus className="h-4 w-4" strokeWidth={2.2} /> },
-  { label: 'Phone verification', icon: <Smartphone className="h-4 w-4" strokeWidth={2.2} /> },
   { label: 'Create password', icon: <Lock className="h-4 w-4" strokeWidth={2.2} /> },
+  { label: 'Verify account', icon: <Smartphone className="h-4 w-4" strokeWidth={2.2} /> },
 ];
 
 interface StepIndicatorProps {
@@ -25,7 +25,6 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
         const num = idx + 1;
         const isCompleted = num < currentStep;
         const isActive = num === currentStep;
-        const isUpcoming = num > currentStep;
         const isLast = idx === STEPS.length - 1;
 
         return (
@@ -83,4 +82,3 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
     </div>
   );
 }
-
