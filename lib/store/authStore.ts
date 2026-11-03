@@ -1,10 +1,18 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { AuthState, User } from '@/types';
+import { loginUser } from '@/lib/api/auth';
+import { clearAuthSession, persistAuthSession } from '@/lib/auth/session';
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string'
+    ? error.message
+    : fallback;
+}
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       isAuthenticated: false,
@@ -14,45 +22,38 @@ export const useAuthStore = create<AuthState>()(
       login: async ({ emailOrPhone, password }) => {
         set({ isLoading: true, error: null });
         try {
-          // Simulated authentication for boilerplate demo, ready for real API call via apiClient.post('/auth/login')
-          await new Promise((resolve) => setTimeout(resolve, 800));
+          const identifier = emailOrPhone.trim();
+          const session = await loginUser({ identifier, password });
+          persistAuthSession(session);
 
-          const mockUser: User = {
-            id: 'usr_882910',
-            name: emailOrPhone.includes('@')
-              ? emailOrPhone.split('@')[0].replace('.', ' ')
-              : 'Demo User',
-            email: emailOrPhone.includes('@') ? emailOrPhone : `${emailOrPhone}@xnett.com`,
-            phone: !emailOrPhone.includes('@') ? emailOrPhone : '+234 803 123 4567',
+          const user: User = {
+            id: identifier,
+            name: identifier.includes('@')
+              ? identifier.split('@')[0].replace(/[._-]+/g, ' ')
+              : identifier,
+            email: identifier.includes('@') ? identifier : '',
+            phone: identifier.includes('@') ? undefined : identifier,
             accountType: 'personal',
-            balance: 148500.5,
-            currency: 'NGN',
             isVerified: true,
           };
 
-          const mockToken = 'jwt_token_demo_' + Math.random().toString(36).substring(2);
-
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('hasito_auth_token', mockToken);
-          }
-
           set({
-            user: mockUser,
-            token: mockToken,
+            user,
+            token: session.accessToken,
             isAuthenticated: true,
             isLoading: false,
             error: null,
           });
-        } catch (err: any) {
+        } catch (err: unknown) {
           set({
             isLoading: false,
-            error: err?.message || 'Login failed. Please verify your credentials.',
+            error: getErrorMessage(err, 'Login failed. Please verify your credentials.'),
           });
           throw err;
         }
       },
 
-      register: async ({ fullName, email, phone, accountType, password }) => {
+      register: async ({ fullName, email, phone, accountType }) => {
         set({ isLoading: true, error: null });
         try {
           await new Promise((resolve) => setTimeout(resolve, 900));
@@ -81,20 +82,17 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           });
-        } catch (err: any) {
+        } catch (err: unknown) {
           set({
             isLoading: false,
-            error: err?.message || 'Registration failed. Please try again.',
+            error: getErrorMessage(err, 'Registration failed. Please try again.'),
           });
           throw err;
         }
       },
 
       logout: () => {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('hasito_auth_token');
-          localStorage.removeItem('hasito_user');
-        }
+        clearAuthSession();
         set({
           user: null,
           token: null,

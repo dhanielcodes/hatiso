@@ -6,6 +6,7 @@ import axios, {
 } from 'axios';
 import { toast } from 'sonner';
 import { ApiError } from '@/types';
+import { clearAuthSession } from '@/lib/auth/session';
 
 interface BackendErrorDetails {
   message?: string;
@@ -93,8 +94,7 @@ apiClient.interceptors.response.use(
 
       if (status === 401) {
         // Token expired or invalid
-        localStorage.removeItem('hasito_auth_token');
-        localStorage.removeItem('hasito_user');
+        clearAuthSession();
         console.warn('[Axios Interceptor] Unauthorized (401). Session invalidated.');
 
         // Notify listeners or redirect if not already on an auth page
