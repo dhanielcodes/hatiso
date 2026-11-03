@@ -24,7 +24,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <div className="flex items-center gap-5">
             <button type="button" className="relative flex h-9 w-9 items-center justify-center rounded-md border border-[#EEE9E6] text-[#201E1E]" aria-label="Notifications"><Bell className="h-4 w-4" /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#F65A08]" /></button>
-            <div className="hidden items-center gap-3 sm:flex"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F7F7F7] text-sm font-semibold">{displayName.slice(0, 1)}</div><div><p className="text-sm font-medium leading-4">{displayName}</p><p className="mt-1 text-xs text-[#7E7B7B]">Personal account</p></div><ChevronDown className="h-4 w-4" /></div>
+            <div className="hidden items-center gap-3 sm:flex"><div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#F7F7F7] text-sm font-semibold">{user?.avatar ? <img src={user.avatar} alt="Profile photo" className="h-full w-full object-cover" /> : displayName.slice(0, 1)}</div>
+              <div>
+                <p className="text-sm font-medium leading-4 text-black">{displayName}</p><p className="mt-1 text-xs text-[#7E7B7B]">Personal account</p>
+              </div>
+              <ChevronDown className="h-4 w-4" />
+            </div>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto">{children}</main>

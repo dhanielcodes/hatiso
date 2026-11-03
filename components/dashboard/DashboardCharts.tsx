@@ -27,7 +27,7 @@ Chart.register(
   Tooltip
 );
 
-type SpendingDatum = { month: string; amount: number };
+type SpendingDatum = { label: string; amountMinor: number };
 type UsageDatum = { name: string; value: number; color: string };
 
 export function SpendingChart({ data }: { data: SpendingDatum[] }) {
@@ -40,10 +40,10 @@ export function SpendingChart({ data }: { data: SpendingDatum[] }) {
     const chart = new Chart(canvas, {
       type: 'line',
       data: {
-        labels: data.map((item) => item.month),
+        labels: data.map((item) => item.label),
         datasets: [
           {
-            data: data.map((item) => item.amount),
+            data: data.map((item) => item.amountMinor / 100),
             borderColor: '#F45A08',
             borderWidth: 3,
             backgroundColor: (context: { chart: { ctx: CanvasRenderingContext2D; height: number } }) => {
@@ -76,16 +76,15 @@ export function SpendingChart({ data }: { data: SpendingDatum[] }) {
             bodyFont: { size: 14, weight: 'bold' },
             callbacks: {
               title: (items: Array<{ label: string }>) => `${items[0].label} spending`,
-              label: (item: TooltipItem<'line'>) => `₦${Math.round(Number(item.raw) * 42300).toLocaleString()}`,
+              label: (item: TooltipItem<'line'>) => `₦${Number(item.raw).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`,
             },
           },
         },
         scales: {
           x: { grid: { display: false }, border: { display: false }, ticks: { color: '#7F8085', font: { size: 12 }, padding: 12 } },
           y: {
-            min: 0,
-            max: 4,
-            ticks: { stepSize: 1, color: '#7F8085', font: { size: 12 }, callback: (value: string | number) => (value === 0 ? '0' : `${value}m`) },
+            beginAtZero: true,
+            ticks: { color: '#7F8085', font: { size: 12 }, callback: (value: string | number) => `₦${Number(value).toLocaleString('en-NG', { notation: 'compact', maximumFractionDigits: 1 })}` },
             grid: { color: '#F5F2F0', drawTicks: false },
             border: { display: false },
           },

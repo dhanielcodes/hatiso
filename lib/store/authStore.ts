@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { AuthState, User } from '@/types';
-import { loginUser } from '@/lib/api/auth';
+import { getCurrentUser, loginUser } from '@/lib/api/auth';
 import { clearAuthSession, persistAuthSession, persistUserEmail } from '@/lib/auth/session';
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -27,7 +27,7 @@ export const useAuthStore = create<AuthState>()(
           persistAuthSession(session);
           if (identifier.includes('@')) persistUserEmail(identifier);
 
-          const user: User = {
+          const fallbackUser: User = {
             id: identifier,
             name: identifier.includes('@')
               ? identifier.split('@')[0].replace(/[._-]+/g, ' ')
@@ -37,6 +37,17 @@ export const useAuthStore = create<AuthState>()(
             accountType: 'personal',
             isVerified: true,
           };
+
+          let user = fallbackUser;
+          try {
+            const profile = await getCurrentUser();
+            user = {
+              ...fallbackUser,
+              id: profile.userId,
+              name: profile.displayName || `${profile.firstName} ${profile.lastName}`.trim() || fallbackUser.name,
+              avatar: profile.avatarUrl ?? undefined,
+            };
+          } catch {}
 
           set({
             user,
