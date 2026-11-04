@@ -61,8 +61,8 @@ const serviceConfig: Partial<Record<DigitalServiceCategory, {
   tone: string;
   badge?: string;
 }>> = {
-  TELCO: { slug: 'airtime', name: 'Airtime', description: 'MTN, Glo, Airtel, 9mobile', Icon: Smartphone, tone: 'bg-[#FDE5D5] text-[#E95312]', badge: 'Popular' },
-  INTERNET_SERVICES: { slug: 'data', name: 'Data Bundle', description: 'Browse network plans', Icon: Wifi, tone: 'bg-[#E1F2F8] text-[#277A9F]' },
+  TELCO: { slug: 'airtime', name: 'Airtime and Data', description: 'MTN, Glo, Airtel, 9mobile', Icon: Smartphone, tone: 'bg-[#FDE5D5] text-[#E95312]', badge: 'Popular' },
+  INTERNET_SERVICES: { slug: 'internet_services', name: 'Internet Services', description: 'Browse Internet plans', Icon: Wifi, tone: 'bg-[#E1F2F8] text-[#277A9F]' },
   DISCO: { slug: 'electricity', name: 'Electricity', description: 'Prepaid and Postpaid', Icon: Zap, tone: 'bg-[#FFF2CF] text-[#C98200]', badge: '2% Cashback' },
   CABLE: { slug: 'tv', name: 'Cable TV', description: 'DStv, GOtv, StarTimes', Icon: Tv, tone: 'bg-[#EEE7FA] text-[#7656AE]' },
   EDUCATION: { slug: 'education', name: 'Education', description: 'Exam pins and school fees', Icon: GraduationCap, tone: 'bg-[#FBE7F7] text-[#D035A5]' },

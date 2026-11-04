@@ -27,6 +27,15 @@ export interface BankCardItem {
 
 const BANKS: BankCardItem[] = [
   {
+    id: 'tm30',
+    name: 'TM30 MFB',
+    logo: '/images/bank_tm30.png',
+    badge: 'Popular',
+    subtitle: 'Internet & Mobile Banking',
+    url: 'https://tm30.com',
+    categories: ['All', 'Popular'],
+  },
+  {
     id: 'ibile',
     name: 'IBILE MFB',
     logo: '/images/bank_ibile_hq.png',
