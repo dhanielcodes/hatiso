@@ -1,10 +1,20 @@
 'use client';
 
-import { useMemo, useState, type ComponentType, type FormEvent } from 'react';
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type ClipboardEvent,
+    type ComponentType,
+    type FormEvent,
+    type KeyboardEvent,
+} from 'react';
 import { Bell, Check, ChevronRight, Eye, EyeOff, Lock, LogOut, Pencil, UserPlus, User } from 'lucide-react';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 type TabId = 'personal' | 'notifications' | 'privacy';
+type ResetStep = 'phone' | 'otp' | 'password';
 
 type MenuItem = {
     id: TabId;
@@ -19,10 +29,14 @@ const MENU: MenuItem[] = [
     { id: 'privacy', label: 'Privacy & Security', icon: Lock },
 ];
 
+const OTP_LENGTH = 6;
+const RESEND_SECONDS = 30;
+
 /* ─── Dummy data ───────────────────────────────────────────────── */
 const PROFILE = {
     fullName: 'Mayowa Babs',
     phone: '09058398933',
+    registeredPhone: '+234 904 637 3748',
     email: 'Mayback@gmail.com',
     memberSince: 'Jan 15, 2026',
     pointsBalance: '1,250 pts',
@@ -112,6 +126,76 @@ function PasswordField({
                     {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
             </div>
+        </div>
+    );
+}
+
+/** Row of single-digit boxes: auto-advance, backspace-to-previous, arrow keys and paste support. */
+function OtpInput({ digits, onChange }: { digits: string[]; onChange: (next: string[]) => void }) {
+    const refs = useRef<(HTMLInputElement | null)[]>([]);
+
+    const focusAt = (index: number) => {
+        const el = refs.current[Math.max(0, Math.min(OTP_LENGTH - 1, index))];
+        el?.focus();
+        el?.select();
+    };
+
+    const setAt = (index: number, digit: string) => {
+        const next = digits.slice();
+        next[index] = digit;
+        onChange(next);
+    };
+
+    const handleChange = (index: number, raw: string) => {
+        const digit = raw.replace(/\D/g, '').slice(-1);
+        setAt(index, digit);
+        if (digit && index < OTP_LENGTH - 1) focusAt(index + 1);
+    };
+
+    const handleKeyDown = (index: number, event: KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Backspace' && !digits[index] && index > 0) {
+            event.preventDefault();
+            setAt(index - 1, '');
+            focusAt(index - 1);
+        } else if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            focusAt(index - 1);
+        } else if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            focusAt(index + 1);
+        }
+    };
+
+    const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
+        const pasted = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
+        if (!pasted) return;
+        event.preventDefault();
+        const next = Array.from({ length: OTP_LENGTH }, (_, i) => pasted[i] ?? '');
+        onChange(next);
+        focusAt(Math.min(pasted.length, OTP_LENGTH - 1));
+    };
+
+    return (
+        <div className="flex gap-2 sm:gap-3" role="group" aria-label="One-time password">
+            {digits.map((digit, index) => (
+                <input
+                    key={index}
+                    ref={(el) => {
+                        refs.current[index] = el;
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                    maxLength={1}
+                    value={digit}
+                    aria-label={`Digit ${index + 1}`}
+                    onChange={(event) => handleChange(index, event.target.value)}
+                    onKeyDown={(event) => handleKeyDown(index, event)}
+                    onPaste={handlePaste}
+                    onFocus={(event) => event.target.select()}
+                    className="h-14 w-11 rounded-lg border border-[#E95312] bg-[#FFF5EF] text-center text-xl font-medium text-[#E95312] outline-none transition focus:ring-2 focus:ring-[#E95312]/30 sm:h-16 sm:w-14"
+                />
+            ))}
         </div>
     );
 }
@@ -266,18 +350,138 @@ function NotificationSettings() {
     );
 }
 
-/* ─── Tab: Privacy & Security ──────────────────────────────────── */
-function PrivacySecurity() {
+/* ─── Privacy & Security: Step 1 — Verify Number ───────────────── */
+function VerifyNumberStep({ onSent }: { onSent: () => void }) {
+    const [phone, setPhone] = useState(PROFILE.registeredPhone);
+    const valid = phone.replace(/\D/g, '').length >= 10;
+
+    const handleSubmit = (event: FormEvent) => {
+        event.preventDefault();
+        if (!valid) return;
+        // Dummy only: call your "send reset link + OTP" endpoint here
+        onSent();
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="max-w-[560px]" noValidate>
+            <h2 className="text-xl font-medium text-[#243B4A]">Verify Number</h2>
+            <div className="mt-5 border-t border-[#EEEAE6]" />
+
+            <p className="mt-7 text-sm leading-relaxed text-[#52617A] sm:text-base">
+                Enter your account email and we&apos;ll send a reset link, along with an OTP to your registered number to keep your account safe.
+            </p>
+
+            <div className="mt-7">
+                <label htmlFor="verify-phone" className="text-sm font-medium text-[#52617A]">
+                    Phone Number <span className="text-[#E22E41]">*</span>
+                </label>
+                <input
+                    id="verify-phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={(event) => setPhone(event.target.value)}
+                    className="mt-2 h-12 w-full rounded-lg border border-[#E6E3E0] bg-white px-4 text-sm tracking-wide text-[#20232A] outline-none transition focus:border-[#E95312]"
+                />
+            </div>
+
+            <div className="mt-16 flex justify-end">
+                <button
+                    type="submit"
+                    disabled={!valid}
+                    className="rounded-lg bg-[#EE7230] px-8 py-3.5 text-sm font-semibold text-white transition hover:bg-[#D9622B] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    Verify identity
+                </button>
+            </div>
+        </form>
+    );
+}
+
+/* ─── Privacy & Security: Step 2 — Enter OTP ───────────────────── */
+function OtpStep({ onVerified, onBack }: { onVerified: () => void; onBack: () => void }) {
+    const [digits, setDigits] = useState<string[]>(() => Array(OTP_LENGTH).fill(''));
+    const [seconds, setSeconds] = useState(RESEND_SECONDS);
+    const complete = digits.every(Boolean);
+
+    useEffect(() => {
+        if (seconds <= 0) return;
+        const timer = setTimeout(() => setSeconds((s) => s - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [seconds]);
+
+    const handleResend = () => {
+        // Dummy only: call your "resend OTP" endpoint here
+        setDigits(Array(OTP_LENGTH).fill(''));
+        setSeconds(RESEND_SECONDS);
+    };
+
+    const handleSubmit = (event: FormEvent) => {
+        event.preventDefault();
+        if (!complete) return;
+        // Dummy only: verify digits.join('') against your backend here
+        onVerified();
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="max-w-[560px]" noValidate>
+            <h2 className="text-xl font-medium text-[#243B4A]">Verify Number</h2>
+            <div className="mt-5 border-t border-[#EEEAE6]" />
+
+            <p className="mt-7 text-sm leading-relaxed text-[#52617A] sm:text-base">
+                Enter your account email and we&apos;ll send a reset link, along with an OTP to your registered number to keep your account safe.
+            </p>
+
+            <div className="mt-7">
+                <OtpInput digits={digits} onChange={setDigits} />
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7A7F8A]">
+                {seconds > 0 ? (
+                    <span aria-live="polite">Resend code in {seconds}s</span>
+                ) : (
+                    <button type="button" onClick={handleResend} className="font-medium text-[#E95312] hover:underline">
+                        Resend code
+                    </button>
+                )}
+                <button type="button" onClick={onBack} className="text-[#52617A] hover:underline">
+                    Change number
+                </button>
+            </div>
+
+            <div className="mt-10 flex justify-end">
+                <button
+                    type="submit"
+                    disabled={!complete}
+                    className="rounded-lg bg-[#EE7230] px-8 py-3.5 text-sm font-semibold text-white transition hover:bg-[#D9622B] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    Verify identity
+                </button>
+            </div>
+        </form>
+    );
+}
+
+/* ─── Privacy & Security: Step 3 — Change Password ─────────────── */
+function ChangePasswordStep({ onDone }: { onDone: () => void }) {
     const [current, setCurrent] = useState('');
     const [next, setNext] = useState('');
     const [confirm, setConfirm] = useState('');
     const [done, setDone] = useState(false);
 
+    // Return to step 1 after the success message so a new reset needs fresh verification
+    useEffect(() => {
+        if (!done) return;
+        const timer = setTimeout(onDone, 2500);
+        return () => clearTimeout(timer);
+    }, [done, onDone]);
+
     const results = useMemo(() => PASSWORD_RULES.map((rule) => ({ ...rule, passed: rule.test(next) })), [next]);
     const passedCount = results.filter((r) => r.passed).length;
     const isStrong = passedCount === PASSWORD_RULES.length;
     const mismatch = confirm.length > 0 && confirm !== next;
-    const canSubmit = current.length > 0 && isStrong && confirm === next;
+    const canSubmit = !done && current.length > 0 && isStrong && confirm === next;
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
@@ -287,7 +491,6 @@ function PrivacySecurity() {
         setNext('');
         setConfirm('');
         setDone(true);
-        setTimeout(() => setDone(false), 3000);
     };
 
     return (
@@ -340,6 +543,19 @@ function PrivacySecurity() {
                 </div>
             </div>
         </form>
+    );
+}
+
+/* ─── Tab: Privacy & Security (flow controller) ────────────────── */
+function PrivacySecurity() {
+    const [step, setStep] = useState<ResetStep>('phone');
+
+    return (
+        <>
+            {step === 'phone' && <VerifyNumberStep onSent={() => setStep('otp')} />}
+            {step === 'otp' && <OtpStep onVerified={() => setStep('password')} onBack={() => setStep('phone')} />}
+            {step === 'password' && <ChangePasswordStep onDone={() => setStep('phone')} />}
+        </>
     );
 }
 
