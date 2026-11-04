@@ -37,8 +37,21 @@ function useClientDate() {
   );
 }
 
-function formatNaira(amountMinor: number) {
-  return `₦${(amountMinor / 100).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+function formatNaira(amountMinor: number | null | undefined) {
+  return `₦${((amountMinor ?? 0) / 100).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
+}
+
+// "+12.3%" / "-4.0%" / "—" when the value is missing
+function formatChange(value: number | null | undefined, unit = '%') {
+  if (!isNum(value)) return '—';
+  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}${unit}`;
+}
+
+// "98.5%" / "—" when the value is missing
+function formatFixed(value: number | null | undefined, digits = 1, unit = '') {
+  return isNum(value) ? `${value.toFixed(digits)}${unit}` : '—';
 }
 
 function formatRange(from: string, to: string) {
@@ -91,7 +104,7 @@ export default function DashboardPage() {
     else start.setDate(end.getDate() - 6);
     return { from: toDateString(start), to: toDateString(end), bucket: (period === 'Last 6 months' ? 'MONTH' : period === 'Last 30 days' ? 'WEEK' : 'DAY') as DashboardBucket };
   }, [customRange, period, today]);
-  const { data, isLoading, isError } = useDashboard({ from, to, bucket, recentLimit: 10 }, Boolean(today));
+  const { data, isLoading, isError } = useDashboard({ from, to, bucket, recentLimit: 10 }, Boolean(today), user?.name);
   const displayName = user?.name?.split(' ')[0] || 'there';
 
   const openRangePicker = () => {
@@ -107,14 +120,41 @@ export default function DashboardPage() {
     setIsRangePickerOpen(false);
   };
 
-  const metrics = data ? [
-    { label: 'Spent this period', value: formatNaira(data.summary.spending.amountMinor), change: `${data.summary.spending.changePercent >= 0 ? '+' : ''}${data.summary.spending.changePercent.toFixed(1)}%`, detail: 'vs previous period', positive: data.summary.spending.changePercent >= 0 },
-    { label: 'Transactions', value: data.summary.transactions.count.toLocaleString(), change: `${data.summary.transactions.changePercent >= 0 ? '+' : ''}${data.summary.transactions.changePercent.toFixed(1)}%`, detail: 'vs previous period', positive: data.summary.transactions.changePercent >= 0 },
-    { label: 'Success rate', value: `${data.summary.successRate.percent.toFixed(1)}%`, change: `${data.summary.successRate.changePercentagePoints >= 0 ? '+' : ''}${data.summary.successRate.changePercentagePoints.toFixed(1)} pts`, detail: 'vs previous period', positive: data.summary.successRate.changePercentagePoints >= 0 },
-    { label: 'Reward points', value: data.rewards.available && data.rewards.points !== null ? data.rewards.points.toLocaleString() : '—', change: data.rewards.available ? 'Available' : 'Not available', detail: '', positive: true },
-  ] : [];
-  const spendingData = (data?.spendingOverview ?? []).map((item) => ({ label: formatBucketLabel(item.from, bucket), amountMinor: item.amountMinor }));
-  const usageData = (data?.digitalServicesUsage ?? []).map((item, index) => ({ name: item.serviceType.replace(/_/g, ' '), value: item.percentage, color: usageColors[index % usageColors.length] }));
+  const metrics = data ? (() => {
+    const { spending, transactions, successRate } = data.summary;
+    return [
+      {
+        label: 'Spent this period',
+        value: formatNaira(spending.amountMinor),
+        change: formatChange(spending.changePercent),
+        detail: 'vs previous period',
+        positive: !isNum(spending.changePercent) || spending.changePercent >= 0,
+      },
+      {
+        label: 'Transactions',
+        value: (transactions.count ?? 0).toLocaleString(),
+        change: formatChange(transactions.changePercent),
+        detail: 'vs previous period',
+        positive: !isNum(transactions.changePercent) || transactions.changePercent >= 0,
+      },
+      {
+        label: 'Success rate',
+        value: formatFixed(successRate.percent, 1, '%'),
+        change: formatChange(successRate.changePercentagePoints, ' pts'),
+        detail: 'vs previous period',
+        positive: !isNum(successRate.changePercentagePoints) || successRate.changePercentagePoints >= 0,
+      },
+      {
+        label: 'Reward points',
+        value: data.rewards.available && data.rewards.points !== null ? data.rewards.points.toLocaleString() : '—',
+        change: data.rewards.available ? 'Available' : 'Not available',
+        detail: '',
+        positive: true,
+      },
+    ];
+  })() : [];
+  const spendingData = (data?.spendingOverview ?? []).map((item) => ({ label: formatBucketLabel(item.from, bucket), amountMinor: item.amountMinor ?? 0 }));
+  const usageData = (data?.digitalServicesUsage ?? []).map((item, index) => ({ name: item.serviceType.replace(/_/g, ' '), value: item.percentage ?? 0, color: usageColors[index % usageColors.length] }));
 
   return (
     <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
@@ -174,7 +214,7 @@ export default function DashboardPage() {
           {isError && <p className="mt-3 text-sm text-rose-600">We couldn&apos;t load dashboard data. Please try again.</p>}
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]"><article className="rounded-xl border border-[#E6E3E0] bg-white p-5 sm:p-6"><div><h2 className="text-xl font-medium text-[#53637C]">Spending overview</h2><p className="mt-2 text-[26px] font-semibold tracking-[-0.04em] text-[#20232A]">{data ? formatNaira(data.summary.spending.amountMinor) : '—'}</p><p className="mt-1 text-xs text-[#9C9697]">{data ? `${data.summary.spending.changePercent >= 0 ? '+' : ''}${data.summary.spending.changePercent.toFixed(1)}% vs previous period` : 'Loading spending overview'}</p></div><div className="mt-6 h-[270px] sm:h-[310px]">{isLoading ? <div className="h-full animate-pulse rounded-xl bg-slate-50" /> : spendingData.length ? <SpendingChart data={spendingData} /> : <p className="pt-24 text-center text-sm text-slate-500">No spending data for this period.</p>}</div></article><article className="rounded-xl border border-[#E6E3E0] bg-white p-5 sm:p-6"><h2 className="text-xl font-medium">Digital Services usage</h2><div className="relative mx-auto mt-4 h-[240px] max-w-[310px]">{isLoading ? <div className="h-full animate-pulse rounded-full bg-slate-100" /> : usageData.length ? <ServiceUsageChart data={usageData} /> : <p className="pt-24 text-center text-sm text-slate-500">No service usage yet.</p>}</div><div className="mt-2 space-y-2.5">{usageData.map((service) => <div key={service.name} className="flex items-center gap-3 text-sm"><span className="h-5 w-5 rounded" style={{ backgroundColor: service.color }} /><span className="flex-1">{service.name}</span><span className="text-[#647188]">{service.value.toFixed(1)}%</span></div>)}</div></article></section>
+        <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]"><article className="rounded-xl border border-[#E6E3E0] bg-white p-5 sm:p-6"><div><h2 className="text-xl font-medium text-[#53637C]">Spending overview</h2><p className="mt-2 text-[26px] font-semibold tracking-[-0.04em] text-[#20232A]">{data ? formatNaira(data.summary.spending.amountMinor) : '—'}</p><p className="mt-1 text-xs text-[#9C9697]">{data ? `${formatChange(data.summary.spending.changePercent)} vs previous period` : 'Loading spending overview'}</p></div><div className="mt-6 h-[270px] sm:h-[310px]">{isLoading ? <div className="h-full animate-pulse rounded-xl bg-slate-50" /> : spendingData.length ? <SpendingChart data={spendingData} /> : <p className="pt-24 text-center text-sm text-slate-500">No spending data for this period.</p>}</div></article><article className="rounded-xl border border-[#E6E3E0] bg-white p-5 sm:p-6"><h2 className="text-xl font-medium">Digital Services usage</h2><div className="relative mx-auto mt-4 h-[240px] max-w-[310px]">{isLoading ? <div className="h-full animate-pulse rounded-full bg-slate-100" /> : usageData.length ? <ServiceUsageChart data={usageData} /> : <p className="pt-24 text-center text-sm text-slate-500">No service usage yet.</p>}</div><div className="mt-2 space-y-2.5">{usageData.map((service) => <div key={service.name} className="flex items-center gap-3 text-sm"><span className="h-5 w-5 rounded" style={{ backgroundColor: service.color }} /><span className="flex-1">{service.name}</span><span className="text-[#647188]">{formatFixed(service.value, 1, '%')}</span></div>)}</div></article></section>
 
         <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]"><article className="rounded-xl border border-[#E6E3E0] bg-white p-5 sm:p-6"><div className="flex items-center justify-between gap-3"><h2 className="text-xl font-semibold">Recent transactions</h2><Link href="/dashboard/transactions" className="inline-flex items-center gap-2 text-sm font-medium text-[#F65A08]">View all transactions <ChevronRight className="h-4 w-4" /></Link></div><div className="mt-5 divide-y divide-[#E8E5E2]">{isLoading ? Array.from({ length: 3 }, (_, index) => <div key={index} className="h-20 animate-pulse rounded bg-slate-50" />) : data?.recentTransactions.length ? data.recentTransactions.map((transaction) => <div key={transaction.txnRef} className="flex items-center gap-3 py-4 first:pt-2"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#EAF7FC] text-xs font-bold text-[#204657]">{transaction.productName.slice(0, 2).toUpperCase()}</div><div className="min-w-0 flex-1"><p className="text-lg font-medium leading-5">{transaction.productName}</p><p className="mt-1 truncate text-sm text-[#81909B]">{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(transaction.createdAt))}</p></div><div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4"><span className="font-semibold text-[#39475E]">{formatNaira(transaction.totalMinor)}</span><StatusBadge status={transaction.paymentStatus} /></div></div>) : <p className="py-10 text-center text-sm text-slate-500">No recent transactions yet.</p>}</div></article><aside className="overflow-hidden rounded-xl border border-[#E6E3E0] bg-white"><div className="relative bg-[#F5F5F5] p-5"><h2 className="text-xl font-semibold">Reward points</h2><p className="mt-7 text-sm text-[#60708B]">Your reward points</p><p className="mt-1 text-[31px] font-medium leading-none tracking-[-0.04em] text-[#364259]">{data?.rewards.available && data.rewards.points !== null ? data.rewards.points.toLocaleString() : '—'} <span className="text-xl">points</span></p><p className="mt-2 text-sm text-[#979797]">{data?.rewards.available ? 'Available to redeem' : 'Rewards are not available yet'}</p><div className="absolute right-4 top-8 flex h-24 w-32 rotate-[-27deg] items-center justify-center rounded-full bg-[#009B48] shadow-[14px_8px_0_#F8AF00]"><Trophy className="h-10 w-10 text-white" /><Sparkles className="absolute -right-4 -top-3 h-5 w-5 text-[#009B48]" /></div></div><div className="p-5"><span className="inline-flex items-center gap-1 rounded-full bg-[#FFF1E8] px-3 py-1.5 text-sm text-[#F65A08]"><Gift className="h-3.5 w-3.5" /> Reward program</span><p className="mt-5 text-sm leading-6 text-[#7F7A78]">Complete digital-service payments to earn rewards when they become available.</p></div></aside></section>
       </main>

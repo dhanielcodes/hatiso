@@ -3,9 +3,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { getDashboard, type DashboardParams } from '@/lib/api/dashboard';
 
-export function useDashboard(params: DashboardParams, enabled = true) {
+export function useDashboard(params: DashboardParams, enabled = true, key: any) {
   return useQuery({
-    queryKey: ['dashboard', params],
+    queryKey: [`dashboard-${key}`, params],
     queryFn: () => getDashboard(params),
     select: (response) => response.data,
     staleTime: 60_000,
