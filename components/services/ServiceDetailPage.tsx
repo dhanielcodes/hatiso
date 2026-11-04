@@ -467,8 +467,8 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
 
       {isSuccessModalOpen && pendingPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102A36]/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg overflow-hidden rounded-[28px] bg-white text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="border-b border-slate-100 px-6 pb-7 pt-8 text-center sm:px-9 sm:pt-10">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-[28px] bg-white text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="border-b border-slate-100 px-6 pb-7 pt-8 text-center sm:px-9 sm:pt-10 [@media(max-height:800px)]:pb-5 [@media(max-height:800px)]:pt-6">
               <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#E6F7ED] text-[#009447] ring-8 ring-[#F2FBF6]">
                 <CheckCircle2 className="h-10 w-10 stroke-[2.4]" />
               </div>
@@ -477,7 +477,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
               <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">Your {pendingPayment.slug} transaction has been completed. The service will be delivered shortly.</p>
             </div>
 
-            <div className="space-y-6 px-6 py-7 sm:px-9 sm:py-8">
+            <div className="space-y-6 px-6 py-7 sm:px-9 sm:py-8 [@media(max-height:800px)]:space-y-4 [@media(max-height:800px)]:py-5">
               <div className="rounded-2xl bg-[#EAF7FC] px-5 py-4 text-center">
                 <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#55707D]">Total paid</p>
                 <p className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[#204657]">{formatNaira(pendingPayment.quote.totalMinor)}</p>
