@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import XnettLogo from '@/components/auth/XnettLogo';
 import { useAuthStore } from '@/lib/store/authStore';
+import XnettLogoDashboard from '../auth/XnettLogoDashboard';
 
 /* ── nav structure ─────────────────────────────────────────────── */
 interface NavItem {
@@ -129,7 +130,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
         : 'text-slate-400 hover:bg-[#1A3848] hover:text-slate-200'
         }`}
     >
-      <span className={active ? 'text-[#E95312]' : 'text-slate-500 group-hover:text-slate-300'}>
+      <span className={active ? 'text-[#FF6500]' : 'text-slate-500 group-hover:text-slate-300'}>
         {item.icon}
       </span>
       {item.label}
@@ -189,7 +190,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
       >
         {/* ── Logo ── */}
         <div className="flex items-start justify-start px-5 pt-7 pb-5">
-          <XnettLogo />
+          <XnettLogoDashboard />
           {/* Close button (mobile only) */}
           {onClose && (
             <button
@@ -244,7 +245,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
         {!helpDismissed && (
           <div className="m-4 mt-3 rounded-2xl bg-[#0D2330] p-4 border border-[#1E3D4E]">
             {/* Headset icon */}
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#E95312] text-white shadow-md shadow-[#E95312]/30">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF6500] text-white shadow-md shadow-[#E95312]/30">
               <Headphones className="h-5 w-5" strokeWidth={2.2} />
             </div>
 
@@ -263,7 +264,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
               </button>
               <Link
                 href="/dashboard/support"
-                className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#E95312] transition-colors hover:text-[#FF8A4C]"
+                className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#FF6500] transition-colors hover:text-[#FF8A4C]"
               >
                 Reach out to us
                 <span aria-hidden>→</span>
@@ -296,7 +297,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
             <p className="mt-2 text-sm leading-6 text-slate-500">Are you sure you want to log out of your account?</p>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={() => setIsLogoutConfirmOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Cancel</button>
-              <button type="button" onClick={handleLogout} className="rounded-xl bg-[#E95312] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E95312] active:scale-[0.98]">Yes, log out</button>
+              <button type="button" onClick={handleLogout} className="rounded-xl bg-[#FF6500] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E95312] active:scale-[0.98]">Yes, log out</button>
             </div>
           </div>
         </div>

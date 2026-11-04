@@ -236,7 +236,7 @@ export default function BankingPage() {
       {/* Top Header */}
       <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
         <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Banking</p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">Your bank is <span className="text-[#E95312]">one tap away.</span></h2>
+        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">Your bank is <span className="text-[#FF6500]">one tap away.</span></h2>
         <p className="mt-2 text-sm text-[#777486] sm:text-base">Visit your bank's secure digital banking service. Hatiso never sees or stores your login details.</p>
       </section>
 
@@ -432,7 +432,7 @@ export default function BankingPage() {
                 <div className="mt-6 space-y-2.5">
                   <button
                     type="submit"
-                    className="w-full rounded-lg bg-[#E95312] py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#E55B00] active:scale-[0.99]"
+                    className="w-full rounded-lg bg-[#FF6500] py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#E55B00] active:scale-[0.99]"
                   >
                     Continue to bank
                   </button>

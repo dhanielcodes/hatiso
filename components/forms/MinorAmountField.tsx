@@ -72,7 +72,7 @@ export default function MinorAmountField({
           {...rest}
           name={field.name}
           value={display}
-          placeholder={placeholder}
+          placeholder={placeholder?.replace(/\s*\(kobo\)/i, '')}
           onFocus={(event) => {
             setFocused(true);
             setDraft(nairaValue === '' ? '' : String(nairaValue));

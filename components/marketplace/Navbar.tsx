@@ -46,13 +46,13 @@ export default function Navbar() {
           <nav className="hidden items-center gap-7 md:flex">
             <Link
               href="/#solutions"
-              className="text-sm font-medium text-white transition-colors hover:text-[#E95312]"
+              className="text-sm font-medium text-white transition-colors hover:text-[#FF6500]"
             >
               Personal
             </Link>
             <Link
               href="/#solutions"
-              className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
+              className="text-sm font-medium text-slate-300 transition-colors hover:text-[#FF6500]"
             >
               Business
             </Link>
@@ -60,7 +60,7 @@ export default function Navbar() {
               href="/banks"
               className={`text-sm font-medium transition-colors ${pathname === '/banks'
                 ? 'text-[#E95312] font-semibold'
-                : 'text-slate-300 hover:text-white'
+                : 'text-slate-300 hover:text-[#FF6500]'
                 }`}
             >
               Banks
@@ -163,7 +163,7 @@ export default function Navbar() {
             <div className="flex items-center gap-3">
               <Link
                 href="/auth/login"
-                className="rounded-lg bg-[#E95312] px-5 py-2 text-sm font-semibold text-white shadow-md shadow-[#E95312]/20 transition-all duration-200 hover:bg-[#E84D15] hover:shadow-lg hover:shadow-[#E95312]/30 active:scale-95"
+                className="rounded-lg bg-[#E15F09] px-5 py-2 text-sm font-semibold text-white shadow-md shadow-[#E95312]/20 transition-all duration-200 hover:bg-[#E84D15] hover:shadow-lg hover:shadow-[#E95312]/30 active:scale-95"
               >
                 Sign in
               </Link>

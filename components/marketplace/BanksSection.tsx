@@ -257,7 +257,7 @@ export default function BanksSection() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setSelectedBank(null)}
-                className="w-full rounded-xl bg-[#E95312] py-3.5 text-center text-sm font-bold text-white hover:bg-[#E84D15] active:scale-[0.98] transition-all duration-150"
+                className="w-full rounded-xl bg-[#FF6500] py-3.5 text-center text-sm font-bold text-white hover:bg-[#E84D15] active:scale-[0.98] transition-all duration-150"
               >
                 Continue to bank
               </a>

@@ -78,7 +78,7 @@ export default function HeroSection() {
           <div className="flex flex-col space-y-6 lg:col-span-6 xl:col-span-6">
             <div className="space-y-2">
               <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
-                <span className="block text-[#E95312] drop-shadow-sm">
+                <span className="block text-[#FF6500] drop-shadow-sm">
                   One platform.
                 </span>
                 <span className="block font-extrabold text-white">

@@ -33,7 +33,7 @@ const step3Schema = Yup.object({
 
 /* ─── Button Style ──────────────────────────────────────────────── */
 const ORANGE_BTN =
-  'w-full rounded-xl bg-[#E95312] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(255,101,0,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
+  'w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(255,101,0,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
 
 /* ─── Phone input component ─────────────────────────────────────── */
 function PhoneInputField({ name, ...rest }: { name: string;[k: string]: unknown }) {

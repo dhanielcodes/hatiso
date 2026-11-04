@@ -101,7 +101,7 @@ export default function LoginPage() {
 
                   <SubmitButton
                     disabled={isLoading}
-                    className="w-full rounded-xl bg-[#E95312] py-3.5 text-sm font-semibold text-white hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50"
+                    className="w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50"
                     loadingLabel={
                       <span className="inline-flex items-center justify-center gap-2">
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

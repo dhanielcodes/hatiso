@@ -79,7 +79,7 @@ function PaymentReview({ payment, isProcessing, error, onReset, onContinue }: {
         {/* {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-center text-xs font-medium text-red-600">{error}</p> : null} */}
         <div className="flex flex-col-reverse gap-3 sm:flex-row">
           <button type="button" onClick={onReset} disabled={isProcessing} className="rounded-xl border border-slate-200 px-7 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50">Reset</button>
-          <button type="button" onClick={onContinue} disabled={isProcessing} aria-busy={isProcessing} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#E95312] py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#E04B14] disabled:cursor-not-allowed disabled:opacity-50">{isProcessing ? <><span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /><span className="sr-only">Preparing payment</span></> : <>Continue <CreditCard className="h-4 w-4" /></>}</button>
+          <button type="button" onClick={onContinue} disabled={isProcessing} aria-busy={isProcessing} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#FF6500] py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#E04B14] disabled:cursor-not-allowed disabled:opacity-50">{isProcessing ? <><span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /><span className="sr-only">Preparing payment</span></> : <>Continue <CreditCard className="h-4 w-4" /></>}</button>
         </div>
       </div>
     </article>
@@ -368,7 +368,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
         >
           <div className="flex flex-col lg:col-span-6 xl:col-span-7 min-h-[220px] sm:min-h-[250px] justify-center">
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl transition-all duration-300">
-              <span className="text-[#E95312]">{heroContent.headlineOrange}</span>
+              <span className="text-[#FF6500]">{heroContent.headlineOrange}</span>
               <span className="text-white">{heroContent.headlineWhite}</span>
             </h1>
 
@@ -487,7 +487,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
               </div>
 
               <div className="space-y-3 pt-1">
-                <button type="button" onClick={handleReset} className="w-full rounded-xl bg-[#E95312] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#E95312]/20 transition hover:bg-[#E04B14] active:scale-[0.98]">Make another payment</button>
+                <button type="button" onClick={handleReset} className="w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#E95312]/20 transition hover:bg-[#E04B14] active:scale-[0.98]">Make another payment</button>
                 <Link href="/" className="block w-full rounded-xl border border-slate-200 py-3 text-center text-sm font-semibold text-[#304A57] transition hover:bg-slate-50 active:scale-[0.98]">Return to marketplace</Link>
               </div>
             </div>

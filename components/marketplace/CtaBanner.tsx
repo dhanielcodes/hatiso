@@ -66,7 +66,7 @@ export default function CtaBanner({
             <div className="pt-6 sm:pt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
               <Link
                 href="/auth/register"
-                className="inline-flex items-center justify-center rounded-xl bg-[#FF8A4C] px-7 py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#E95312]/20 transition-all duration-150 hover:bg-[#E84D15] active:scale-[0.98]"
+                className="inline-flex items-center justify-center rounded-xl bg-[#E15F09] px-7 py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#E95312]/20 transition-all duration-150 hover:bg-[#E84D15] active:scale-[0.98]"
               >
                 Create a free account
               </Link>
