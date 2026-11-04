@@ -248,7 +248,7 @@ const categoryTabConfig: Partial<
 
 interface ServiceTabsSelectorProps {
   activeSlug: string;
-  onSelectService?: (slug: string) => void;
+  onSelectService?: (slug: string, title: string) => void;
 }
 
 export default function ServiceTabsSelector({
@@ -272,12 +272,12 @@ export default function ServiceTabsSelector({
   const scrollLeft = useRef(0);
   const hasMoved = useRef(false);
 
-  const handleSelect = (slug: string) => {
+  const handleSelect = (slug: string, title: string) => {
     // If the user was dragging, don't trigger the click
     if (hasMoved.current) return;
 
     if (onSelectService) {
-      onSelectService(slug);
+      onSelectService(slug, title);
     } else {
       router.push(`/categories/${slug}`);
     }
@@ -387,7 +387,7 @@ export default function ServiceTabsSelector({
                 key={srv.slug}
                 data-slug={srv.slug}
                 type="button"
-                onClick={() => handleSelect(srv.slug)}
+                onClick={() => handleSelect(srv.slug, srv.name)}
                 className={`group flex h-[125px] w-[105px] flex-shrink-0 flex-col overflow-hidden rounded-2xl transition-all duration-200 active:scale-95 focus:outline-none sm:h-[142px] sm:w-[124px] ${isActive
                   ? 'border-2 border-[#FF6500] shadow-xl ring-4 ring-[#E95312]/20'
                   : 'border border-transparent shadow-sm hover:shadow-md'

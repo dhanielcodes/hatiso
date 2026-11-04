@@ -32,6 +32,7 @@ const PaystackCheckout = dynamic(() => import('./PaystackCheckout'), { ssr: fals
 
 interface ServiceDetailPageProps {
   initialSlug?: string;
+  initialTitle?: string;
 }
 
 type PreparedPayment = PendingPayment & {
@@ -96,11 +97,12 @@ const categoryBySlug: Record<string, DigitalServiceCategory> = {
   'other-services': 'OTHER_SERVICES',
 };
 
-export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDetailPageProps) {
+export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitle = 'Airtime & Data' }: ServiceDetailPageProps) {
 
 
 
   const [activeSlug, setActiveSlug] = useState(initialSlug);
+  const [activeTitle, setActiveTitle] = useState(initialTitle);
   const [slugFromProp, setSlugFromProp] = useState(initialSlug);
   const [isFading, setIsFading] = useState(false);
   const [pendingPayment, setPendingPayment] = useState<PreparedPayment | null>(null);
@@ -129,6 +131,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
   if (initialSlug !== slugFromProp) {
     setSlugFromProp(initialSlug);
     setActiveSlug(initialSlug);
+    setActiveTitle(initialTitle);
   }
 
   useEffect(() => {
@@ -139,6 +142,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
         setIsFading(true);
         setTimeout(() => {
           setActiveSlug(slugFromUrl);
+          setActiveTitle(initialTitle);
           setIsFading(false);
         }, 150);
       }
@@ -206,12 +210,14 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
   } = useDigitalServiceCatalogues(category, 0);
 
 
-  const handleServiceClick = (slug: string) => {
+  const handleServiceClick = (slug: string, title: string) => {
     if (slug === activeSlug) return;
 
     setIsFading(true);
     setTimeout(() => {
       setActiveSlug(slug);
+      setActiveTitle(title);
+
       if (typeof window !== 'undefined') {
         window.history.pushState(null, '', `/categories/${slug}`);
       }
@@ -446,6 +452,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime' }: ServiceDe
           ) : (
             <ServicePaymentForm
               activeSlug={activeSlug}
+              activeTitle={activeTitle}
               billers={serviceCatalogues ?? []}
               isLoading={isLoading}
               isError={hasCategoryRequestError}

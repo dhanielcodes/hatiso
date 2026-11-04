@@ -69,6 +69,7 @@ export interface DigitalServiceProduct {
 export interface DigitalServiceBiller {
   billerCode: string;
   billerName: string;
+  logoUrl?: string;
   tenantId: string;
   category: DigitalServiceCategory;
   products: DigitalServiceProduct[];

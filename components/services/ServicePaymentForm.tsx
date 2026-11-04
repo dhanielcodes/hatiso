@@ -43,6 +43,7 @@ export type PendingPayment = {
 
 interface ServicePaymentFormProps {
   activeSlug: string;
+  activeTitle?: string;
   billers: DigitalServiceBiller[];
   isLoading?: boolean;
   isError?: boolean;
@@ -70,7 +71,7 @@ const providerImages: Record<string, string> = {
   kaduna: '/images/elec_kaduna.png',
 };
 
-const providerSelectorType: ProviderSelectorType = 'name';
+const providerSelectorType: ProviderSelectorType = 'image';
 
 function ServiceFormSkeleton() {
   return (
@@ -212,7 +213,7 @@ function toProviderItems(
     id: biller.billerCode,
     name: biller.billerName,
     imageSrc:
-      type === 'image' ? providerImages[biller.billerCode.toLowerCase()] : undefined,
+      type === 'image' ? biller?.logoUrl || providerImages[biller.billerCode.toLowerCase()] : undefined,
   }));
 }
 
@@ -254,6 +255,7 @@ function DynamicFormField({ field }: { field: DigitalServiceFormField }) {
 
 function DynamicFields({
   activeSlug,
+  activeTitle,
   billers,
   onBillerChange,
   onProductChange,
@@ -261,6 +263,7 @@ function DynamicFields({
   variant = 'marketplace',
 }: {
   activeSlug: string;
+  activeTitle?: string;
   billers: DigitalServiceBiller[];
   onBillerChange: (billerCode: string) => void;
   onProductChange: (productCode: string) => void;
@@ -278,7 +281,7 @@ function DynamicFields({
   return (
     <Form className={variant === 'dashboard' ? 'space-y-5' : 'mt-6 space-y-5'} noValidate>
       {variant === 'marketplace' && <div className="text-center">
-        <h2 className="text-xl font-bold capitalize text-slate-900 sm:text-2xl">{activeSlug}</h2>
+        <h2 className="text-xl font-bold capitalize text-slate-900 sm:text-2xl">{activeTitle}</h2>
         <p className="mt-1 text-xs text-slate-500 sm:text-sm">Choose a provider and product to continue.</p>
       </div>}
       {typeof topLevelError === 'string' ? <div className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-600"><AlertCircle className="h-4 w-4 shrink-0" /><span>{topLevelError}</span></div> : null}
@@ -291,7 +294,7 @@ function DynamicFields({
   );
 }
 
-export default function ServicePaymentForm({ activeSlug, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0, initialBillerCode, hideBillerSelector = false, variant = 'marketplace', initialEmail = '' }: ServicePaymentFormProps) {
+export default function ServicePaymentForm({ activeSlug, activeTitle, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0, initialBillerCode, hideBillerSelector = false, variant = 'marketplace', initialEmail = '' }: ServicePaymentFormProps) {
   const [selectedBillerCode, setSelectedBillerCode] = useState<string | undefined>(initialBillerCode);
   const [selectedProductCode, setSelectedProductCode] = useState<string>();
   const selectedBiller = billers.find((biller) => biller.billerCode === selectedBillerCode) ?? billers[0];
@@ -332,6 +335,7 @@ export default function ServicePaymentForm({ activeSlug, billers, isLoading = fa
         >
           <DynamicFields
             activeSlug={activeSlug}
+            activeTitle={activeTitle}
             billers={billers}
             hideBillerSelector={hideBillerSelector}
             variant={variant}

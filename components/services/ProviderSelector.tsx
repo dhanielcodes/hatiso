@@ -25,7 +25,7 @@ export default function ProviderSelector({
   providers,
   selectedId,
   onSelect,
-  type = 'name',
+  type = 'image',
 }: ProviderSelectorProps) {
   return (
     <div className="w-full">
