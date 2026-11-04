@@ -235,8 +235,8 @@ export default function BankingPage() {
     <div className="min-h-full bg-[#FFFAF7] space-y-6">
       {/* Top Header */}
       <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#FF6500]">Banking</p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">Your bank is <span className="text-[#FF6500]">one tap away.</span></h2>
+        <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Banking</p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">Your bank is <span className="text-[#E95312]">one tap away.</span></h2>
         <p className="mt-2 text-sm text-[#777486] sm:text-base">Visit your bank's secure digital banking service. Hatiso never sees or stores your login details.</p>
       </section>
 
@@ -258,7 +258,7 @@ export default function BankingPage() {
               placeholder="Search services or provider"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-[#E8E3DF] bg-white py-2.5 pl-10 pr-4 text-sm text-[#1B3C4A] placeholder:text-[#A09D9B] focus:border-[#FF6500] focus:outline-none"
+              className="w-full rounded-xl border border-[#E8E3DF] bg-white py-2.5 pl-10 pr-4 text-sm text-[#1B3C4A] placeholder:text-[#A09D9B] focus:border-[#E95312] focus:outline-none"
             />
           </div>
 
@@ -308,7 +308,7 @@ export default function BankingPage() {
               <div
                 key={bank.id}
                 onClick={() => handleBankClick(bank)}
-                className="group flex cursor-pointer items-center justify-between rounded-2xl border border-[#EDE8E4] bg-white p-4 sm:p-5 transition-all hover:border-[#FF6500]/50 hover:shadow-sm"
+                className="group flex cursor-pointer items-center justify-between rounded-2xl border border-[#EDE8E4] bg-white p-4 sm:p-5 transition-all hover:border-[#E95312]/50 hover:shadow-sm"
               >
                 <div className="flex min-w-0 items-center gap-3.5">
                   {/* Bank Logo */}
@@ -338,7 +338,7 @@ export default function BankingPage() {
                 </div>
 
                 {/* Right Chevron */}
-                <ChevronRight className="h-4 w-4 shrink-0 text-[#C4C0BE] transition-transform group-hover:translate-x-0.5 group-hover:text-[#FF6500]" />
+                <ChevronRight className="h-4 w-4 shrink-0 text-[#C4C0BE] transition-transform group-hover:translate-x-0.5 group-hover:text-[#E95312]" />
               </div>
             ))}
           </div>
@@ -417,14 +417,14 @@ export default function BankingPage() {
 
                 <div className="mt-6">
                   <label className="block text-xs font-semibold text-[#3E3A39]">
-                    Phone Number <span className="text-[#FF6500]">*</span>
+                    Phone Number <span className="text-[#E95312]">*</span>
                   </label>
                   <input
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="+234 904 637 3748"
-                    className="mt-1.5 w-full rounded-lg border border-[#E2E8F0] px-3.5 py-2.5 text-sm font-medium text-[#1B3C4A] placeholder:text-[#94A3B8] focus:border-[#FF6500] focus:outline-none"
+                    className="mt-1.5 w-full rounded-lg border border-[#E2E8F0] px-3.5 py-2.5 text-sm font-medium text-[#1B3C4A] placeholder:text-[#94A3B8] focus:border-[#E95312] focus:outline-none"
                     required
                   />
                 </div>
@@ -432,7 +432,7 @@ export default function BankingPage() {
                 <div className="mt-6 space-y-2.5">
                   <button
                     type="submit"
-                    className="w-full rounded-lg bg-[#FF6500] py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#E55B00] active:scale-[0.99]"
+                    className="w-full rounded-lg bg-[#E95312] py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#E55B00] active:scale-[0.99]"
                   >
                     Continue to bank
                   </button>
@@ -475,7 +475,7 @@ export default function BankingPage() {
                     type="button"
                     onClick={handleVerifyOtp}
                     disabled={isVerifying}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF6500] py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#E55B00] disabled:opacity-60 active:scale-[0.99]"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#E95312] py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#E55B00] disabled:opacity-60 active:scale-[0.99]"
                   >
                     {isVerifying ? (
                       <>

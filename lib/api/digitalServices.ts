@@ -214,8 +214,61 @@ export async function verifyGuestPayment(
   return response.data;
 }
 
+
+
+
+export async function createDigitalServiceOrderAuthenticated(input: CreateDigitalServiceOrderInput) {
+  const response = await apiClient.post<ApiResponse<DigitalServiceOrder>>(
+    `/api/${process.env.NEXT_PUBLIC_API_VERSION}/digital-services/orders`,
+    input,
+    { headers: { 'Idempotency-Key': createIdempotencyKey() } }
+  );
+  return response.data;
+}
+
+export async function createGuestPaymentQuoteAuthenticated(
+  input: CreateGuestPaymentQuoteInput,
+  guestToken: string
+) {
+  const response = await apiClient.post<ApiResponse<GuestPaymentQuote>>(
+    `/api/${process.env.NEXT_PUBLIC_API_VERSION}/payments/quote`,
+    input,
+    { headers: { 'X-Guest-Token': guestToken } }
+  );
+  return response.data;
+}
+
+export async function createGuestPaymentAuthenticated(
+  input: CreateGuestPaymentInput,
+  guestToken: string
+) {
+  const response = await apiClient.post<ApiResponse<GuestPayment>>(
+    `/api/${process.env.NEXT_PUBLIC_API_VERSION}/payments`,
+    input,
+    {
+      headers: {
+        'Idempotency-Key': createIdempotencyKey(),
+        'X-Guest-Token': guestToken,
+      },
+    }
+  );
+  return response.data;
+}
+
+export async function verifyGuestPaymentAuthenticated(
+  input: VerifyGuestPaymentInput,
+  guestToken: string
+) {
+  const response = await apiClient.post<ApiResponse<VerifiedGuestPayment>>(
+    `/api/${process.env.NEXT_PUBLIC_API_VERSION}/payments/verify`,
+    input,
+    { headers: { 'X-Guest-Token': guestToken } }
+  );
+  return response.data;
+}
+
 export function getDigitalServiceCatalogues(category: DigitalServiceCategory, page: number = 0, size: number = 20) {
   return apiGet<ApiResponse<DigitalServiceBiller[]>>(
-    `/api/v1/digital-services/catalogue/grouped?category=${category}&page=${page}&size=${size}`
+    `/api/${process.env.NEXT_PUBLIC_API_VERSION}/digital-services/catalogue/grouped?category=${category}&page=${page}&size=${size}`
   );
 }

@@ -171,7 +171,7 @@ export default function SolutionsSection() {
 
                       {/* Text on Right */}
                       <div className="space-y-5 lg:col-span-6 lg:pl-6">
-                        <span className="inline-block text-sm sm:text-base font-bold text-[#FF6500]">
+                        <span className="inline-block text-sm sm:text-base font-bold text-[#E95312]">
                           {slide.badge}
                         </span>
                         <h2 className="text-3xl font-black tracking-tight text-[#102A36] sm:text-4xl lg:text-5xl leading-[1.12]">
@@ -200,7 +200,7 @@ export default function SolutionsSection() {
                       {/* SLIDE 0 (Pay for what you need): Text on Left, DRAMATIC VERTICAL POP OUT on Right */}
                       {/* Text on Left */}
                       <div className="space-y-5 lg:col-span-7">
-                        <span className="inline-block text-sm sm:text-base font-bold text-[#FF6500]">
+                        <span className="inline-block text-sm sm:text-base font-bold text-[#E95312]">
                           {slide.badge}
                         </span>
                         <h2 className="text-3xl font-black tracking-tight text-[#102A36] sm:text-4xl lg:text-5xl leading-[1.12]">
@@ -303,7 +303,7 @@ export default function SolutionsSection() {
                   onClick={() => setIndividualSlide(i)}
                   aria-label={`Go to individual slide ${i + 1}`}
                   className={`h-1.5 rounded-full transition-all duration-300 ${individualSlide === i
-                    ? 'w-6 bg-[#FF6500]'
+                    ? 'w-6 bg-[#E95312]'
                     : 'w-2 bg-slate-300 hover:bg-slate-400'
                     }`}
                 />
@@ -351,7 +351,7 @@ export default function SolutionsSection() {
 
                       {/* Text on Right */}
                       <div className="space-y-5 lg:col-span-5 lg:pl-6">
-                        <span className="inline-block text-sm sm:text-base font-bold text-[#FF6500]">
+                        <span className="inline-block text-sm sm:text-base font-bold text-[#E95312]">
                           {slide.badge}
                         </span>
                         <h2 className="text-3xl font-black tracking-tight text-[#102A36] sm:text-4xl lg:text-5xl leading-[1.12]">
@@ -380,7 +380,7 @@ export default function SolutionsSection() {
                       {/* SLIDE 0 (Put your services in front): DRAMATIC POP OUT ON RIGHT (extending top, bottom, and BEYOND RIGHT EDGE) */}
                       {/* Text on Left */}
                       <div className="space-y-5 lg:col-span-5">
-                        <span className="inline-block text-sm sm:text-base font-bold text-[#FF6500]">
+                        <span className="inline-block text-sm sm:text-base font-bold text-[#E95312]">
                           {slide.badge}
                         </span>
                         <h2 className="text-3xl font-black tracking-tight text-[#102A36] sm:text-4xl lg:text-5xl leading-[1.12]">
@@ -431,7 +431,7 @@ export default function SolutionsSection() {
                   onClick={() => setBusinessSlide(i)}
                   aria-label={`Go to business slide ${i + 1}`}
                   className={`h-1.5 rounded-full transition-all duration-300 ${businessSlide === i
-                    ? 'w-6 bg-[#FF6500]'
+                    ? 'w-6 bg-[#E95312]'
                     : 'w-2 bg-slate-300 hover:bg-slate-400'
                     }`}
                 />

@@ -9,7 +9,7 @@
   --brand-bg: #1B3C4A;
   --brand-bg-dark: #0E2028;
   --brand-bg-card: #183541;
-  --brand-orange: #FF6500;
+  --brand-orange: #E95312;
   --brand-orange-hover: #E84D15;
   --brand-cyan: #22D3EE;
   --text-main: #FFFFFF;
@@ -42,7 +42,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #FF6500;
+  background: #E95312;
 }
 
 /* Hide scrollbar utility across all modern browsers */

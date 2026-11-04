@@ -20,10 +20,13 @@ import type { DashboardBucket } from '@/lib/api/dashboard';
 const usageColors = ['#F45A08', '#FFA76D', '#2E75BC', '#6A4D9B', '#204555', '#C54E92'];
 
 function toDateString(date: Date) {
-  return date.toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
-const subscribeToNothing = () => () => {};
+const subscribeToNothing = () => () => { };
 const getServerDate = () => '';
 
 function useClientDate() {
@@ -151,18 +154,18 @@ export default function DashboardPage() {
                 <ChevronDown className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-slate-500" />
               </label>
               <div className="relative">
-                <button type="button" onClick={openRangePicker} className="flex items-center gap-2 rounded-xl border border-[#DED8D4] bg-white px-3 py-2.5 text-xs text-[#343238] transition hover:border-[#FF6500]/50 active:scale-[0.98]">
+                <button type="button" onClick={openRangePicker} className="flex items-center gap-2 rounded-xl border border-[#DED8D4] bg-white px-3 py-2.5 text-xs text-[#343238] transition hover:border-[#E95312]/50 active:scale-[0.98]">
                   <CalendarDays className="h-4 w-4 text-[#807A7B]" />
                   {from && to ? formatRange(from, to) : 'Choose range'}
                 </button>
                 {isRangePickerOpen && <div className="absolute right-0 z-20 mt-2 w-[min(22rem,calc(100vw-2.5rem))] rounded-xl border border-[#E6E3E0] bg-white p-4 shadow-xl shadow-slate-900/10">
                   <p className="text-sm font-semibold text-[#34425D]">Custom date range</p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <label className="text-xs font-medium text-slate-600">From<input type="date" value={pendingFrom} max={pendingTo || today || undefined} onChange={(event) => setPendingFrom(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-[#FF6500]" /></label>
-                    <label className="text-xs font-medium text-slate-600">To<input type="date" value={pendingTo} min={pendingFrom || undefined} max={today || undefined} onChange={(event) => setPendingTo(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-[#FF6500]" /></label>
+                    <label className="text-xs font-medium text-slate-600">From<input type="date" value={pendingFrom} max={pendingTo || today || undefined} onChange={(event) => setPendingFrom(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-[#E95312]" /></label>
+                    <label className="text-xs font-medium text-slate-600">To<input type="date" value={pendingTo} min={pendingFrom || undefined} max={today || undefined} onChange={(event) => setPendingTo(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-[#E95312]" /></label>
                   </div>
                   {pendingFrom && pendingTo && pendingFrom > pendingTo && <p className="mt-3 text-xs text-rose-600">The end date must be after the start date.</p>}
-                  <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setIsRangePickerOpen(false)} className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Cancel</button><button type="button" onClick={applyCustomRange} disabled={!pendingFrom || !pendingTo || pendingFrom > pendingTo} className="rounded-lg bg-[#FF6500] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#E95312] disabled:cursor-not-allowed disabled:opacity-50">Apply range</button></div>
+                  <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setIsRangePickerOpen(false)} className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Cancel</button><button type="button" onClick={applyCustomRange} disabled={!pendingFrom || !pendingTo || pendingFrom > pendingTo} className="rounded-lg bg-[#E95312] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#E95312] disabled:cursor-not-allowed disabled:opacity-50">Apply range</button></div>
                 </div>}
               </div>
             </div>

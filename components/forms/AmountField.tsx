@@ -83,9 +83,8 @@ export default function AmountField({
     >
       <div className={fieldShellClass(variant, { hasError })}>
         <span
-          className={`mr-2 text-sm font-bold ${
-            variant === 'dark' ? 'text-slate-400' : 'text-slate-400'
-          }`}
+          className={`mr-2 text-sm font-bold ${variant === 'dark' ? 'text-slate-400' : 'text-slate-400'
+            }`}
         >
           {currencySymbol}
         </span>
@@ -123,14 +122,13 @@ export default function AmountField({
           }}
           required={required}
           aria-invalid={hasError}
-          className={`w-full bg-transparent text-sm font-semibold focus:outline-none ${
-            variant === 'dark'
-              ? 'text-white placeholder-slate-500'
-              : 'text-slate-900 placeholder-slate-400'
-          }`}
+          className={`w-full bg-transparent text-sm font-semibold focus:outline-none ${variant === 'dark'
+            ? 'text-white placeholder-slate-500'
+            : 'text-slate-900 placeholder-slate-400'
+            }`}
         />
       </div>
-      {(min !== undefined || max !== undefined) && !hint && !hasError ? (
+      {/*  {(min !== undefined || max !== undefined) && !hint && !hasError ? (
         <p className={`mt-1.5 text-[11px] ${variant === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
           {min !== undefined && max !== undefined
             ? `Min ${currencySymbol}${min.toLocaleString()} · Max ${currencySymbol}${max.toLocaleString()}`
@@ -138,7 +136,7 @@ export default function AmountField({
               ? `Minimum ${currencySymbol}${min.toLocaleString()}`
               : `Maximum ${currencySymbol}${Number(max).toLocaleString()}`}
         </p>
-      ) : null}
+      ) : null} */}
     </FieldShell>
   );
 }

@@ -201,7 +201,7 @@ export default function BanksPage() {
     selectedStatuses.length > 0;
 
   return (
-    <div className="min-h-screen bg-[#1B3C4A] text-white selection:bg-[#FF6500] selection:text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-[#1B3C4A] text-white selection:bg-[#E95312] selection:text-white flex flex-col justify-between">
       {/* ========================================================= */}
       {/* 1. TOP HERO SECTION (Dark Brand Theme)                    */}
       {/* ========================================================= */}
@@ -213,7 +213,7 @@ export default function BanksPage() {
             {/* Left Column: Heading & Description */}
             <div className="flex flex-col lg:col-span-7">
               <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-                <span className="text-[#FF6500]">Every bank.</span>
+                <span className="text-[#E95312]">Every bank.</span>
                 <span className="block text-white mt-1">One place to choose from.</span>
               </h1>
 
@@ -289,7 +289,7 @@ export default function BanksPage() {
                   <button
                     type="button"
                     onClick={clearAllFilters}
-                    className="text-xs font-semibold text-[#FF6500] hover:underline"
+                    className="text-xs font-semibold text-[#E95312] hover:underline"
                   >
                     Clear all
                   </button>
@@ -303,7 +303,7 @@ export default function BanksPage() {
                 </h3>
 
                 {/* Search Input */}
-                <div className="relative mb-3 flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus-within:border-[#FF6500] focus-within:ring-1 focus-within:ring-[#FF6500]">
+                <div className="relative mb-3 flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus-within:border-[#E95312] focus-within:ring-1 focus-within:ring-[#E95312]">
                   <Search className="mr-2 h-3.5 w-3.5 text-slate-400" />
                   <input
                     type="text"
@@ -330,13 +330,13 @@ export default function BanksPage() {
                     return (
                       <label
                         key={bName}
-                        className="flex items-center gap-2.5 cursor-pointer select-none py-0.5 hover:text-[#FF6500] transition-colors"
+                        className="flex items-center gap-2.5 cursor-pointer select-none py-0.5 hover:text-[#E95312] transition-colors"
                       >
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleBank(bName)}
-                          className="h-4 w-4 rounded border-slate-300 text-[#FF6500] focus:ring-[#FF6500]"
+                          className="h-4 w-4 rounded border-slate-300 text-[#E95312] focus:ring-[#E95312]"
                         />
                         <span className="font-medium text-slate-700">{bName}</span>
                       </label>
@@ -356,13 +356,13 @@ export default function BanksPage() {
                     return (
                       <label
                         key={srv}
-                        className="flex items-center gap-2.5 cursor-pointer select-none py-0.5 hover:text-[#FF6500] transition-colors"
+                        className="flex items-center gap-2.5 cursor-pointer select-none py-0.5 hover:text-[#E95312] transition-colors"
                       >
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleService(srv)}
-                          className="h-4 w-4 rounded border-slate-300 text-[#FF6500] focus:ring-[#FF6500]"
+                          className="h-4 w-4 rounded border-slate-300 text-[#E95312] focus:ring-[#E95312]"
                         />
                         <span className="font-medium text-slate-700">{srv}</span>
                       </label>
@@ -396,7 +396,7 @@ export default function BanksPage() {
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => toggleStatus(status)}
-                            className="h-4 w-4 rounded border-slate-300 text-[#FF6500] focus:ring-[#FF6500]"
+                            className="h-4 w-4 rounded border-slate-300 text-[#E95312] focus:ring-[#E95312]"
                           />
                           <span className="font-medium text-slate-700">{status}</span>
                         </div>
@@ -432,7 +432,7 @@ export default function BanksPage() {
                   <button
                     type="button"
                     onClick={clearAllFilters}
-                    className="mt-4 rounded-xl bg-[#FF6500] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#E04B14]"
+                    className="mt-4 rounded-xl bg-[#E95312] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#E04B14]"
                   >
                     Reset all filters
                   </button>
@@ -584,7 +584,7 @@ export default function BanksPage() {
                 href={selectedBankModal.websiteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF6500] py-3 text-center text-xs sm:text-sm font-bold text-white shadow transition hover:bg-[#E04B14]"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E95312] py-3 text-center text-xs sm:text-sm font-bold text-white shadow transition hover:bg-[#E04B14]"
               >
                 <span>Visit Bank&apos;s Official Website</span>
                 <ExternalLink className="h-4 w-4" />

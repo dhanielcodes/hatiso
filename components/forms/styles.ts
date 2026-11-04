@@ -23,7 +23,7 @@ export function fieldControlClass(
       'bg-[#0F222A] text-white placeholder-slate-500',
       opts?.hasError
         ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500'
-        : 'border-slate-600 focus:border-[#FF6500] focus:ring-[#FF6500]',
+        : 'border-slate-600 focus:border-[#E95312] focus:ring-[#E95312]',
       opts?.withIcon ? 'pr-11' : '',
     ]
       .filter(Boolean)
@@ -35,7 +35,7 @@ export function fieldControlClass(
       'w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 transition focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60 bg-white',
       opts?.hasError
         ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500'
-        : 'border-[#E8E4DE] focus:border-[#FF6500] focus:ring-[#FF6500]',
+        : 'border-[#E8E4DE] focus:border-[#E95312] focus:ring-[#E95312]',
       opts?.withIcon ? 'pr-11' : '',
     ]
       .filter(Boolean)
@@ -67,7 +67,7 @@ export function fieldShellClass(
       'bg-[#0F222A]',
       opts?.hasError
         ? 'border-rose-500 focus-within:border-rose-500 focus-within:ring-rose-500'
-        : 'border-slate-600 focus-within:border-[#FF6500] focus-within:ring-[#FF6500]',
+        : 'border-slate-600 focus-within:border-[#E95312] focus-within:ring-[#E95312]',
     ].join(' ');
   }
 
@@ -76,7 +76,7 @@ export function fieldShellClass(
     'bg-white',
     opts?.hasError
       ? 'border-rose-400 focus-within:border-rose-500 focus-within:ring-rose-500'
-      : 'border-slate-200 focus-within:border-[#FF6500] focus-within:ring-2 focus-within:ring-[#FF6500]/20',
+      : 'border-slate-200 focus-within:border-[#E95312] focus-within:ring-2 focus-within:ring-[#E95312]/20',
   ].join(' ');
 }
 
@@ -94,6 +94,6 @@ export function fieldHintClass(variant: FieldVariant = 'light') {
 
 export function checkboxClass(variant: FieldVariant = 'light') {
   return variant === 'dark'
-    ? 'rounded border-slate-600 bg-[#0F222A] text-[#FF6500] focus:ring-[#FF6500]'
-    : 'h-4 w-4 rounded border-slate-300 text-[#FF6500] focus:ring-[#FF6500]';
+    ? 'rounded border-slate-600 bg-[#0F222A] text-[#E95312] focus:ring-[#E95312]'
+    : 'h-4 w-4 rounded border-slate-300 text-[#E95312] focus:ring-[#E95312]';
 }

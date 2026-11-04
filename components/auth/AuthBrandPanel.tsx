@@ -27,7 +27,7 @@ function FloatingIcon({
     <div
       className={`absolute z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] ${className}`}
     >
-      <span className="text-[#FF6500]">{children}</span>
+      <span className="text-[#E95312]">{children}</span>
     </div>
   );
 }
@@ -51,7 +51,7 @@ export default function AuthBrandPanel() {
       <div className="max-w-xl pt-6">
         <h2 className="text-[2.35rem] font-semibold leading-[1.15] tracking-tight xl:text-[2.75rem]">
           Start managing your financial life{' '}
-          <span className="text-[#FF6500]">in one place.</span>
+          <span className="text-[#E95312]">in one place.</span>
         </h2>
         <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/75">
           Join Hatiso to explore trusted services and businesses, connect with your bank

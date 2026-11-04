@@ -98,13 +98,13 @@ export default function MinorAmountField({
           className={`w-full bg-transparent text-sm font-semibold focus:outline-none ${variant === 'dark' ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
         />
       </div>
-      {(minimumMinor !== undefined || maximumMinor !== undefined) && !hint && !hasError ? (
+      {/*    {(minimumMinor !== undefined || maximumMinor !== undefined) && !hint && !hasError ? (
         <p className={`mt-1.5 text-[11px] ${variant === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
           {minimumMinor !== undefined && `Minimum ${currencySymbol}${(minimumMinor / 100).toLocaleString('en-NG')}`}
           {minimumMinor !== undefined && maximumMinor !== undefined && ' · '}
           {maximumMinor !== undefined && `Maximum ${currencySymbol}${(maximumMinor / 100).toLocaleString('en-NG')}`}
         </p>
-      ) : null}
+      ) : null} */}
     </FieldShell>
   );
 }

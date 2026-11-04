@@ -171,7 +171,7 @@ function fieldSchema(field: DigitalServiceFormField): Yup.AnySchema {
       }
     }
   }
-  return field.required ? schema.required(`${field.label} is required`) : schema.optional();
+  return field.required ? schema.required(`${field.label.replace(/\s*\(kobo\)/i, '')} is required`) : schema.optional();
 }
 
 function setSchemaAtPath(target: Record<string, unknown>, path: string, schema: Yup.AnySchema) {
@@ -286,7 +286,7 @@ function DynamicFields({
       <SelectField name="productCode" label="Select product" required placeholder="Select a product" options={products.map((product) => ({ value: product.code, label: product.name }))} onValueChange={onProductChange} />
       {selectedProduct.formFields.filter((field) => field.type !== 'hidden' && field.path !== 'productCode').map((field) => <DynamicFormField key={field.path} field={field} />)}
       {!selectedProduct.formFields.some((field) => field.path === 'email') && <TextField name="email" type="email" label="Email for receipt (optional)" placeholder="Enter your email address" startIcon={<Mail className="h-4 w-4" />} />}
-      <SubmitButton className="w-full rounded-xl bg-[#FF9A62] py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#FF6500] hover:shadow-lg active:scale-[0.99]">Continue</SubmitButton>
+      <SubmitButton className="w-full rounded-xl bg-[#E95312] py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#E95312] hover:shadow-lg active:scale-[0.99]">Continue</SubmitButton>
     </Form>
   );
 }

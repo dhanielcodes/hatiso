@@ -92,7 +92,7 @@ export default function LoginPage() {
                     <div className="flex justify-end">
                       <Link
                         href="/auth/forgot-password"
-                        className="text-[13px] font-medium text-[#FF6500] transition-colors hover:text-[#E84D15]"
+                        className="text-[13px] font-medium text-[#E95312] transition-colors hover:text-[#E84D15]"
                       >
                         Forgot Password
                       </Link>
@@ -101,7 +101,7 @@ export default function LoginPage() {
 
                   <SubmitButton
                     disabled={isLoading}
-                    className="w-full rounded-xl bg-[#F5A56B] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,165,107,0.35)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50"
+                    className="w-full rounded-xl bg-[#FF8A4C] py-3.5 text-sm font-semibold text-white hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50"
                     loadingLabel={
                       <span className="inline-flex items-center justify-center gap-2">
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -119,7 +119,7 @@ export default function LoginPage() {
               Don&apos;t have an account with Hatiso?{' '}
               <Link
                 href="/auth/register"
-                className="font-semibold text-[#FF6500] transition-colors hover:text-[#E84D15]"
+                className="font-semibold text-[#E95312] transition-colors hover:text-[#E84D15]"
               >
                 Create a free account
               </Link>

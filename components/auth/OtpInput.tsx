@@ -86,13 +86,12 @@ export default function OtpInput({
           onPaste={handlePaste}
           onFocus={(e) => e.target.select()}
           aria-label={`OTP digit ${idx + 1}`}
-          className={`h-14 w-12 rounded-xl border-2 text-center text-xl font-bold text-slate-900 transition-all focus:outline-none ${
-            hasError
+          className={`h-14 w-12 rounded-xl border-2 text-center text-xl font-bold text-slate-900 transition-all focus:outline-none ${hasError
               ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
               : filled[idx]
-              ? 'border-[#FF6500] bg-[#FEF0E6] focus:border-[#FF6500] focus:ring-2 focus:ring-[#FF6500]/20'
-              : 'border-[#E8E4DE] bg-white focus:border-[#FF6500] focus:ring-2 focus:ring-[#FF6500]/20'
-          }`}
+                ? 'border-[#E95312] bg-[#FEF0E6] focus:border-[#E95312] focus:ring-2 focus:ring-[#E95312]/20'
+                : 'border-[#E8E4DE] bg-white focus:border-[#E95312] focus:ring-2 focus:ring-[#E95312]/20'
+            }`}
         />
       ))}
     </div>

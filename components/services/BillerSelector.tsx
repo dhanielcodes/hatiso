@@ -60,8 +60,8 @@ export default function BillerSelector({
                 type="button"
                 onClick={() => onSelectBiller(biller.id, biller.name)}
                 className={`relative flex flex-col items-center justify-center transition-all duration-200 focus:outline-none ${isSelected
-                    ? 'rounded-2xl sm:rounded-3xl border border-[#FF6500] bg-[#FBF2ED] py-3.5 px-2 shadow-xs'
-                    : 'rounded-2xl sm:rounded-3xl border border-transparent py-3.5 px-2 hover:bg-white/60'
+                  ? 'rounded-2xl sm:rounded-3xl border border-[#E95312] bg-[#FBF2ED] py-3.5 px-2 shadow-xs'
+                  : 'rounded-2xl sm:rounded-3xl border border-transparent py-3.5 px-2 hover:bg-white/60'
                   }`}
               >
                 {/* Circular Network Logo (Crisp HD 148px asset from mockup) */}
@@ -83,7 +83,7 @@ export default function BillerSelector({
                 {/* Bottom Selection Checkmark or Equal-Height Spacer */}
                 <div className="mt-1.5 flex h-4 w-4 items-center justify-center">
                   {isSelected ? (
-                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#FF6500] text-white shadow-xs">
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#E95312] text-white shadow-xs">
                       <Check className="h-2.5 w-2.5 stroke-[3]" />
                     </div>
                   ) : (

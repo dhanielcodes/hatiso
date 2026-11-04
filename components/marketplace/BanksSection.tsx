@@ -138,7 +138,7 @@ export default function BanksSection() {
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
         <div className="mb-12 text-center space-y-3">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#FF6500]">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#E95312]">
             Banks
           </span>
           <h2 className="text-3xl font-black tracking-tight text-[#0F2833] sm:text-4xl lg:text-5xl">
@@ -180,7 +180,7 @@ export default function BanksSection() {
                 <span className="text-xs sm:text-[13px] font-bold text-[#0F2833] truncate">
                   {bank.name}
                 </span>
-                <div className="flex-shrink-0 ml-1 text-[#FF6500]">
+                <div className="flex-shrink-0 ml-1 text-[#E95312]">
                   <ArrowUpRight className="h-4 w-4 stroke-[2.2]" />
                 </div>
               </div>
@@ -257,7 +257,7 @@ export default function BanksSection() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setSelectedBank(null)}
-                className="w-full rounded-xl bg-[#FF6500] py-3.5 text-center text-sm font-bold text-white hover:bg-[#E84D15] active:scale-[0.98] transition-all duration-150"
+                className="w-full rounded-xl bg-[#E95312] py-3.5 text-center text-sm font-bold text-white hover:bg-[#E84D15] active:scale-[0.98] transition-all duration-150"
               >
                 Continue to bank
               </a>

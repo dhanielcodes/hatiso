@@ -21,7 +21,7 @@ export default function ContactPage() {
   const [submittedName, setSubmittedName] = useState('');
 
   return (
-    <div className="min-h-screen bg-[#1B3C4A] text-white selection:bg-[#FF6500] selection:text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-[#1B3C4A] text-white selection:bg-[#E95312] selection:text-white flex flex-col justify-between">
       <div className="relative overflow-hidden bg-[#1B3C4A]">
         <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-20">
           <svg
@@ -47,7 +47,7 @@ export default function ContactPage() {
         <Navbar />
 
         <div className="relative z-10 mx-auto max-w-4xl px-4 pt-8 pb-16 text-center sm:px-6 sm:pt-12 sm:pb-20">
-          <p className="text-3xl font-bold text-[#FF6500] lg:text-6xl">Reach out</p>
+          <p className="text-3xl font-bold text-[#E95312] lg:text-6xl">Reach out</p>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
             Let&apos;s build with you
           </h1>

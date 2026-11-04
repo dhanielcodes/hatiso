@@ -48,21 +48,21 @@ export default function ProviderSelector({
                 type="button"
                 onClick={() => onSelect(item.id, item.name)}
                 className={`relative flex flex-col items-center justify-center transition-all duration-200 focus:outline-none ${isSelected
-                    ? 'rounded-2xl border border-[#FF6500] bg-[#FBF2ED] py-3 px-1.5 sm:px-2 shadow-xs'
-                    : 'rounded-2xl border border-transparent py-3 px-1.5 sm:px-2 hover:bg-white/60'
+                  ? 'rounded-2xl border border-[#E95312] bg-[#FBF2ED] py-3 px-1.5 sm:px-2 shadow-xs'
+                  : 'rounded-2xl border border-transparent py-3 px-1.5 sm:px-2 hover:bg-white/60'
                   }`}
               >
                 {type === 'image' ? (
                   <>
                     <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-xs font-bold text-[#204657] sm:h-12 sm:w-12">
                       {item.imageSrc ? (
-                    <Image
-                      src={item.imageSrc}
-                      alt={`${item.name} provider`}
-                      fill
-                      sizes="48px"
-                      className="object-contain transition-transform duration-200 hover:scale-105"
-                    />
+                        <Image
+                          src={item.imageSrc}
+                          alt={`${item.name} provider`}
+                          fill
+                          sizes="48px"
+                          className="object-contain transition-transform duration-200 hover:scale-105"
+                        />
                       ) : (
                         item.name.slice(0, 2).toUpperCase()
                       )}
@@ -80,7 +80,7 @@ export default function ProviderSelector({
                 {/* Bottom Selection Checkmark or Equal-Height Spacer */}
                 <div className="mt-1 flex h-4 w-4 items-center justify-center">
                   {isSelected ? (
-                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#FF6500] text-white shadow-xs">
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#E95312] text-white shadow-xs">
                       <Check className="h-2.5 w-2.5 stroke-[3]" />
                     </div>
                   ) : (

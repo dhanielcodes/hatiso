@@ -10,7 +10,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   airtime: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-[#E95312]"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -29,7 +29,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   data: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-[#E95312]"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -49,7 +49,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   electricity: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-[#E95312]"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -68,7 +68,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   tv: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-[#E95312]"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -88,7 +88,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   betting: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-[#E95312]"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -106,7 +106,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   education: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-[#E95312]"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -123,7 +123,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   'government-services': (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-[#E95312]"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -143,7 +143,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   shopping: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-[#E95312]"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -159,7 +159,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   embassies: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-[#E95312]"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -179,7 +179,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   'transport-travel': (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-[#E95312]"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -247,7 +247,7 @@ export default function PopularCategories() {
                 <Link
                   key={serviceCategory}
                   href={category.href}
-                  className="group flex flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 hover:-translate-y-1 hover:ring-2 hover:ring-[#FF6500]/40 active:scale-95"
+                  className="group flex flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 hover:-translate-y-1 hover:ring-2 hover:ring-[#E95312]/40 active:scale-95"
                   style={{ minHeight: '190px' }}
                 >
                   {/* Top Portion: Soft Pale Ice-Blue Tint with Centered Orange Icon */}
@@ -259,7 +259,7 @@ export default function PopularCategories() {
 
                   {/* Bottom Portion: Pure Crisp White with Dark Slate Navy Title */}
                   <div className="flex items-center justify-center bg-white py-3 px-2 text-center">
-                    <span className="text-xs sm:text-sm font-semibold text-[#102A36] transition-colors group-hover:text-[#FF6500]">
+                    <span className="text-xs sm:text-sm font-semibold text-[#102A36] transition-colors group-hover:text-[#E95312]">
                       {category.label}
                     </span>
                   </div>

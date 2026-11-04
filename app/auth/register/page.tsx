@@ -58,12 +58,12 @@ function PhoneInputField({ name, ...rest }: { name: string;[k: string]: unknown 
   return (
     <div>
       <label className="mb-1.5 block text-[13px] font-medium text-[#1C1C1C]">
-        Phone Number <span className="text-[#FF6500]">*</span>
+        Phone Number <span className="text-[#E95312]">*</span>
       </label>
       <div
         className={`flex items-center rounded-xl border bg-white px-4 py-3.5 transition focus-within:ring-1 ${hasError
-            ? 'border-rose-400 focus-within:border-rose-500 focus-within:ring-rose-500'
-            : 'border-[#E8E4DE] focus-within:border-[#FF6500] focus-within:ring-[#FF6500]'
+          ? 'border-rose-400 focus-within:border-rose-500 focus-within:ring-rose-500'
+          : 'border-[#E8E4DE] focus-within:border-[#E95312] focus-within:ring-[#E95312]'
           }`}
       >
         <span className="mr-2 select-none text-sm font-medium text-slate-600">+234</span>
@@ -226,7 +226,7 @@ export default function RegisterPage() {
             {step === 1 && (
               <>
                 <div className="mb-6 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#FF6500]">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#E95312]">
                     STEP 1
                   </p>
                   <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
@@ -300,7 +300,7 @@ export default function RegisterPage() {
                   Already have an account?{' '}
                   <Link
                     href="/auth/login"
-                    className="font-semibold text-[#FF6500] hover:text-[#E84D15]"
+                    className="font-semibold text-[#E95312] hover:text-[#E84D15]"
                   >
                     Sign In
                   </Link>
@@ -312,7 +312,7 @@ export default function RegisterPage() {
             {step === 2 && (
               <>
                 <div className="mb-6 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#FF6500]">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#E95312]">
                     STEP 2
                   </p>
                   <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
@@ -426,7 +426,7 @@ export default function RegisterPage() {
             {step === 3 && (
               <>
                 <div className="mb-8 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#FF6500]">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#E95312]">
                     STEP 3
                   </p>
                   <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
@@ -496,7 +496,7 @@ export default function RegisterPage() {
                         type="button"
                         disabled={isResending}
                         onClick={handleResendOtp}
-                        className="font-semibold text-[#FF6500] hover:text-[#E84D15] disabled:opacity-50"
+                        className="font-semibold text-[#E95312] hover:text-[#E84D15] disabled:opacity-50"
                       >
                         {isResending ? 'Sending...' : 'Click to resend code'}
                       </button>
@@ -543,7 +543,7 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => router.push('/dashboard')}
-              className="mt-7 w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#E84D15] active:scale-[0.99]"
+              className="mt-7 w-full rounded-xl bg-[#E95312] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#E84D15] active:scale-[0.99]"
             >
               Continue to Dashboard
             </button>

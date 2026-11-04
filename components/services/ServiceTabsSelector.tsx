@@ -20,7 +20,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-[#FF6500]"
+        className="h-9 w-9 text-[#E95312]"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -41,7 +41,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-[#FF6500]"
+        className="h-9 w-9 text-[#E95312]"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -63,7 +63,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-[#FF6500]"
+        className="h-9 w-9 text-[#E95312]"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -84,7 +84,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-[#FF6500]"
+        className="h-9 w-9 text-[#E95312]"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -106,7 +106,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-[#FF6500]"
+        className="h-9 w-9 text-[#E95312]"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -127,7 +127,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-[#FF6500]"
+        className="h-9 w-9 text-[#E95312]"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -147,7 +147,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-[#FF6500]"
+        className="h-9 w-9 text-[#E95312]"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -170,7 +170,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-[#FF6500]"
+        className="h-9 w-9 text-[#E95312]"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -189,7 +189,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-[#FF6500]"
+        className="h-9 w-9 text-[#E95312]"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -212,7 +212,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-[#FF6500]"
+        className="h-9 w-9 text-[#E95312]"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -342,7 +342,7 @@ export default function ServiceTabsSelector({
     <section className="my-12 w-full sm:my-16">
       {/* Title & Subtitle */}
       <div className="mb-8 text-center sm:mb-10">
-        <p className="text-xs font-semibold tracking-wide text-[#FF6500] sm:text-sm">
+        <p className="text-xs font-semibold tracking-wide text-[#E95312] sm:text-sm">
           Choose your digital service
         </p>
         <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-white sm:text-3xl lg:text-4xl">
@@ -389,8 +389,8 @@ export default function ServiceTabsSelector({
                 type="button"
                 onClick={() => handleSelect(srv.slug)}
                 className={`group flex h-[125px] w-[105px] flex-shrink-0 flex-col overflow-hidden rounded-2xl transition-all duration-200 active:scale-95 focus:outline-none sm:h-[142px] sm:w-[124px] ${isActive
-                    ? 'border-2 border-[#FF6500] shadow-xl ring-4 ring-[#FF6500]/20'
-                    : 'border border-transparent shadow-sm hover:shadow-md'
+                  ? 'border-2 border-[#E95312] shadow-xl ring-4 ring-[#E95312]/20'
+                  : 'border border-transparent shadow-sm hover:shadow-md'
                   }`}
               >
                 {/* TOP PORTION: Two-Tone upper portion with Centered Orange Icon */}
@@ -406,7 +406,7 @@ export default function ServiceTabsSelector({
                 {/* BOTTOM PORTION: Pure Crisp White with Category Name */}
                 <div className="flex items-center justify-center bg-white py-2.5 px-1.5 text-center">
                   <span
-                    className={`text-xs font-bold transition-colors sm:text-sm ${isActive ? 'text-[#FF6500]' : 'text-[#102A36]'
+                    className={`text-xs font-bold transition-colors sm:text-sm ${isActive ? 'text-[#E95312]' : 'text-[#102A36]'
                       }`}
                   >
                     {srv.name}
