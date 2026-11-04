@@ -275,7 +275,7 @@ function DynamicFields({
   const products = availableProducts(selectedBiller);
   const selectedProduct = products.find((product) => product.code === values.productCode) ?? products[0];
 
-  const categoryTabConfig = {
+  const categoryTabConfig: Record<string, { slug: string; name: string; visualSlug: string }> = {
     airtime: { slug: 'airtime', name: 'Airtime & Data', visualSlug: 'airtime' },
     data: { slug: 'data', name: 'Internet Services', visualSlug: 'data' },
     electricity: { slug: 'electricity', name: 'Electricity', visualSlug: 'electricity' },
