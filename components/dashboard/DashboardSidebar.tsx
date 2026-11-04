@@ -69,7 +69,7 @@ const NAV: NavSection[] = [
       },
     ],
   },
-  /* {
+  {
     section: 'GROW',
     items: [
       {
@@ -84,6 +84,7 @@ const NAV: NavSection[] = [
       },
     ],
   },
+
   {
     section: 'ACCOUNT',
     items: [
@@ -103,7 +104,7 @@ const NAV: NavSection[] = [
         icon: <HelpCircle className="h-[18px] w-[18px]" strokeWidth={2.2} />,
       },
     ],
-  }, */
+  },
 ];
 
 /* ── helpers ───────────────────────────────────────────────────── */
