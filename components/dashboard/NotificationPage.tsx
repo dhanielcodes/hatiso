@@ -161,12 +161,11 @@ export default function NotificationsPage() {
     return (
         <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
             {/* ── Page header ── */}
-            <section className="border-b border-[#F2EAE5] px-5 py-5 sm:px-8 sm:py-6">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#E95312]">Notifications</p>
-                <h1 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#18202A]">
-                    Nothing important <span className="text-[#E95312]">slips by.</span>
-                </h1>
-                <p className="mt-3 text-sm text-[#7E7581]">Payment updates, helpful reminders, offers, and security alerts.</p>
+
+            <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Notifications</p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">  Nothing important <span className="text-[#FF6500]">slips by.</span></h2>
+                <p className="mt-2 text-sm text-[#777486] sm:text-base">Payment updates, helpful reminders, offers, and security alerts.</p>
             </section>
 
             <main className="mx-auto px-5 py-6 sm:px-8 lg:py-7">

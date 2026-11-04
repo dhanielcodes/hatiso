@@ -259,12 +259,14 @@ export default function AnalyticsPage() {
             <section className="border-b border-[#F2EAE5] px-5 py-5 sm:px-8 sm:py-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#E95312]">Insights</p>
-                        <h1 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#18202A]">
-                            Understand where your <span className="text-[#E95312]">money goes.</span>
-                        </h1>
-                        <p className="mt-3 text-sm text-[#7E7581]">Practical patterns and gentle guidance, built from your payment history.</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Insights</p>
+                        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">Understand where your<span className="text-[#FF6500]"> money goes.</span></h2>
+
+                        <p className="mt-2 text-sm text-[#777486] sm:text-base">Practical patterns and gentle guidance, built from your payment history.</p>
+
                     </div>
+
+
 
                     <div className="flex flex-wrap items-center gap-2">
                         <div className="flex items-stretch overflow-visible rounded-lg border border-[#DED8D4] bg-white">
