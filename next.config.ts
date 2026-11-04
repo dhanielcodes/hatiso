@@ -19,6 +19,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "www.vodafone.cz",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
   cacheComponents: true,
