@@ -49,7 +49,7 @@ const step2Schema = Yup.object({
 
 /* ─── Shared button style ───────────────────────────────────────── */
 const BTN =
-  'w-full rounded-xl bg-[#F5A56B] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
+  'w-full rounded-xl bg-[#E95312] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
 
 /* ─── Phone input ───────────────────────────────────────────────── */
 function PhoneInputField({ name, ...rest }: { name: string;[k: string]: unknown }) {
