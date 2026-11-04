@@ -29,6 +29,15 @@ export interface BankItem {
 
 const BANKS_DATA: BankItem[] = [
   {
+    id: 'tm30',
+    status: 'Online',
+    name: 'TM30 MFB',
+    services: ['Transfer', 'Bills', 'Airtime & data', 'Card', 'USSD', 'Virtual account'],
+    logo: '/images/bank_ab_mfb_hq.png',
+    websiteUrl: 'https://tm-30-bank.vercel.app/',
+    description: 'Licensed by the Central Bank of Nigeria to deliver innovative microfinance and retail banking services.',
+  },
+  /* {
     id: 'ibile',
     name: 'IBILE MFB',
     logo: '/images/bank_ibile_hq.png',
@@ -117,7 +126,7 @@ const BANKS_DATA: BankItem[] = [
     services: ['Transfer', 'Bills', 'Airtime & data', 'USSD', 'Virtual account'],
     websiteUrl: 'https://bowenmicrofinancebank.com',
     description: 'Pioneering community-first commercial microfinance and student educational financial services.',
-  },
+  }, */
 ];
 
 const ALL_SERVICES = ['Transfer', 'Bills', 'Airtime & data', 'Card', 'USSD', 'Virtual account'];
