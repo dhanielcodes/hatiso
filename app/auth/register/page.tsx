@@ -14,27 +14,38 @@ import StepIndicator from '@/components/auth/StepIndicator';
 import OtpInput from '@/components/auth/OtpInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 
+/* ─── Sign-up method ───────────────────────────────────────────── */
+type SignupMethod = 'email' | 'phone';
+
 /* ─── Step schemas ─────────────────────────────────────────────── */
-const step1Schema = Yup.object({
-  fullName: Yup.string()
-    .trim()
-    .min(2, 'Name is too short')
-    .test('has-last-name', 'Please enter your first and last name', (val) => {
-      if (!val) return false;
-      const parts = val.trim().split(/\s+/);
-      return parts.length >= 2 && parts[1].length > 0;
-    })
-    .required('Full name is required'),
-  email: Yup.string()
-    .trim()
-    .email('Enter a valid email address')
-    .required('Email is required'),
-  phone: Yup.string()
-    .trim()
-    .min(7, 'Phone number is too short')
-    .required('Phone number is required'),
-  agreeTerms: Yup.boolean().oneOf([true], 'You must agree to the Terms of Service').required(),
-});
+// Only the field for the selected method is validated as required.
+const buildStep1Schema = (method: SignupMethod) =>
+  Yup.object({
+    fullName: Yup.string()
+      .trim()
+      .min(2, 'Name is too short')
+      .test('has-last-name', 'Please enter your first and last name', (val) => {
+        if (!val) return false;
+        const parts = val.trim().split(/\s+/);
+        return parts.length >= 2 && parts[1].length > 0;
+      })
+      .required('Full name is required'),
+    email:
+      method === 'email'
+        ? Yup.string()
+          .trim()
+          .email('Enter a valid email address')
+          .required('Email is required')
+        : Yup.string(),
+    phone:
+      method === 'phone'
+        ? Yup.string()
+          .trim()
+          .matches(/^(\+?234|0)?[789][01]\d{8}$/, 'Enter a valid Nigerian phone number')
+          .required('Phone number is required')
+        : Yup.string(),
+    agreeTerms: Yup.boolean().oneOf([true], 'You must agree to the Terms of Service').required(),
+  });
 
 const step2Schema = Yup.object({
   password: Yup.string()
@@ -50,6 +61,47 @@ const step2Schema = Yup.object({
 /* ─── Shared button style ───────────────────────────────────────── */
 const BTN =
   'w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
+
+/* ─── Email / Phone tab switch ──────────────────────────────────── */
+function MethodTabs({
+  value,
+  onChange,
+}: {
+  value: SignupMethod;
+  onChange: (next: SignupMethod) => void;
+}) {
+  const tabs: { id: SignupMethod; label: string }[] = [
+    { id: 'email', label: 'Email' },
+    { id: 'phone', label: 'Phone' },
+  ];
+
+  return (
+    <div
+      role="tablist"
+      aria-label="Sign up method"
+      className="grid grid-cols-2 gap-1 rounded-xl bg-[#ECE7E0] p-1"
+    >
+      {tabs.map((tab) => {
+        const active = value === tab.id;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(tab.id)}
+            className={`rounded-lg py-2.5 text-[13px] font-semibold transition ${active
+              ? 'bg-white text-[#E95312] shadow-sm'
+              : 'text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 /* ─── Phone input ───────────────────────────────────────────────── */
 function PhoneInputField({ name, ...rest }: { name: string;[k: string]: unknown }) {
@@ -72,6 +124,7 @@ function PhoneInputField({ name, ...rest }: { name: string;[k: string]: unknown 
           {...(rest as React.InputHTMLAttributes<HTMLInputElement>)}
           type="tel"
           inputMode="numeric"
+          autoComplete="tel-national"
           placeholder="_ _ _ _ _ _ _ _ _"
           aria-invalid={hasError}
           className="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
@@ -99,6 +152,7 @@ function formatNigerianPhone(phone: string): string | null {
 /* ─── Saved step-1 data ─────────────────────────────────────────── */
 interface Step1Data {
   fullName: string;
+  method: SignupMethod;
   email: string;
   phone: string;
 }
@@ -109,7 +163,12 @@ export default function RegisterPage() {
   const { login } = useAuthStore();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [step1Data, setStep1Data] = useState<Step1Data>({ fullName: '', email: '', phone: '' });
+  const [step1Data, setStep1Data] = useState<Step1Data>({
+    fullName: '',
+    method: 'email',
+    email: '',
+    phone: '',
+  });
   const [savedPassword, setSavedPassword] = useState('');
   const [userId, setUserId] = useState('');
 
@@ -125,6 +184,11 @@ export default function RegisterPage() {
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdName, setCreatedName] = useState('');
+
+  /* The contact the user signed up with, used for OTP copy and auto-login */
+  const isEmailMethod = step1Data.method === 'email';
+  const formattedPhone = formatNigerianPhone(step1Data.phone);
+  const contactDisplay = isEmailMethod ? step1Data.email : formattedPhone || step1Data.phone;
 
   /* Countdown timer for resend OTP */
   const startCountdown = useCallback(() => {
@@ -160,7 +224,10 @@ export default function RegisterPage() {
     setResendFeedback('');
     try {
       const res = await resendVerification({ userId });
-      setResendFeedback(res.message || 'A new verification code has been sent to your email.');
+      setResendFeedback(
+        res.message ||
+        `A new verification code has been sent to your ${isEmailMethod ? 'email' : 'phone'}.`
+      );
       startCountdown();
     } catch (err: unknown) {
       const msg =
@@ -176,22 +243,25 @@ export default function RegisterPage() {
   /* ── Handle Verify Code ── */
   const handleVerifyOtp = async () => {
     if (otp.length < 6) {
-      setOtpError('Please enter the 6-digit code sent to your email.');
+      setOtpError(
+        `Please enter the 6-digit code sent to your ${isEmailMethod ? 'email' : 'phone'}.`
+      );
       return;
     }
     setIsVerifying(true);
     setOtpError('');
     try {
       await verifyUser({
-        purpose: 'VERIFY_EMAIL',
+        // NOTE: confirm the exact purpose value your backend expects for phone sign-ups
+        purpose: isEmailMethod ? 'VERIFY_EMAIL' : 'VERIFY_PHONE',
         userId,
         code: otp.trim(),
-      });
+      } as Parameters<typeof verifyUser>[0]);
 
       // Verification succeeded! Auto-login the user into dashboard session
       try {
         await login({
-          emailOrPhone: step1Data.email,
+          emailOrPhone: isEmailMethod ? step1Data.email : formattedPhone || step1Data.phone,
           password: savedPassword,
         });
       } catch (loginErr) {
@@ -244,56 +314,75 @@ export default function RegisterPage() {
                     phone: step1Data.phone,
                     agreeTerms: false as boolean,
                   }}
-                  validationSchema={step1Schema}
+                  validationSchema={buildStep1Schema(step1Data.method)}
                   onSubmit={(values) => {
-                    setStep1Data({
+                    setStep1Data((prev) => ({
                       fullName: values.fullName.trim(),
-                      email: values.email.trim(),
-                      phone: values.phone.trim(),
-                    });
+                      method: prev.method,
+                      // Only keep the contact for the chosen method
+                      email: prev.method === 'email' ? values.email.trim() : '',
+                      phone: prev.method === 'phone' ? values.phone.trim() : '',
+                    }));
                     setRegisterError('');
                     setStep(2);
                   }}
                 >
-                  <Form className="space-y-4" noValidate>
-                    <TextField
-                      name="fullName"
-                      label="Full Name"
-                      required
-                      variant="auth"
-                      placeholder="e.g. Mayowa Babs"
-                    />
-                    <TextField
-                      name="email"
-                      type="email"
-                      label="Email Address"
-                      required
-                      variant="auth"
-                      placeholder="e.g. alexandra@example.com"
-                      autoComplete="email"
-                    />
-                    <PhoneInputField name="phone" />
+                  {({ setErrors, setTouched }) => (
+                    <Form className="space-y-4" noValidate>
+                      <MethodTabs
+                        value={step1Data.method}
+                        onChange={(next) => {
+                          if (next === step1Data.method) return;
+                          setStep1Data((prev) => ({ ...prev, method: next }));
+                          // Clear stale errors from the previous tab
+                          setErrors({});
+                          setTouched({}, false);
+                        }}
+                      />
 
-                    <CheckboxField
-                      name="agreeTerms"
-                      variant="auth"
-                      label={
-                        <>
-                          I agree to the{' '}
-                          <Link href="/terms" className="font-semibold text-slate-900 underline">
-                            Terms of Service
-                          </Link>{' '}
-                          and{' '}
-                          <Link href="/privacy" className="font-semibold text-slate-900 underline">
-                            Privacy Policy
-                          </Link>
-                          .
-                        </>
-                      }
-                    />
+                      <TextField
+                        name="fullName"
+                        label="Full Name"
+                        required
+                        variant="auth"
+                        placeholder="e.g. Mayowa Babs"
+                      />
 
-                    <SubmitButton className={BTN}>Continue</SubmitButton>
-                  </Form>
+                      {step1Data.method === 'email' ? (
+                        <TextField
+                          name="email"
+                          type="email"
+                          label="Email Address"
+                          required
+                          variant="auth"
+                          placeholder="e.g. alexandra@example.com"
+                          autoComplete="email"
+                        />
+                      ) : (
+                        <PhoneInputField name="phone" />
+                      )}
+
+                      <CheckboxField
+                        name="agreeTerms"
+                        variant="auth"
+                        label={
+                          <>
+                            I agree to the{' '}
+                            <Link href="/terms" className="font-semibold text-slate-900 underline">
+                              Terms of Service
+                            </Link>{' '}
+                            and{' '}
+                            <Link href="/privacy" className="font-semibold text-slate-900 underline">
+                              Privacy Policy
+                            </Link>
+                            .
+                          </>
+                        }
+                      />
+
+                      <SubmitButton className={BTN}>Continue</SubmitButton>
+                    </Form>
+                  )}
                 </Formik>
 
                 <p className="mt-5 text-center text-[13px] text-slate-500">
@@ -339,16 +428,20 @@ export default function RegisterPage() {
                       const parts = step1Data.fullName.trim().split(/\s+/);
                       const firstName = parts[0] || 'User';
                       const lastName = parts.slice(1).join(' ') || parts[0] || 'User';
-                      const formattedPhone = formatNigerianPhone(step1Data.phone);
+
+                      // Send only the contact the user signed up with
+                      const contact =
+                        step1Data.method === 'email'
+                          ? { email: step1Data.email.trim().toLowerCase() }
+                          : { phone: formatNigerianPhone(step1Data.phone) };
 
                       const res = await registerUser({
                         type: 'INDIVIDUAL',
-                        email: step1Data.email.trim().toLowerCase(),
-                        phone: formattedPhone,
+                        ...contact,
                         password: values.password,
                         firstName,
                         lastName,
-                      });
+                      } as unknown as Parameters<typeof registerUser>[0]);
 
                       setUserId(res.userId);
                       setSavedPassword(values.password);
@@ -433,8 +526,9 @@ export default function RegisterPage() {
                     Account Verification
                   </h1>
                   <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500">
-                    An OTP (One-Time Password) has been sent to{' '}
-                    <span className="font-semibold text-slate-800">{step1Data.email}</span>.
+                    An OTP (One-Time Password) has been sent{' '}
+                    {isEmailMethod ? 'to' : 'by SMS to'}{' '}
+                    <span className="font-semibold text-slate-800">{contactDisplay}</span>.
                     <br />
                     Enter OTP below to verify your account.
                   </p>
@@ -514,7 +608,7 @@ export default function RegisterPage() {
                     }}
                     className="text-xs text-slate-500 hover:text-slate-800 underline"
                   >
-                    Change email or details
+                    {isEmailMethod ? 'Change email or details' : 'Change phone number or details'}
                   </button>
                 </div>
               </>
