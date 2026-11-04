@@ -90,7 +90,6 @@ apiClient.interceptors.response.use(
     };
 
     if (typeof window !== 'undefined') {
-      toast.error(formattedError.message);
 
       if (status === 401) {
         // Clear raw session keys AND the Zustand persist store
@@ -110,9 +109,17 @@ apiClient.interceptors.response.use(
           window.location.href = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
         }
       } else if (status === 403) {
+        toast.error(formattedError.message);
+
         console.error('[Axios Interceptor] Forbidden (403): Access denied.');
       } else if (status === 500) {
+        toast.error(formattedError.message);
+
         console.error('[Axios Interceptor] Internal Server Error (500).');
+      }
+      else {
+        toast.error(formattedError.message);
+
       }
     }
 
