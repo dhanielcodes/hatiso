@@ -107,12 +107,10 @@ export default function TransactionsPage() {
 
   return (
     <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
-      <section className="border-b border-[#F2EAE5] px-5 py-5 sm:px-8 sm:py-6">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#FA5B0B]">Activity</p>
-        <div className="mt-3 flex flex-wrap items-end justify-between gap-2">
-          <div><h1 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">Every payment, <span className="text-[#FF6500]">easy to follow.</span></h1><p className="mt-2 text-[15px] text-[#7E7581]">Track payments, download receipts, repeat a purchase, or get help.</p></div>
-          <div className="inline-flex items-center gap-2 rounded-xl border border-[#DED8D4] bg-white px-3 py-2.5 text-xs text-[#343238]"><CalendarDays className="h-4 w-4 text-[#807A7B]" />Order history</div>
-        </div>
+      <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Activity</p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">Every payment, <span className="text-[#FF6500]">easy to follow.</span></h2>
+        <p className="mt-2 text-sm text-[#777486] sm:text-base">Track payments, download receipts, repeat a purchase, or get help.</p>
       </section>
 
       <main className="space-y-8 px-5 py-8 sm:px-8">
