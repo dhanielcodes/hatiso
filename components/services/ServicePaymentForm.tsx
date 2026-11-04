@@ -275,13 +275,23 @@ function DynamicFields({
   const products = availableProducts(selectedBiller);
   const selectedProduct = products.find((product) => product.code === values.productCode) ?? products[0];
 
+  const categoryTabConfig = {
+    airtime: { slug: 'airtime', name: 'Airtime & Data', visualSlug: 'airtime' },
+    data: { slug: 'data', name: 'Internet Services', visualSlug: 'data' },
+    electricity: { slug: 'electricity', name: 'Electricity', visualSlug: 'electricity' },
+    tv: { slug: 'tv', name: 'Cable TV', visualSlug: 'tv' },
+    EDUCATION: { slug: 'education', name: 'Education', visualSlug: 'education' },
+    INSURANCE: { slug: 'insurance', name: 'Insurance', visualSlug: 'government-services' },
+    OTHER_SERVICES: { slug: 'other-services', name: 'Other Services', visualSlug: 'shopping' },
+  };
+
   if (!selectedBiller || !selectedProduct) return null;
 
   const topLevelError = submitCount > 0 ? Object.values(errors).find((error) => typeof error === 'string') : undefined;
   return (
     <Form className={variant === 'dashboard' ? 'space-y-5' : 'mt-6 space-y-5'} noValidate>
       {variant === 'marketplace' && <div className="text-center">
-        <h2 className="text-xl font-bold capitalize text-slate-900 sm:text-2xl">{activeTitle}</h2>
+        <h2 className="text-xl font-bold capitalize text-slate-900 sm:text-2xl">{categoryTabConfig?.[activeSlug]?.name}</h2>
         <p className="mt-1 text-xs text-slate-500 sm:text-sm">Choose a provider and product to continue.</p>
       </div>}
       {typeof topLevelError === 'string' ? <div className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-600"><AlertCircle className="h-4 w-4 shrink-0" /><span>{topLevelError}</span></div> : null}
