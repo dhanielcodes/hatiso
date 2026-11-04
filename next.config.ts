@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "vtpass.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
   cacheComponents: true,
