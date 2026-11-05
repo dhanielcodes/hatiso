@@ -50,13 +50,149 @@ export interface DashboardData {
   containsDemoData: boolean;
 }
 
+export type ServiceType =
+  | 'AIRTIME'
+  | 'DATA'
+  | 'EDUCATION'
+  | 'ELECTRICITY'
+  | 'INSURANCE'
+  | 'INTERNET'
+  | 'TV'
+  | string;
+
+export type DayOfWeek =
+  | 'MONDAY'
+  | 'TUESDAY'
+  | 'WEDNESDAY'
+  | 'THURSDAY'
+  | 'FRIDAY'
+  | 'SATURDAY'
+  | 'SUNDAY';
+
+export interface SummaryMetric {
+  amountMinor: number;
+  previousAmountMinor: number;
+  changePercent: number;
+}
+
+export interface TransactionCountMetric {
+  count: number;
+  previousCount: number;
+  changePercent: number;
+}
+
+export interface SuccessRateMetric {
+  percent: number;
+  previousPercent: number;
+  changePercentagePoints: number;
+}
+
+export interface Summary {
+  spending: SummaryMetric;
+  transactions: TransactionCountMetric;
+  successRate: SuccessRateMetric;
+  paymentSuccessRatePercent: number;
+  successfulTransactions: number;
+  pendingTransactions: number;
+  failedTransactions: number;
+  reversedTransactions: number;
+  cancelledTransactions: number;
+}
+
+export interface AveragePayment {
+  amountMinor: number;
+  previousAmountMinor: number;
+  differenceMinor: number;
+  changePercent: number;
+}
+
+export interface SpendingOverviewItem {
+  from: string;
+  to: string;
+  amountMinor: number;
+  averageDailySpendMinor: number;
+}
+
+export interface DigitalServicesUsageItem {
+  serviceType: ServiceType;
+  transactions: number;
+  percentage: number;
+  amountMinor: number;
+}
+
+export interface MonthComparisonPoint {
+  day: number;
+  currentAmountMinor: number;
+  previousAmountMinor: number;
+}
+
+export interface MonthComparison {
+  currentMonth: string;
+  previousMonth: string;
+  fromDay: number;
+  throughDay: number;
+  currentAmountMinor: number;
+  previousAmountMinor: number;
+  differenceMinor: number;
+  changePercent: number;
+  points: MonthComparisonPoint[];
+}
+
+export interface PaymentActivityItem {
+  dayOfWeek: DayOfWeek;
+  morning: number;
+  noon: number;
+  evening: number;
+  night: number;
+}
+
+export interface TopProviderItem {
+  providerCode: string;
+  providerName: string;
+  amountMinor: number;
+}
+
+export interface AnalyticsData {
+  currency: string;
+  timezone: string;
+  period: string;
+  from: string;
+  to: string;
+  previousFrom: string;
+  previousTo: string;
+  bucket: DashboardBucket;
+  summary: Summary;
+  averagePayment: AveragePayment;
+  averageMonthlySpendMinor: number;
+  spendingOverview: SpendingOverviewItem[];
+  digitalServicesUsage: DigitalServicesUsageItem[];
+  monthComparison: MonthComparison;
+  paymentActivity: PaymentActivityItem[];
+  topProviders: TopProviderItem[];
+}
+
 interface DashboardResponse {
   code: number;
   status: boolean;
   data: DashboardData;
 }
-
+interface AnalyticsResponse {
+  code: number;
+  status: boolean;
+  data: AnalyticsData;
+}
 export function getDashboard(params: DashboardParams = {}) {
   const queryParams: Record<string, unknown> = { ...params };
   return apiGet<DashboardResponse>('/api/v1/dashboard', queryParams);
+}
+
+
+export function getAnalytics(params: DashboardParams = {}) {
+  const queryParams: Record<string, unknown> = { ...params };
+  return apiGet<AnalyticsResponse>('/api/v1/analytics', queryParams);
+}
+
+export function getAnalyticsCSV(params: DashboardParams = {}) {
+  const queryParams: Record<string, unknown> = { ...params };
+  return apiGet<unknown>('/api/v1/analytics/export', queryParams);
 }
