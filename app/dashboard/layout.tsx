@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Bell, ChevronDown, LayoutPanelTop, Menu } from 'lucide-react';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import { useAuthStore } from '@/lib/store/authStore';
 import Link from 'next/link';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+// 1. Move all layout logic and hooks into this inner component
+function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -45,7 +46,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#FFFAF7]">
-      <DashboardSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Suspense fallback={<div className="w-64" />}>
+        <DashboardSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      </Suspense>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-[#F0E9E5] bg-white px-5 sm:px-7">
           <div className="flex items-center gap-3 text-sm">
@@ -65,7 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="font-medium text-[#2B2930]">{pageName}</span>
           </div>
           <div className="flex items-center gap-5">
-            <Link href='/dashboard/notifications'>
+            <Link href="/dashboard/notifications">
               <button
                 type="button"
                 className="relative flex h-9 w-9 items-center justify-center rounded-md border border-[#EEE9E6] text-[#201E1E]"
@@ -75,9 +78,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#F65A08]" />
               </button>
             </Link>
-            <Link href='/dashboard/profile'>
+            <Link href="/dashboard/profile">
               <div className="hidden items-center gap-3 sm:flex">
-                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#E95312] text-sm font-semibold">
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#E95312] text-sm font-semibold text-white">
                   {user?.avatar ? (
                     <img src={user.avatar} alt="Profile photo" className="h-full w-full object-cover" />
                   ) : (
@@ -96,5 +99,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
+  );
+}
+
+// 2. Wrap the layout in Suspense at the top export level
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#FFFAF7]">Loading dashboard...</div>}>
+      <DashboardContent>{children}</DashboardContent>
+    </Suspense>
   );
 }

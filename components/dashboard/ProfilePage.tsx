@@ -341,18 +341,18 @@ function PersonalDetails({
                     <div>
                         <div className="flex flex-wrap items-center gap-3">
                             <p className="text-lg font-medium text-[#3B4150]">{shownName}</p>
-                            {PROFILE.verified && (
+                            {/*                    {PROFILE.verified && (
                                 <span className="rounded bg-[#DDF0E4] px-2.5 py-1 text-xs font-medium text-[#2E7D4F]">Verified</span>
                             )}
-                            <span className="rounded bg-[#FFF3DB] px-2.5 py-1 text-xs font-medium text-[#9A4A00]">{PROFILE.tier}</span>
+                            <span className="rounded bg-[#FFF3DB] px-2.5 py-1 text-xs font-medium text-[#9A4A00]">{PROFILE.tier}</span> */}
                         </div>
-                        <p className="mt-3 text-sm text-[#7A7F8A]">Member since - {PROFILE.memberSince}</p>
+                        {/* <p className="mt-3 text-sm text-[#7A7F8A]">Member since - {PROFILE.memberSince}</p> */}
                     </div>
                 </div>
-                <div className="pr-1 text-right sm:pr-4">
+                {/*  <div className="pr-1 text-right sm:pr-4">
                     <p className="text-xs text-[#7A7F8A]">Points balance</p>
                     <p className="mt-2 text-sm font-semibold text-[#20232A]">{PROFILE.pointsBalance}</p>
-                </div>
+                </div> */}
             </div>
 
             {/* Details */}

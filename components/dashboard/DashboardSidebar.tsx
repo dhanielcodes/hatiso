@@ -77,11 +77,11 @@ const NAV: NavSection[] = [
         href: '/dashboard/analytics',
         icon: <BarChart3 className="h-[18px] w-[18px]" strokeWidth={2.2} />,
       },
-      {
-        label: 'Rewards',
-        href: '/dashboard/rewards',
-        icon: <Gift className="h-[18px] w-[18px]" strokeWidth={2.2} />,
-      },
+      /*   {
+          label: 'Rewards',
+          href: '/dashboard/rewards',
+          icon: <Gift className="h-[18px] w-[18px]" strokeWidth={2.2} />,
+        }, */
     ],
   },
 

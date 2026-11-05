@@ -1,23 +1,29 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Formik, Form, useField } from 'formik';
 import * as Yup from 'yup';
+import { toast } from 'sonner';
 import { Check, ArrowLeft } from 'lucide-react';
 import { PasswordField, SubmitButton } from '@/components/forms';
 import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
 import XnettLogo from '@/components/auth/XnettLogo';
 import OtpInput from '@/components/auth/OtpInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
+import { forgotPassword, recoverPassword } from '@/lib/api/passwordRecovery';
+
+/* ─── Constants ─────────────────────────────────────────────────── */
+const OTP_LENGTH = 6;
+const RESEND_SECONDS = 52;
 
 /* ─── Validation Schemas ────────────────────────────────────────── */
 const step1Schema = Yup.object({
-  phone: Yup.string()
+  email: Yup.string()
     .trim()
-    .min(7, 'Please enter a valid phone number')
-    .required('Phone number is required'),
+    .email('Please enter a valid email address')
+    .required('Email is required'),
 });
 
 const step3Schema = Yup.object({
@@ -31,18 +37,28 @@ const step3Schema = Yup.object({
     .required('Please confirm your password'),
 });
 
+/* ─── Helpers ───────────────────────────────────────────────────── */
+const getErrorMessage = (err: unknown) =>
+  (err as any)?.response?.data?.message ??
+  (err as any)?.message ??
+  'Something went wrong. Please try again.';
+
+// The recover endpoint checks the code and sets the password in one call, so a bad or
+// expired code only shows up at the last step. These messages send the user back to step 2.
+const looksLikeCodeError = (message: string) => /code|otp|expired|invalid/i.test(message);
+
 /* ─── Button Style ──────────────────────────────────────────────── */
 const ORANGE_BTN =
   'w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(255,101,0,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
 
-/* ─── Phone input component ─────────────────────────────────────── */
-function PhoneInputField({ name, ...rest }: { name: string;[k: string]: unknown }) {
+/* ─── Email input component ─────────────────────────────────────── */
+function EmailInputField({ name }: { name: string }) {
   const [field, meta] = useField(name);
   const hasError = Boolean(meta.touched && meta.error);
   return (
     <div>
-      <label className="mb-1.5 block text-[13px] font-medium text-[#1C1C1C]">
-        Phone Number <span className="text-[#E95312]">*</span>
+      <label htmlFor={name} className="mb-1.5 block text-[13px] font-medium text-[#1C1C1C]">
+        Email <span className="text-[#E95312]">*</span>
       </label>
       <div
         className={`flex items-center rounded-xl border bg-white px-4 py-3.5 transition focus-within:ring-1 ${hasError
@@ -50,13 +66,13 @@ function PhoneInputField({ name, ...rest }: { name: string;[k: string]: unknown 
           : 'border-[#E8E4DE] focus-within:border-[#E95312] focus-within:ring-[#E95312]'
           }`}
       >
-        <span className="mr-2 select-none text-sm font-medium text-slate-600">+234</span>
         <input
           {...field}
-          {...(rest as React.InputHTMLAttributes<HTMLInputElement>)}
-          type="tel"
-          inputMode="numeric"
-          placeholder="904 637 3748"
+          id={name}
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="you@example.com"
           aria-invalid={hasError}
           className="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
         />
@@ -70,45 +86,61 @@ export default function ForgotPasswordPage() {
   const router = useRouter();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [resendCount, setResendCount] = useState(52);
+  const [resendCount, setResendCount] = useState(RESEND_SECONDS);
   const [isSending, setIsSending] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  /* Countdown timer */
-  const startCountdown = useCallback(() => {
-    setResendCount(52);
-    const id = setInterval(() => {
-      setResendCount((n) => {
-        if (n <= 1) {
-          clearInterval(id);
-          return 0;
-        }
-        return n - 1;
-      });
-    }, 1000);
-    return () => clearInterval(id);
+  /* Countdown timer (single interval, cleaned up on unmount) */
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopCountdown = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   }, []);
 
-  /* Step 2 verification */
-  const handleVerifyOtp = async () => {
-    if (otp.length < 6) {
-      setOtpError('Please enter the 6-digit code sent to your phone number.');
+  const startCountdown = useCallback(() => {
+    stopCountdown();
+    setResendCount(RESEND_SECONDS);
+    timerRef.current = setInterval(() => {
+      setResendCount((n) => Math.max(n - 1, 0));
+    }, 1000);
+  }, [stopCountdown]);
+
+  useEffect(() => {
+    if (resendCount === 0) stopCountdown();
+  }, [resendCount, stopCountdown]);
+
+  useEffect(() => stopCountdown, [stopCountdown]);
+
+  /* Step 2: the code is verified together with the new password in step 3 */
+  const handleContinue = () => {
+    if (otp.length < OTP_LENGTH) {
+      setOtpError(`Please enter the ${OTP_LENGTH}-digit code sent to your email.`);
       return;
     }
-    setIsVerifying(true);
     setOtpError('');
+    setStep(3);
+  };
+
+  const handleResend = async () => {
+    if (resendCount > 0 || isResending) return;
+    setIsResending(true);
     try {
-      // Simulate verification step
-      await new Promise((r) => setTimeout(r, 600));
-      setStep(3);
-    } catch {
-      setOtpError('Invalid verification code. Please check and try again.');
+      await forgotPassword(email);
+      setOtp('');
+      setOtpError('');
+      startCountdown();
+      toast.success('A new code has been sent to your email.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     } finally {
-      setIsVerifying(false);
+      setIsResending(false);
     }
   };
 
@@ -125,7 +157,7 @@ export default function ForgotPasswordPage() {
 
         <div className="flex flex-1 flex-col items-center justify-center py-6">
           <div className="w-full max-w-[420px]">
-            {/* ══ STEP 1: RESET YOUR PASSWORD ════════════════════ */}
+            {/* ══ STEP 1: ENTER EMAIL ════════════════════════════ */}
             {step === 1 && (
               <>
                 <div className="mb-7 text-center">
@@ -133,28 +165,34 @@ export default function ForgotPasswordPage() {
                     Reset your password
                   </h1>
                   <p className="mx-auto mt-2 max-w-[340px] text-[13px] leading-relaxed text-slate-500">
-                    Enter your account email and we&apos;ll send a reset link, along with an OTP to
-                    your registered number to keep your account safe.
+                    Enter your account email and we&apos;ll send you a 6-digit code to reset your
+                    password.
                   </p>
                 </div>
 
                 <Formik
-                  initialValues={{ phone: phone || '' }}
+                  initialValues={{ email }}
                   validationSchema={step1Schema}
                   onSubmit={async (values) => {
+                    const value = values.email.trim();
                     setIsSending(true);
                     try {
-                      setPhone(values.phone.trim());
-                      await new Promise((r) => setTimeout(r, 600));
+                      await forgotPassword(value);
+                      setEmail(value);
+                      setOtp('');
+                      setOtpError('');
                       setStep(2);
                       startCountdown();
+                      toast.success('We sent a code to your email.');
+                    } catch (err) {
+                      toast.error(getErrorMessage(err));
                     } finally {
                       setIsSending(false);
                     }
                   }}
                 >
                   <Form className="space-y-5" noValidate>
-                    <PhoneInputField name="phone" />
+                    <EmailInputField name="email" />
 
                     <SubmitButton
                       disabled={isSending}
@@ -166,7 +204,7 @@ export default function ForgotPasswordPage() {
                         </span>
                       }
                     >
-                      Send Link
+                      Send Code
                     </SubmitButton>
                   </Form>
                 </Formik>
@@ -183,22 +221,25 @@ export default function ForgotPasswordPage() {
               </>
             )}
 
-            {/* ══ STEP 2: PHONE NUMBER VERIFICATION ══════════════ */}
+            {/* ══ STEP 2: ENTER CODE ═════════════════════════════ */}
             {step === 2 && (
               <>
                 <div className="mb-8 text-center">
                   <h1 className="text-[1.75rem] font-bold tracking-tight text-[#111111] sm:text-[2rem]">
-                    Phone Number Verification
+                    Check your email
                   </h1>
                   <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-relaxed text-slate-500">
-                    An OTP (One-Time Password) has been sent to your phone number.
+                    We sent a 6-digit code to <span className="font-medium text-slate-700">{email}</span>.
                     <br />
-                    Enter OTP below to verify your phone number.
+                    Enter it below to continue.
                   </p>
                 </div>
 
                 {otpError && (
-                  <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-center text-xs text-rose-600">
+                  <div
+                    role="alert"
+                    className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-center text-xs text-rose-600"
+                  >
                     {otpError}
                   </div>
                 )}
@@ -214,32 +255,22 @@ export default function ForgotPasswordPage() {
 
                 <button
                   type="button"
-                  disabled={isVerifying || otp.length < 6}
-                  onClick={handleVerifyOtp}
+                  disabled={otp.length < OTP_LENGTH}
+                  onClick={handleContinue}
                   className={`${ORANGE_BTN} mt-8`}
                 >
-                  {isVerifying ? (
-                    <span className="inline-flex items-center justify-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Verifying...
-                    </span>
-                  ) : (
-                    'Verify'
-                  )}
+                  Continue
                 </button>
 
                 <p className="mt-5 text-center text-[13px] text-slate-500">
-                  Resend code in {resendCount}s ?{' '}
+                  {resendCount > 0 ? `Resend code in ${resendCount}s ? ` : "Didn't get it? "}
                   <button
                     type="button"
-                    disabled={resendCount > 0}
-                    onClick={() => {
-                      setOtp('');
-                      startCountdown();
-                    }}
+                    disabled={resendCount > 0 || isResending}
+                    onClick={handleResend}
                     className="font-semibold text-[#E95312] hover:text-[#E84D15] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Click to resend code
+                    {isResending ? 'Sending...' : 'Click to resend code'}
                   </button>
                 </p>
 
@@ -247,13 +278,14 @@ export default function ForgotPasswordPage() {
                   <button
                     type="button"
                     onClick={() => {
+                      stopCountdown();
                       setOtp('');
                       setOtpError('');
                       setStep(1);
                     }}
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800"
                   >
-                    <ArrowLeft className="h-3.5 w-3.5" /> Change phone number
+                    <ArrowLeft className="h-3.5 w-3.5" /> Change email
                   </button>
                 </div>
               </>
@@ -274,11 +306,26 @@ export default function ForgotPasswordPage() {
                 <Formik
                   initialValues={{ password: '', confirmPassword: '' }}
                   validationSchema={step3Schema}
-                  onSubmit={async () => {
+                  onSubmit={async (values) => {
                     setIsSending(true);
                     try {
-                      await new Promise((r) => setTimeout(r, 700));
+                      await recoverPassword({
+                        email,
+                        code: otp,
+                        newPassword: values.password,
+                      });
+                      stopCountdown();
                       setShowSuccess(true);
+                    } catch (err) {
+                      const message = getErrorMessage(err);
+                      if (looksLikeCodeError(message)) {
+                        // Bad or expired code: send the user back to re-enter it
+                        setOtp('');
+                        setOtpError(message);
+                        setStep(2);
+                      } else {
+                        toast.error(message);
+                      }
                     } finally {
                       setIsSending(false);
                     }
@@ -288,7 +335,7 @@ export default function ForgotPasswordPage() {
                     <Form className="space-y-4" noValidate>
                       <PasswordField
                         name="password"
-                        label="Password"
+                        label="New Password"
                         required
                         variant="auth"
                         placeholder="••••••••••"
@@ -297,7 +344,7 @@ export default function ForgotPasswordPage() {
 
                       <PasswordField
                         name="confirmPassword"
-                        label="Password"
+                        label="Confirm Password"
                         required
                         variant="auth"
                         placeholder="••••••••••"
@@ -353,4 +400,3 @@ export default function ForgotPasswordPage() {
     </div>
   );
 }
-
