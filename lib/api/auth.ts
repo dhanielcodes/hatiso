@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '@/lib/api/axios';
+import { apiGet, apiPost, apiPut } from '@/lib/api/axios';
 
 export interface LoginCredentials {
   identifier: string;
@@ -40,6 +40,14 @@ export interface RegisterPayload {
   password: string;
   firstName: string;
   lastName: string;
+}
+
+export interface ProfileUpdatePayload {
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  bio: string;
+
 }
 
 export interface RegisterResponseData {
@@ -99,6 +107,51 @@ export async function getCurrentUser() {
 
   if (!response.status || !response.data?.userId) {
     throw new Error('Unable to retrieve your profile.');
+  }
+
+  return response.data;
+}
+
+export async function updateProfile(payload: ProfileUpdatePayload): Promise<RegisterResponseData> {
+  const response = await apiPut<RegisterResponse>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/users/me`, payload);
+
+  if (!response.status || !response.data?.userId) {
+    throw new Error(response.data?.message || 'Profile update failed. Please try again.');
+  }
+
+  return response.data;
+}
+
+export function resetPassword(payload: {
+  "oldPassword": string;
+  "newPassword": string;
+}) {
+  return apiPost<RegisterResponse>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/users/me/password/reset`, payload);
+}
+
+export async function forgotPassword(payload: { email: string }): Promise<{
+  message: string;
+}> {
+  const response = await apiPost<RegisterResponse>('/api/public/auth/password/forgot', payload);
+
+  if (!response.status) {
+    throw new Error(response.data?.message || 'Registration failed. Please try again.');
+  }
+
+  return response.data;
+}
+
+export async function completeForgotPassword(payload: {
+  "email": string;
+  "code": string;
+  "newPassword": string;
+}): Promise<{
+  message: string;
+}> {
+  const response = await apiPost<RegisterResponse>('/api/public/auth/password/recover', payload);
+
+  if (!response.status) {
+    throw new Error(response.data?.message || 'Registration failed. Please try again.');
   }
 
   return response.data;

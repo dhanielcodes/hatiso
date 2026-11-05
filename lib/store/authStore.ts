@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { AuthState, User } from '@/types';
-import { getCurrentUser, loginUser, registerUser } from '@/lib/api/auth';
+import { completeForgotPassword, forgotPassword, getCurrentUser, loginUser, ProfileUpdatePayload, registerUser, resetPassword, updateProfile } from '@/lib/api/auth';
 import { clearAuthSession, persistAuthSession, persistUserEmail } from '@/lib/auth/session';
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -106,7 +106,80 @@ export const useAuthStore = create<AuthState>()(
           throw err;
         }
       },
+      updateProfile: async ({ firstName, lastName, displayName, bio }: ProfileUpdatePayload) => {
+        set({ isLoading: true, error: null });
+        try {
+          const result = await updateProfile({
+            bio,
+            displayName,
+            firstName,
+            lastName,
+          });
 
+          set({ isLoading: false, error: null });
+          return result;
+        } catch (err: unknown) {
+          set({
+            isLoading: false,
+            error: getErrorMessage(err, 'Registration failed. Please try again.'),
+          });
+          throw err;
+        }
+      },
+      resetPassword: async ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => {
+        set({ isLoading: true, error: null });
+        try {
+          const result = await resetPassword({
+            oldPassword,
+            newPassword,
+          });
+
+          set({ isLoading: false, error: null });
+          return result;
+        } catch (err: unknown) {
+          set({
+            isLoading: false,
+            error: getErrorMessage(err, 'Registration failed. Please try again.'),
+          });
+          throw err;
+        }
+      },
+      forgotPassword: async ({ email }: { email: string }) => {
+        set({ isLoading: true, error: null });
+        try {
+          const result = await forgotPassword({
+            email,
+          });
+
+          set({ isLoading: false, error: null });
+          return result;
+        } catch (err: unknown) {
+          set({
+            isLoading: false,
+            error: getErrorMessage(err, 'Registration failed. Please try again.'),
+          });
+          throw err;
+        }
+      },
+      completeForgotPassword: async ({ email, code, newPassword }: { email: string; code: string; newPassword: string }) => {
+        set({ isLoading: true, error: null });
+        try {
+          const result = await completeForgotPassword({
+            email,
+            code,
+            newPassword,
+          });
+
+          set({ isLoading: false, error: null });
+          return result;
+        } catch (err: unknown) {
+          set({
+            isLoading: false,
+            error: getErrorMessage(err, 'Registration failed. Please try again.'),
+          });
+          throw err;
+        }
+      },
       logout: () => {
         clearAuthSession();
         set({

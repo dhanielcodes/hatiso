@@ -2,161 +2,130 @@
 
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { useNotifications } from '@/lib/queries/useNotifications';
 
 /* ─── Types ────────────────────────────────────────────────────── */
-type Category = 'Payment Updates' | 'Reminders' | 'Offers' | 'Security Alerts';
-type CategoryFilter = 'All' | Category;
-type Tone = 'pending' | 'success';
-type StatusFilter = 'All Statuses' | 'Pending' | 'Success';
+type CategoryFilter = 'All' | 'Payment Updates' | 'Reminders' | 'Offers' | 'Security Alerts';
+type StatusFilter = 'All' | 'Pending' | 'Success' | 'Failed';
+type Tone = 'pending' | 'success' | 'failed';
 
-type Notification = {
+/** One item as returned by the API (swap for your own type if you already have one). */
+type ApiNotification = {
     id: string;
-    category: Category;
-    tone: Tone;
-    title: string; // bold part
-    subtitle?: string; // lighter part after the dash
+    category: string; // e.g. "PAYMENT_UPDATES"
+    status: string; // e.g. "PENDING" | "FAILED" | "SUCCESS"
+    eventStatus?: string;
+    title: string;
     message: string;
-    date: string;
-    action: string;
+    orderReference?: string;
+    productName?: string;
+    amountMinor?: number;
+    currency?: string;
+    createdAt: string; // ISO timestamp
 };
+
+type NotificationsPayload = {
+    items: ApiNotification[];
+    page: number;
+    size: number;
+    hasMore: boolean;
+};
+
+/** Accepts either the full envelope ({ code, status, data }) or the inner `data` object. */
+function unwrapNotifications(payload: unknown): NotificationsPayload | undefined {
+    if (!payload || typeof payload !== 'object') return undefined;
+    const candidate = payload as { items?: unknown; data?: unknown };
+    if (Array.isArray(candidate.items)) return payload as NotificationsPayload;
+    if (candidate.data && typeof candidate.data === 'object') {
+        const inner = candidate.data as { items?: unknown };
+        if (Array.isArray(inner.items)) return candidate.data as NotificationsPayload;
+    }
+    return undefined;
+}
 
 /* ─── Constants ────────────────────────────────────────────────── */
 const CATEGORIES: CategoryFilter[] = ['All', 'Payment Updates', 'Reminders', 'Offers', 'Security Alerts'];
-const STATUS_OPTIONS: StatusFilter[] = ['All Statuses', 'Pending', 'Success'];
+const STATUS_OPTIONS: StatusFilter[] = ['All', 'Pending', 'Success', 'Failed'];
 const PAGE_SIZES = [10, 20, 50];
+
+// UI filter → API query value (undefined = no filter)
+const CATEGORY_PARAM: Record<CategoryFilter, string | undefined> = {
+    All: undefined,
+    'Payment Updates': 'PAYMENT_UPDATES',
+    Reminders: 'REMINDERS',
+    Offers: 'OFFERS',
+    'Security Alerts': 'SECURITY_ALERTS',
+};
+const STATUS_PARAM: Record<StatusFilter, string | undefined> = {
+    All: undefined,
+    Pending: 'PENDING',
+    Success: 'SUCCESS',
+    Failed: 'FAILED',
+};
 
 const TONE_DOT: Record<Tone, string> = {
     pending: 'bg-[#F5B53F]',
     success: 'bg-[#4CAF50]',
+    failed: 'bg-[#E22E41]',
 };
 
-/* ─── Dummy data ───────────────────────────────────────────────── */
-type Template = Omit<Notification, 'id' | 'date'> & { date?: string };
-
-// The first six match the screenshot exactly (with their fixed dates)
-const TEMPLATES: Template[] = [
-    {
-        category: 'Payment Updates',
-        tone: 'pending',
-        title: 'Pending',
-        subtitle: 'Payment processing',
-        message: 'Your DSTV subscription is being processed. We’ll notify you once it’s complete.',
-        date: '20 Nov 2026',
-        action: 'View Payment',
-    },
-    {
-        category: 'Payment Updates',
-        tone: 'success',
-        title: 'Success',
-        subtitle: 'Payment successful',
-        message: 'Your ₦2,000 MTN 5GB data purchase was successful. Ref: TXN-20261021-00481',
-        date: '18 Nov 2026',
-        action: 'View Payment',
-    },
-    {
-        category: 'Offers',
-        tone: 'success',
-        title: 'Points Earned',
-        message: 'You earned points+20 points added for your recent purchase. Your balance is now 470 pts.',
-        date: '17 Nov 2026',
-        action: 'View Reward',
-    },
-    {
-        category: 'Offers',
-        tone: 'success',
-        title: 'Points Redeemed',
-        subtitle: 'Reward redeemed',
-        message: 'You redeemed 200 points for ₦500 airtime. Enjoy!',
-        date: '17 Nov 2026',
-        action: 'View Reward',
-    },
-    {
-        category: 'Reminders',
-        tone: 'pending',
-        title: 'Tier Progress',
-        subtitle: 'You’re almost there',
-        message: 'Earn 80 more points to reach Gold tier and unlock better rewards.',
-        date: '16 Nov 2026',
-        action: 'View Reward',
-    },
-    {
-        category: 'Offers',
-        tone: 'success',
-        title: 'Referral',
-        subtitle: 'Invite a friend, earn more',
-        message: 'Share your code and both of you earn 100 points when they make their first purchase.',
-        date: '12 Nov 2026',
-        action: 'View Calendar',
-    },
-    // Extra variety so every filter has results
-    {
-        category: 'Security Alerts',
-        tone: 'success',
-        title: 'Security',
-        subtitle: 'New device sign-in',
-        message: 'Your account was accessed from a new device. If this wasn’t you, change your PIN right away.',
-        action: 'View Activity',
-    },
-    {
-        category: 'Reminders',
-        tone: 'pending',
-        title: 'Reminder',
-        subtitle: 'Bill due soon',
-        message: 'Your IKEDC electricity bill is due in 3 days. Pay early to avoid a late fee.',
-        action: 'View Payment',
-    },
-    {
-        category: 'Offers',
-        tone: 'success',
-        title: 'Offer',
-        subtitle: 'Weekend data bonus',
-        message: 'Buy any data bundle this weekend and earn double points on every purchase.',
-        action: 'View Offer',
-    },
-    {
-        category: 'Payment Updates',
-        tone: 'success',
-        title: 'Success',
-        subtitle: 'Payment successful',
-        message: 'Your ₦5,000 AIRTEL airtime top-up was successful. Ref: TXN-20261002-00317',
-        action: 'View Payment',
-    },
-];
+// Label for the card's action button, by API category
+const ACTION_LABEL: Record<string, string> = {
+    PAYMENT_UPDATES: 'View Payment',
+    REMINDERS: 'View Payment',
+    OFFERS: 'View Offer',
+    SECURITY_ALERTS: 'View Activity',
+};
 
 const DATE_FORMAT = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+const DATE_TIME_FORMAT = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
 
-const NOTIFICATIONS: Notification[] = Array.from({ length: 100 }, (_, i) => {
-    const template = TEMPLATES[i % TEMPLATES.length];
-    // Items without a fixed date step back one day at a time from 11 Nov 2026
-    const date = template.date ?? DATE_FORMAT.format(new Date(2026, 10, 11 - i));
-    return { ...template, id: `n-${i + 1}`, date };
-});
+/* ─── Helpers ──────────────────────────────────────────────────── */
+function toneFor(status: string): Tone {
+    const s = status.toUpperCase();
+    if (['FAILED', 'CANCELLED', 'REVERSED', 'ERROR'].includes(s)) return 'failed';
+    if (['PENDING', 'PROCESSING'].includes(s)) return 'pending';
+    return 'success';
+}
+
+function formatMoney(amountMinor: number, currency = 'NGN') {
+    return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    }).format(amountMinor / 100);
+}
 
 /* ═══════════════════════════════════════════════════════════════ */
 export default function NotificationsPage() {
     const [query, setQuery] = useState('');
-    const [status, setStatus] = useState<StatusFilter>('All Statuses');
+    const [status, setStatus] = useState<StatusFilter>('All');
     const [category, setCategory] = useState<CategoryFilter>('All');
     const [pageSize, setPageSize] = useState(10);
     const [page, setPage] = useState(1);
 
-    const filtered = useMemo(() => {
-        const q = query.trim().toLowerCase();
-        return NOTIFICATIONS.filter((n) => {
-            if (category !== 'All' && n.category !== category) return false;
-            if (status === 'Pending' && n.tone !== 'pending') return false;
-            if (status === 'Success' && n.tone !== 'success') return false;
-            if (!q) return true;
-            return [n.title, n.subtitle ?? '', n.message].some((value) => value.toLowerCase().includes(q));
-        });
-    }, [query, status, category]);
+    // The UI is 1-based (page 1, 2, 3…) but the backend counts pages from 0, so convert only at the API boundary
+    const apiPage = page - 1;
 
-    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-    const currentPage = Math.min(page, totalPages);
-    const startIndex = (currentPage - 1) * pageSize;
-    const visible = filtered.slice(startIndex, startIndex + pageSize);
-    const showingFrom = filtered.length === 0 ? 0 : startIndex + 1;
-    const showingTo = Math.min(startIndex + pageSize, filtered.length);
+    const { data, isLoading, isError } = useNotifications(apiPage, pageSize, STATUS_PARAM[status] as string, CATEGORY_PARAM[category] as string);
+
+    const payload = useMemo(() => unwrapNotifications(data), [data]);
+    const items = useMemo(() => payload?.items ?? [], [payload]);
+
+    // The API has no search param, so search only narrows the page that is currently loaded
+    const visible = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        if (!q) return items;
+        return items.filter((n) =>
+            [n.title, n.message, n.productName ?? '', n.orderReference ?? ''].some((value) => value.toLowerCase().includes(q))
+        );
+    }, [items, query]);
+
+    // The API returns no total count, so the footer is based on the current page and `hasMore`
+    const hasMore = payload?.hasMore ?? false;
+    const showingFrom = items.length === 0 ? 0 : (page - 1) * pageSize + 1;
+    const showingTo = items.length === 0 ? 0 : showingFrom + items.length - 1;
 
     return (
         <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
@@ -177,10 +146,7 @@ export default function NotificationsPage() {
                         <input
                             type="search"
                             value={query}
-                            onChange={(event) => {
-                                setQuery(event.target.value);
-                                setPage(1);
-                            }}
+                            onChange={(event) => setQuery(event.target.value)}
                             placeholder="Search by updates,reminders,offers..."
                             className="h-12 w-full rounded-lg border border-[#E6E3E0] bg-white pl-11 pr-4 text-sm text-[#343238] outline-none placeholder:text-[#A29B9C] focus:border-[#E95312]"
                         />
@@ -226,48 +192,75 @@ export default function NotificationsPage() {
                     </div>
                 </section>
 
+                {isError && (
+                    <p role="alert" className="mt-6 rounded-lg bg-[#FFF0EE] px-4 py-3 text-sm text-[#C0341D]">
+                        We couldn&apos;t load your notifications. Please try again shortly.
+                    </p>
+                )}
+
                 {/* ── Notification list ── */}
                 <section className="mt-6 space-y-4" aria-live="polite">
-                    {visible.map((item) => (
-                        <article
-                            key={item.id}
-                            className="flex flex-col gap-4 rounded-xl border border-[#F4EFEB] bg-white px-6 py-5 sm:flex-row sm:items-start sm:justify-between"
-                        >
-                            <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-3">
-                                    <span className={`h-3 w-3 shrink-0 rounded-full ${TONE_DOT[item.tone]}`} aria-hidden="true" />
-                                    <h2 className="text-[15px] text-[#20232A]">
-                                        <span className="font-semibold">{item.title}</span>
-                                        {item.subtitle && <span className="font-normal"> - {item.subtitle}</span>}
-                                    </h2>
-                                </div>
-                                <p className="mt-4 text-[15px] text-[#52617A]">{item.message}</p>
-                            </div>
-
-                            <div className="flex shrink-0 items-center justify-between gap-4 sm:flex-col sm:items-end sm:justify-start">
-                                <time className="text-sm font-semibold text-[#20232A]">{item.date}</time>
-                                <button
-                                    type="button"
-                                    className="rounded-lg border border-[#E6E3E0] bg-white px-4 py-2 text-sm text-[#52617A] transition hover:bg-slate-50"
-                                >
-                                    {item.action}
-                                </button>
-                            </div>
-                        </article>
-                    ))}
-
-                    {visible.length === 0 && (
+                    {isLoading && (
                         <div className="rounded-xl border border-[#F4EFEB] bg-white px-6 py-16 text-center text-sm text-slate-500">
-                            No notifications match your filters.
+                            Loading notifications…
+                        </div>
+                    )}
+
+                    {!isLoading &&
+                        visible.map((item) => {
+                            const created = new Date(item.createdAt);
+                            const validDate = !Number.isNaN(created.getTime());
+                            const reference = item.orderReference;
+                            const meta = [
+                                typeof item.amountMinor === 'number' ? formatMoney(item.amountMinor, item.currency) : null,
+                                reference ? `Ref: ${reference}` : null,
+                            ].filter(Boolean);
+
+                            return (
+                                <article
+                                    key={item.id}
+                                    className="flex flex-col gap-4 rounded-xl border border-[#F4EFEB] bg-white px-6 py-5 sm:flex-row sm:items-start sm:justify-between"
+                                >
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-3">
+                                            <span className={`h-3 w-3 shrink-0 rounded-full ${TONE_DOT[toneFor(item.status)]}`} aria-hidden="true" />
+                                            <h2 className="text-[15px] text-[#20232A]">
+                                                <span className="font-semibold">{item.title}</span>
+                                                {item.productName && <span className="font-normal"> - {item.productName}</span>}
+                                            </h2>
+                                        </div>
+                                        <p className="mt-4 text-[15px] text-[#52617A]">{item.message}</p>
+                                        {meta.length > 0 && <p className="mt-2 break-all text-xs text-[#8A8F99]">{meta.join(' · ')}</p>}
+                                    </div>
+
+                                    <div className="flex shrink-0 items-center justify-between gap-4 sm:flex-col sm:items-end sm:justify-start">
+                                        {validDate && (
+                                            <time dateTime={item.createdAt} title={DATE_TIME_FORMAT.format(created)} className="text-sm font-semibold text-[#20232A]">
+                                                {DATE_FORMAT.format(created)}
+                                            </time>
+                                        )}
+                                        {/*  <button
+                                            type="button"
+                                            // Hook up navigation here, e.g. to the transaction for `item.orderReference`
+                                            className="rounded-lg border border-[#E6E3E0] bg-white px-4 py-2 text-sm text-[#52617A] transition hover:bg-slate-50"
+                                        >
+                                            {ACTION_LABEL[item.category] ?? 'View Details'}
+                                        </button> */}
+                                    </div>
+                                </article>
+                            );
+                        })}
+
+                    {!isLoading && visible.length === 0 && (
+                        <div className="rounded-xl border border-[#F4EFEB] bg-white px-6 py-16 text-center text-sm text-slate-500">
+                            {query.trim() && items.length > 0 ? 'No notifications on this page match your search.' : 'No notifications match your filters.'}
                         </div>
                     )}
                 </section>
 
                 {/* ── Pagination ── */}
                 <footer className="mt-8 flex flex-wrap items-center justify-between gap-3 px-2 pb-6 text-sm text-[#52617A]">
-                    <span>
-                        Showing {showingFrom}-{showingTo} of {filtered.length} entries
-                    </span>
+                    <span>{items.length === 0 ? 'No entries' : `Showing ${showingFrom}-${showingTo} entries`}</span>
                     <div className="flex items-center gap-4">
                         <span className="flex items-center gap-2">
                             Show
@@ -295,18 +288,18 @@ export default function NotificationsPage() {
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
-                                onClick={() => setPage(Math.max(1, currentPage - 1))}
-                                disabled={currentPage === 1}
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                disabled={page === 1 || isLoading}
                                 aria-label="Previous page"
                                 className="flex h-7 w-8 items-center justify-center rounded-md border border-[#E6E3E0] bg-white transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 <ChevronLeft className="h-4 w-4" />
                             </button>
-                            <span className="min-w-4 text-center text-xs font-semibold text-[#20232A]">{currentPage}</span>
+                            <span className="min-w-4 text-center text-xs font-semibold text-[#20232A]">{page}</span>
                             <button
                                 type="button"
-                                onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
-                                disabled={currentPage === totalPages}
+                                onClick={() => setPage((p) => p + 1)}
+                                disabled={!hasMore || isLoading}
                                 aria-label="Next page"
                                 className="flex h-7 w-8 items-center justify-center rounded-md border border-[#E6E3E0] bg-white transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                             >

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Bell, ChevronDown, LayoutPanelTop, Menu } from 'lucide-react';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import { useAuthStore } from '@/lib/store/authStore';
+import Link from 'next/link';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -64,28 +65,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="font-medium text-[#2B2930]">{pageName}</span>
           </div>
           <div className="flex items-center gap-5">
-            <button
-              type="button"
-              className="relative flex h-9 w-9 items-center justify-center rounded-md border border-[#EEE9E6] text-[#201E1E]"
-              aria-label="Notifications"
-            >
-              <Bell className="h-4 w-4" />
-              <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#F65A08]" />
-            </button>
-            <div className="hidden items-center gap-3 sm:flex">
-              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#F7F7F7] text-sm font-semibold">
-                {user?.avatar ? (
-                  <img src={user.avatar} alt="Profile photo" className="h-full w-full object-cover" />
-                ) : (
-                  displayName.slice(0, 1)
-                )}
+            <Link href='/dashboard/notifications'>
+              <button
+                type="button"
+                className="relative flex h-9 w-9 items-center justify-center rounded-md border border-[#EEE9E6] text-[#201E1E]"
+                aria-label="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#F65A08]" />
+              </button>
+            </Link>
+            <Link href='/dashboard/profile'>
+              <div className="hidden items-center gap-3 sm:flex">
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#E95312] text-sm font-semibold">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt="Profile photo" className="h-full w-full object-cover" />
+                  ) : (
+                    displayName.slice(0, 1)
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium leading-4 text-black">{displayName}</p>
+                  <p className="mt-1 text-xs text-[#7E7B7B]">Personal account</p>
+                </div>
+                <ChevronDown className="h-4 w-4" />
               </div>
-              <div>
-                <p className="text-sm font-medium leading-4 text-black">{displayName}</p>
-                <p className="mt-1 text-xs text-[#7E7B7B]">Personal account</p>
-              </div>
-              <ChevronDown className="h-4 w-4" />
-            </div>
+            </Link>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto">{children}</main>

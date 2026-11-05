@@ -26,5 +26,5 @@ interface OrdersResponse {
 }
 
 export function getDigitalServiceOrders(page: number, size: number) {
-  return apiGet<OrdersResponse>('/api/v1/digital-services/orders', { page, size });
+  return apiGet<OrdersResponse>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/digital-services/orders`, { page, size });
 }

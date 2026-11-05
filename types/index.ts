@@ -1,3 +1,5 @@
+import { ProfileUpdatePayload } from "@/lib/api/auth";
+
 export interface User {
   id: string;
   name: string;
@@ -27,6 +29,10 @@ export interface AuthState {
   logout: () => void;
   clearError: () => void;
   setUser: (user: User | null) => void;
+  completeForgotPassword: ({ email, code, newPassword }: { email: string; code: string; newPassword: string }) => Promise<any>;
+  forgotPassword: ({ email }: { email: string }) => Promise<any>;
+  updateProfile: (payload: ProfileUpdatePayload) => Promise<any>;
+  resetPassword: ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => Promise<any>;
 }
 
 export interface CategoryItem {

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+    useCallback,
     useEffect,
     useMemo,
     useRef,
@@ -10,11 +11,16 @@ import {
     type FormEvent,
     type KeyboardEvent,
 } from 'react';
-import { Bell, Check, ChevronRight, Eye, EyeOff, Lock, LogOut, Pencil, UserPlus, User } from 'lucide-react';
+import { Bell, Check, ChevronRight, Eye, EyeOff, Lock, Pencil, UserPlus, User } from 'lucide-react';
+import { toast } from 'sonner';
+import { useNotificationSettings, useUpdateNotificationSettings } from '@/lib/queries/useNotifications';
+import { useAuthStore } from '@/lib/store/authStore';
+import { getCurrentUser } from '@/lib/api/auth';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 type TabId = 'personal' | 'notifications' | 'privacy';
-type ResetStep = 'phone' | 'otp' | 'password';
+type Channel = 'EMAIL' | 'SMS' | 'OFF';
+type SecurityStep = 'phone' | 'otp' | 'password';
 
 type MenuItem = {
     id: TabId;
@@ -22,46 +28,29 @@ type MenuItem = {
     icon: ComponentType<{ className?: string }>;
 };
 
+type ProfileFields = {
+    firstName: string;
+    lastName: string;
+    displayName: string;
+    bio: string;
+};
+
 /* ─── Constants ────────────────────────────────────────────────── */
+const OTP_LENGTH = 6;
+
 const MENU: MenuItem[] = [
     { id: 'personal', label: 'Personal Details', icon: User },
     { id: 'notifications', label: 'Notification Settings', icon: Bell },
-    { id: 'privacy', label: 'Privacy & Security', icon: Lock },
+    { id: 'privacy', label: 'Reset Password', icon: Lock },
 ];
 
-const OTP_LENGTH = 6;
-const RESEND_SECONDS = 30;
-
-/* ─── Dummy data ───────────────────────────────────────────────── */
-const PROFILE = {
-    fullName: 'Mayowa Babs',
-    phone: '09058398933',
-    registeredPhone: '+234 904 637 3748',
-    email: 'Mayback@gmail.com',
-    memberSince: 'Jan 15, 2026',
-    pointsBalance: '1,250 pts',
-    verified: true,
-    tier: 'Silver',
-};
-
-const NOTIFICATION_GROUPS = [
+const CHANNEL_OPTIONS: { value: Channel; label: string; description: string }[] = [
+    { value: 'EMAIL', label: 'Email', description: 'Receive purchase alerts via email.' },
+    { value: 'SMS', label: 'SMS', description: 'Receive purchase alerts via SMS.' },
     {
-        title: 'General Notifications',
-        description: 'Notifications about requests, transactions and exclusive offers',
-        settings: [
-            { key: 'billPayment', label: 'Bill Payment Alerts', description: 'Receive notifications for every payment.', defaultOn: true },
-            { key: 'transaction', label: 'Transaction Alerts', description: 'Receive notifications for every transactions.', defaultOn: true },
-            { key: 'offers', label: 'Exclusive Offers', description: 'Get exclusive access to promotions, discounts, and more.', defaultOn: false },
-        ],
-    },
-    {
-        title: 'Notification Method',
-        description: 'Choose how you prefer to receive notifications.',
-        settings: [
-            { key: 'email', label: 'Email Notifications', description: 'Receive notifications via email', defaultOn: true },
-            { key: 'push', label: 'Push Notification', description: 'Get real-time updates and alerts directly on your phone', defaultOn: true },
-            { key: 'sms', label: 'SMS Notification', description: 'Receive notification via SMS', defaultOn: false },
-        ],
+        value: 'OFF',
+        label: 'Off',
+        description: 'Turn off external alerts. Purchase updates still appear in your in-app feed.',
     },
 ];
 
@@ -71,24 +60,60 @@ const PASSWORD_RULES = [
     { id: 'length', label: 'At least 8 characters', test: (v: string) => v.length >= 8 },
 ];
 
-/* ─── Small presentational pieces ──────────────────────────────── */
-function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (next: boolean) => void; label: string }) {
-    return (
-        <button
-            type="button"
-            role="switch"
-            aria-checked={checked}
-            aria-label={label}
-            onClick={() => onChange(!checked)}
-            className={`relative mt-0.5 h-[18px] w-8 shrink-0 rounded-full transition-colors ${checked ? 'bg-[#5BAA5F]' : 'bg-[#B8BFC8]'}`}
-        >
-            <span
-                className={`absolute top-[2px] h-3.5 w-3.5 rounded-full bg-white shadow transition-all ${checked ? 'left-[16px]' : 'left-[2px]'}`}
-            />
-        </button>
-    );
-}
+/* Dummy only: no endpoint exists yet for these */
+const PROFILE = {
+    memberSince: 'Jan 15, 2026',
+    pointsBalance: '1,250 pts',
+    verified: true,
+    tier: 'Silver',
+    phone: '+234 904 637 3748',
+};
 
+/* ─── Response helpers ─────────────────────────────────────────── */
+// The payload may live on an axios error (`err.response.data`), on a wrapped response
+// (`{ code, status, data: {...} }`) or be the response itself.
+const readPayload = (x: unknown): any => {
+    const a = x as any;
+    return a?.response?.data ?? a?.data ?? a;
+};
+
+const getErrorMessage = (err: unknown) =>
+    readPayload(err)?.message ?? (err as any)?.message ?? 'Something went wrong. Please try again.';
+
+const FAILURE = /(error|fail|invalid|denied|unauthori[sz]ed)/;
+const SUCCESS = /(success|^ok$|^true$|updated|changed)/;
+const is2xx = (n: number) => !Number.isNaN(n) && n >= 200 && n < 300;
+
+// True when a resolved value OR a thrown value is really a success response.
+const isSuccessPayload = (x: unknown): boolean => {
+    if (x == null) return false;
+    const a = x as any;
+    const payload = readPayload(x);
+
+    // A real HTTP status decides everything
+    const http = Number(a?.response?.status ?? (typeof a?.status === 'number' ? a.status : NaN));
+    if (!Number.isNaN(http)) return is2xx(http);
+
+    // Network failure / timeout
+    if (a?.isAxiosError && !a?.response) return false;
+
+    // Explicit failure markers win over success markers
+    const status = String(payload?.status ?? '').toLowerCase();
+    const code = String(payload?.code ?? '').toLowerCase();
+    const numCode = Number(payload?.code);
+    if (payload?.success === false) return false;
+    if (FAILURE.test(status) || FAILURE.test(code)) return false;
+    if (!Number.isNaN(numCode) && !is2xx(numCode)) return false;
+
+    return payload?.success === true || SUCCESS.test(status) || SUCCESS.test(code) || is2xx(numCode);
+};
+
+const getSuccessMessage = (x: unknown, fallback: string) => {
+    const payload = readPayload(x);
+    return payload?.message ?? payload?.data?.message ?? fallback;
+};
+
+/* ─── Small presentational pieces ──────────────────────────────── */
 function PasswordField({
     id,
     label,
@@ -130,70 +155,71 @@ function PasswordField({
     );
 }
 
-/** Row of single-digit boxes: auto-advance, backspace-to-previous, arrow keys and paste support. */
-function OtpInput({ digits, onChange }: { digits: string[]; onChange: (next: string[]) => void }) {
+// Six single-digit boxes with auto-advance, backspace and paste support
+function OtpInput({
+    digits,
+    onChange,
+    disabled,
+}: {
+    digits: string[];
+    onChange: (next: string[]) => void;
+    disabled?: boolean;
+}) {
     const refs = useRef<(HTMLInputElement | null)[]>([]);
 
-    const focusAt = (index: number) => {
-        const el = refs.current[Math.max(0, Math.min(OTP_LENGTH - 1, index))];
-        el?.focus();
-        el?.select();
-    };
-
-    const setAt = (index: number, digit: string) => {
+    const fill = (start: number, raw: string) => {
+        const chars = raw.replace(/\D/g, '').slice(0, OTP_LENGTH - start).split('');
+        if (chars.length === 0) return;
         const next = digits.slice();
-        next[index] = digit;
+        chars.forEach((c, k) => {
+            next[start + k] = c;
+        });
         onChange(next);
-    };
-
-    const handleChange = (index: number, raw: string) => {
-        const digit = raw.replace(/\D/g, '').slice(-1);
-        setAt(index, digit);
-        if (digit && index < OTP_LENGTH - 1) focusAt(index + 1);
+        refs.current[Math.min(start + chars.length, OTP_LENGTH - 1)]?.focus();
     };
 
     const handleKeyDown = (index: number, event: KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === 'Backspace' && !digits[index] && index > 0) {
+        if (event.key === 'Backspace') {
             event.preventDefault();
-            setAt(index - 1, '');
-            focusAt(index - 1);
-        } else if (event.key === 'ArrowLeft') {
-            event.preventDefault();
-            focusAt(index - 1);
-        } else if (event.key === 'ArrowRight') {
-            event.preventDefault();
-            focusAt(index + 1);
+            const next = digits.slice();
+            if (next[index]) {
+                next[index] = '';
+            } else if (index > 0) {
+                next[index - 1] = '';
+                refs.current[index - 1]?.focus();
+            }
+            onChange(next);
+        } else if (event.key === 'ArrowLeft' && index > 0) {
+            refs.current[index - 1]?.focus();
+        } else if (event.key === 'ArrowRight' && index < OTP_LENGTH - 1) {
+            refs.current[index + 1]?.focus();
         }
     };
 
-    const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
-        const pasted = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
-        if (!pasted) return;
+    const handlePaste = (index: number, event: ClipboardEvent<HTMLInputElement>) => {
         event.preventDefault();
-        const next = Array.from({ length: OTP_LENGTH }, (_, i) => pasted[i] ?? '');
-        onChange(next);
-        focusAt(Math.min(pasted.length, OTP_LENGTH - 1));
+        fill(index, event.clipboardData.getData('text'));
     };
 
     return (
-        <div className="flex gap-2 sm:gap-3" role="group" aria-label="One-time password">
+        <div className="flex gap-3 sm:gap-5" role="group" aria-label="One-time passcode">
             {digits.map((digit, index) => (
                 <input
                     key={index}
                     ref={(el) => {
                         refs.current[index] = el;
                     }}
-                    type="text"
+                    value={digit}
+                    onChange={(event) => fill(index, event.target.value)}
+                    onKeyDown={(event) => handleKeyDown(index, event)}
+                    onPaste={(event) => handlePaste(index, event)}
+                    onFocus={(event) => event.target.select()}
+                    disabled={disabled}
                     inputMode="numeric"
                     autoComplete={index === 0 ? 'one-time-code' : 'off'}
                     maxLength={1}
-                    value={digit}
                     aria-label={`Digit ${index + 1}`}
-                    onChange={(event) => handleChange(index, event.target.value)}
-                    onKeyDown={(event) => handleKeyDown(index, event)}
-                    onPaste={handlePaste}
-                    onFocus={(event) => event.target.select()}
-                    className="h-14 w-11 rounded-lg border border-[#E95312] bg-[#FFF5EF] text-center text-xl font-medium text-[#E95312] outline-none transition focus:ring-2 focus:ring-[#E95312]/30 sm:h-16 sm:w-14"
+                    className="h-[72px] w-[52px] rounded-xl border border-[#E6E3E0] bg-white text-center text-xl font-medium text-[#20232A] outline-none transition focus:border-[#E95312] disabled:opacity-60 sm:h-[90px] sm:w-[68px]"
                 />
             ))}
         </div>
@@ -201,26 +227,101 @@ function OtpInput({ digits, onChange }: { digits: string[]; onChange: (next: str
 }
 
 /* ─── Tab: Personal Details ────────────────────────────────────── */
-function PersonalDetails() {
+const fromUser = (u?: any): ProfileFields => ({
+    firstName: u?.firstName ?? '',
+    lastName: u?.lastName ?? '',
+    displayName: u?.displayName ?? '',
+    bio: u?.bio ?? '',
+});
+
+function PersonalDetails({
+    user,
+    loading,
+    loadError,
+    onRetry,
+    updateProfile,
+}: {
+    user?: any;
+    loading: boolean;
+    loadError: string | null;
+    onRetry: () => void;
+    updateProfile: (payload: ProfileFields) => Promise<unknown>;
+}) {
+    const [isSaving, setIsSaving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [details, setDetails] = useState({ fullName: PROFILE.fullName, phone: PROFILE.phone, email: PROFILE.email });
-    const [draft, setDraft] = useState(details);
+    const [details, setDetails] = useState<ProfileFields>(() => fromUser(user));
+    const [draft, setDraft] = useState<ProfileFields>(details);
+
+    // Keep in sync when the user loads or refetches
+    useEffect(() => {
+        const next = fromUser(user);
+        setDetails(next);
+        setDraft(next);
+    }, [user]);
 
     const startEdit = () => {
         setDraft(details);
         setIsEditing(true);
     };
 
-    const save = () => {
-        setDetails(draft);
-        setIsEditing(false);
+    const canSave = Boolean(draft.firstName.trim() && draft.lastName.trim()) && !isSaving;
+
+    const save = async () => {
+        if (!canSave) return;
+        setIsSaving(true);
+        const payload: ProfileFields = {
+            firstName: draft.firstName.trim(),
+            lastName: draft.lastName.trim(),
+            displayName: draft.displayName.trim(),
+            bio: draft.bio.trim(),
+        };
+        try {
+            await updateProfile(payload);
+            setDetails(payload);
+            setIsEditing(false);
+            toast.success('Profile updated.');
+        } catch (err) {
+            toast.error(getErrorMessage(err));
+        } finally {
+            setIsSaving(false);
+        }
     };
 
-    const fields: { key: keyof typeof details; label: string; type: string }[] = [
-        { key: 'fullName', label: 'Full Name', type: 'text' },
-        { key: 'phone', label: 'Phone Number', type: 'tel' },
-        { key: 'email', label: 'Email', type: 'email' },
+    const editable: { key: keyof ProfileFields; label: string; multiline?: boolean }[] = [
+        { key: 'firstName', label: 'First Name' },
+        { key: 'lastName', label: 'Last Name' },
+        { key: 'displayName', label: 'Display Name' },
+        { key: 'bio', label: 'Bio', multiline: true },
     ];
+
+    const shownName = details.displayName || `${details.firstName} ${details.lastName}`.trim() || '—';
+    const inputCls =
+        'w-full max-w-sm rounded-lg border border-[#E6E3E0] bg-white px-3 text-base text-[#20232A] outline-none focus:border-[#E95312]';
+
+    if (loading) {
+        return (
+            <div>
+                <h2 className="text-xl font-medium text-[#243B4A]">Personal Details</h2>
+                <p className="mt-8 text-sm text-[#7A7F8A]">Loading your details…</p>
+            </div>
+        );
+    }
+
+    if (loadError && !user) {
+        return (
+            <div>
+                <h2 className="text-xl font-medium text-[#243B4A]">Personal Details</h2>
+                <p className="mt-8 text-sm text-[#E22E41]" role="alert">{loadError}</p>
+                <button
+                    type="button"
+                    onClick={onRetry}
+                    className="mt-4 rounded-md border border-[#E6E3E0] bg-white px-3 py-1.5 text-xs text-[#20232A] transition hover:bg-slate-50"
+                >
+                    Try again
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -229,12 +330,17 @@ function PersonalDetails() {
             {/* Profile summary */}
             <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#F6F6F7] px-6 py-5">
                 <div className="flex items-center gap-5">
-                    <span className="flex h-[65px] w-[65px] shrink-0 items-center justify-center rounded-full bg-[#E3E5E8]">
-                        <UserPlus className="h-6 w-6 text-[#20232A]" />
+                    <span className="flex h-[65px] w-[65px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E3E5E8]">
+                        {user?.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                            <UserPlus className="h-6 w-6 text-[#20232A]" />
+                        )}
                     </span>
                     <div>
                         <div className="flex flex-wrap items-center gap-3">
-                            <p className="text-lg font-medium text-[#3B4150]">{details.fullName}</p>
+                            <p className="text-lg font-medium text-[#3B4150]">{shownName}</p>
                             {PROFILE.verified && (
                                 <span className="rounded bg-[#DDF0E4] px-2.5 py-1 text-xs font-medium text-[#2E7D4F]">Verified</span>
                             )}
@@ -251,22 +357,24 @@ function PersonalDetails() {
 
             {/* Details */}
             <div className="mt-6 rounded-2xl border border-[#F0EDEA] bg-[#F9F9FA] px-6 pb-6 pt-5">
-                <div className="flex justify-end gap-2">
+                <div className="flex items-center justify-end gap-2">
                     {isEditing ? (
                         <>
                             <button
                                 type="button"
                                 onClick={() => setIsEditing(false)}
-                                className="rounded-md border border-[#E6E3E0] bg-white px-3 py-1.5 text-xs text-[#52617A] transition hover:bg-slate-50"
+                                disabled={isSaving}
+                                className="rounded-md border border-[#E6E3E0] bg-white px-3 py-1.5 text-xs text-[#52617A] transition hover:bg-slate-50 disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={save}
-                                className="rounded-md bg-[#E95312] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#D44A10]"
+                                disabled={!canSave}
+                                className="rounded-md bg-[#E95312] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#D44A10] disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                Save
+                                {isSaving ? 'Saving…' : 'Save'}
                             </button>
                         </>
                     ) : (
@@ -281,7 +389,7 @@ function PersonalDetails() {
                 </div>
 
                 <dl className="mt-1">
-                    {fields.map((field, index) => (
+                    {editable.map((field, index) => (
                         <div key={field.key} className={`px-3 py-5 ${index > 0 ? 'border-t border-[#E6E3E0]' : ''}`}>
                             <dt>
                                 <label htmlFor={`profile-${field.key}`} className="text-sm text-[#52617A]">
@@ -290,15 +398,25 @@ function PersonalDetails() {
                             </dt>
                             <dd className="mt-1.5">
                                 {isEditing ? (
-                                    <input
-                                        id={`profile-${field.key}`}
-                                        type={field.type}
-                                        value={draft[field.key]}
-                                        onChange={(event) => setDraft((d) => ({ ...d, [field.key]: event.target.value }))}
-                                        className="h-10 w-full max-w-sm rounded-lg border border-[#E6E3E0] bg-white px-3 text-base text-[#20232A] outline-none focus:border-[#E95312]"
-                                    />
+                                    field.multiline ? (
+                                        <textarea
+                                            id={`profile-${field.key}`}
+                                            rows={3}
+                                            value={draft[field.key]}
+                                            onChange={(e) => setDraft((d) => ({ ...d, [field.key]: e.target.value }))}
+                                            className={`${inputCls} py-2`}
+                                        />
+                                    ) : (
+                                        <input
+                                            id={`profile-${field.key}`}
+                                            type="text"
+                                            value={draft[field.key]}
+                                            onChange={(e) => setDraft((d) => ({ ...d, [field.key]: e.target.value }))}
+                                            className={`${inputCls} h-10`}
+                                        />
+                                    )
                                 ) : (
-                                    <p className="text-base font-medium text-[#20232A]">{details[field.key]}</p>
+                                    <p className="text-base font-medium text-[#20232A]">{details[field.key] || '—'}</p>
                                 )}
                             </dd>
                         </div>
@@ -311,186 +429,285 @@ function PersonalDetails() {
 
 /* ─── Tab: Notification Settings ───────────────────────────────── */
 function NotificationSettings() {
-    const [values, setValues] = useState<Record<string, boolean>>(() =>
-        Object.fromEntries(NOTIFICATION_GROUPS.flatMap((g) => g.settings.map((s) => [s.key, s.defaultOn])))
-    );
+    const { data, isLoading, isError } = useNotificationSettings();
+    const update = useUpdateNotificationSettings();
+    const [selected, setSelected] = useState<Channel | undefined>();
+
+    // Handles both `{ code, status, data: {...} }` and an already-unwrapped response
+    const settings = (data as any)?.data ?? data;
+    const current: Channel | undefined = settings?.purchaseChannel;
+    const available: string[] = settings?.availableChannels ?? [];
+
+    useEffect(() => {
+        if (current) setSelected(current);
+    }, [current]);
+
+    const choose = (value: Channel) => {
+        if (value === selected || update.isPending) return;
+        const previous = selected;
+        setSelected(value); // optimistic
+        update.mutate({ purchaseChannel: value } as any, {
+            onSuccess: () => toast.success('Notification preference saved.'),
+            onError: (err: unknown) => {
+                setSelected(previous);
+                toast.error(getErrorMessage(err));
+            },
+        });
+    };
 
     return (
         <div className="max-w-[690px]">
             <h2 className="text-xl font-medium text-[#243B4A]">Notification Settings</h2>
-            <div className="mt-5 border-t border-[#EEEAE6]">
-                {NOTIFICATION_GROUPS.map((group, index) => (
-                    <section
-                        key={group.title}
-                        className={`grid gap-6 py-6 md:grid-cols-[1fr_1fr] ${index > 0 ? 'border-t border-[#EEEAE6]' : ''}`}
-                    >
-                        <div>
-                            <h3 className="text-base font-medium text-[#243B4A]">{group.title}</h3>
-                            <p className="mt-2 max-w-[300px] text-sm text-[#7A7F8A]">{group.description}</p>
-                        </div>
-                        <ul className="space-y-6">
-                            {group.settings.map((setting) => (
-                                <li key={setting.key} className="flex items-start gap-4">
-                                    <Toggle
-                                        checked={values[setting.key]}
-                                        onChange={(next) => setValues((v) => ({ ...v, [setting.key]: next }))}
-                                        label={setting.label}
-                                    />
-                                    <div>
-                                        <p className="text-sm font-medium text-[#20232A]">{setting.label}</p>
-                                        <p className="mt-2 max-w-[260px] text-xs leading-relaxed text-[#8A8F99]">{setting.description}</p>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    </section>
-                ))}
+            <div className="mt-5 grid gap-6 border-t border-[#EEEAE6] py-6 md:grid-cols-[1fr_1fr]">
+                <div>
+                    <h3 className="text-base font-medium text-[#243B4A]">Purchase Alerts</h3>
+                    <p className="mt-2 max-w-[300px] text-sm text-[#7A7F8A]">
+                        Choose how you want to be notified about your purchases.
+                    </p>
+                </div>
+
+                {isLoading ? (
+                    <p className="text-sm text-[#7A7F8A]">Loading…</p>
+                ) : isError ? (
+                    <p className="text-sm text-[#E22E41]">Couldn&apos;t load your notification settings.</p>
+                ) : (
+                    <div role="radiogroup" aria-label="Purchase alert channel" className="space-y-5">
+                        {CHANNEL_OPTIONS.map((opt) => {
+                            const enabled = opt.value === 'OFF' || available.includes(opt.value);
+                            const checked = selected === opt.value;
+                            return (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={checked}
+                                    disabled={!enabled || update.isPending}
+                                    onClick={() => choose(opt.value)}
+                                    className="flex w-full items-start gap-4 text-left disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <span
+                                        className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 ${checked ? 'border-[#E95312]' : 'border-[#B8BFC8]'
+                                            }`}
+                                    >
+                                        {checked && <span className="h-2 w-2 rounded-full bg-[#E95312]" />}
+                                    </span>
+                                    <span>
+                                        <span className="block text-sm font-medium text-[#20232A]">{opt.label}</span>
+                                        <span className="mt-1 block max-w-[260px] text-xs leading-relaxed text-[#8A8F99]">
+                                            {enabled ? opt.description : `${opt.label} isn't verified on your account yet.`}
+                                        </span>
+                                    </span>
+                                </button>
+                            );
+                        })}
+                        <p className="text-xs text-[#8A8F99]">Push notifications aren&apos;t available yet.</p>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
-/* ─── Privacy & Security: Step 1 — Verify Number ───────────────── */
-function VerifyNumberStep({ onSent }: { onSent: () => void }) {
-    const [phone, setPhone] = useState(PROFILE.registeredPhone);
-    const valid = phone.replace(/\D/g, '').length >= 10;
+/* ─── Privacy & Security: step 1 – verify number ───────────────── */
+function VerifyPhoneStep({
+    phone,
+    onPhoneChange,
+    editable,
+    sendOtp,
+    onSent,
+}: {
+    phone: string;
+    onPhoneChange: (value: string) => void;
+    editable: boolean;
+    sendOtp: (phone: string) => Promise<unknown>;
+    onSent: () => void;
+}) {
+    const [isSending, setIsSending] = useState(false);
 
-    const handleSubmit = (event: FormEvent) => {
+    const digitCount = phone.replace(/\D/g, '').length;
+    const canSubmit = digitCount >= 10 && !isSending;
+
+    const handleSubmit = async (event: FormEvent) => {
         event.preventDefault();
-        if (!valid) return;
-        // Dummy only: call your "send reset link + OTP" endpoint here
-        onSent();
+        if (!canSubmit) return;
+        setIsSending(true);
+        try {
+            await sendOtp(phone);
+            onSent();
+        } catch (err) {
+            // Some backends reject on 2xx wrappers – don't block the flow in that case
+            if (isSuccessPayload(err)) onSent();
+            else toast.error(getErrorMessage(err));
+        } finally {
+            setIsSending(false);
+        }
     };
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-[560px]" noValidate>
+        <form onSubmit={handleSubmit} className="max-w-[622px]" noValidate>
             <h2 className="text-xl font-medium text-[#243B4A]">Verify Number</h2>
             <div className="mt-5 border-t border-[#EEEAE6]" />
 
-            <p className="mt-7 text-sm leading-relaxed text-[#52617A] sm:text-base">
-                Enter your account email and we&apos;ll send a reset link, along with an OTP to your registered number to keep your account safe.
+            <p className="mt-7 text-base leading-relaxed text-[#6B7280]">
+                Enter your account email and we&apos;ll send a reset link, along with an OTP to your registered number to keep your
+                account safe.
             </p>
 
-            <div className="mt-7">
+            <div className="mt-10">
                 <label htmlFor="verify-phone" className="text-sm font-medium text-[#52617A]">
                     Phone Number <span className="text-[#E22E41]">*</span>
                 </label>
                 <input
                     id="verify-phone"
                     type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
                     value={phone}
-                    onChange={(event) => setPhone(event.target.value)}
-                    className="mt-2 h-12 w-full rounded-lg border border-[#E6E3E0] bg-white px-4 text-sm tracking-wide text-[#20232A] outline-none transition focus:border-[#E95312]"
+                    onChange={(event) => onPhoneChange(event.target.value)}
+                    readOnly={!editable}
+                    autoComplete="tel"
+                    className={`mt-2 h-11 w-full rounded-lg border border-[#E6E3E0] px-3.5 text-sm text-[#20232A] outline-none transition focus:border-[#E95312] ${editable ? 'bg-white' : 'bg-[#FBFBFB]'
+                        }`}
                 />
             </div>
 
-            <div className="mt-16 flex justify-end">
+            <div className="mt-24 flex justify-end">
                 <button
                     type="submit"
-                    disabled={!valid}
-                    className="rounded-lg bg-[#EE7230] px-8 py-3.5 text-sm font-semibold text-white transition hover:bg-[#D9622B] disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={!canSubmit}
+                    className="rounded-lg bg-[#EE7230] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#D9622B] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                    Verify identity
+                    {isSending ? 'Sending code…' : 'Verify identity'}
                 </button>
             </div>
         </form>
     );
 }
 
-/* ─── Privacy & Security: Step 2 — Enter OTP ───────────────────── */
-function OtpStep({ onVerified, onBack }: { onVerified: () => void; onBack: () => void }) {
+/* ─── Privacy & Security: step 2 – enter OTP ───────────────────── */
+function OtpStep({
+    phone,
+    sendOtp,
+    verifyOtp,
+    onVerified,
+}: {
+    phone: string;
+    sendOtp: (phone: string) => Promise<unknown>;
+    verifyOtp: (phone: string, code: string) => Promise<unknown>;
+    onVerified: () => void;
+}) {
     const [digits, setDigits] = useState<string[]>(() => Array(OTP_LENGTH).fill(''));
-    const [seconds, setSeconds] = useState(RESEND_SECONDS);
-    const complete = digits.every(Boolean);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [isResending, setIsResending] = useState(false);
 
-    useEffect(() => {
-        if (seconds <= 0) return;
-        const timer = setTimeout(() => setSeconds((s) => s - 1), 1000);
-        return () => clearTimeout(timer);
-    }, [seconds]);
+    const code = digits.join('');
+    const canSubmit = code.length === OTP_LENGTH && !isVerifying;
 
-    const handleResend = () => {
-        // Dummy only: call your "resend OTP" endpoint here
-        setDigits(Array(OTP_LENGTH).fill(''));
-        setSeconds(RESEND_SECONDS);
+    const handleSubmit = async (event: FormEvent) => {
+        event.preventDefault();
+        if (!canSubmit) return;
+        setIsVerifying(true);
+        try {
+            await verifyOtp(phone, code);
+            onVerified();
+        } catch (err) {
+            if (isSuccessPayload(err)) {
+                onVerified();
+            } else {
+                toast.error(getErrorMessage(err));
+                setDigits(Array(OTP_LENGTH).fill(''));
+            }
+        } finally {
+            setIsVerifying(false);
+        }
     };
 
-    const handleSubmit = (event: FormEvent) => {
-        event.preventDefault();
-        if (!complete) return;
-        // Dummy only: verify digits.join('') against your backend here
-        onVerified();
+    const resend = async () => {
+        if (isResending) return;
+        setIsResending(true);
+        try {
+            const res = await sendOtp(phone);
+            toast.success(getSuccessMessage(res, 'A new code has been sent.'));
+        } catch (err) {
+            if (isSuccessPayload(err)) toast.success(getSuccessMessage(err, 'A new code has been sent.'));
+            else toast.error(getErrorMessage(err));
+        } finally {
+            setIsResending(false);
+        }
     };
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-[560px]" noValidate>
+        <form onSubmit={handleSubmit} className="max-w-[622px]" noValidate>
             <h2 className="text-xl font-medium text-[#243B4A]">Verify Number</h2>
             <div className="mt-5 border-t border-[#EEEAE6]" />
 
-            <p className="mt-7 text-sm leading-relaxed text-[#52617A] sm:text-base">
-                Enter your account email and we&apos;ll send a reset link, along with an OTP to your registered number to keep your account safe.
+            <p className="mt-7 max-w-[520px] text-base leading-relaxed text-[#6B7280]">
+                Enter your account email and we&apos;ll send a reset link, along with an OTP to your registered number to keep your
+                account safe.
             </p>
 
-            <div className="mt-7">
-                <OtpInput digits={digits} onChange={setDigits} />
+            <div className="mt-10">
+                <OtpInput digits={digits} onChange={setDigits} disabled={isVerifying} />
             </div>
 
-            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7A7F8A]">
-                {seconds > 0 ? (
-                    <span aria-live="polite">Resend code in {seconds}s</span>
-                ) : (
-                    <button type="button" onClick={handleResend} className="font-medium text-[#E95312] hover:underline">
-                        Resend code
-                    </button>
-                )}
-                <button type="button" onClick={onBack} className="text-[#52617A] hover:underline">
-                    Change number
+            <div className="mt-16 flex items-center justify-between gap-4">
+                <button
+                    type="button"
+                    onClick={resend}
+                    disabled={isResending}
+                    className="text-sm font-medium text-[#E95312] transition hover:opacity-70 disabled:opacity-50"
+                >
+                    {isResending ? 'Sending…' : 'Resend code'}
                 </button>
-            </div>
-
-            <div className="mt-10 flex justify-end">
                 <button
                     type="submit"
-                    disabled={!complete}
-                    className="rounded-lg bg-[#EE7230] px-8 py-3.5 text-sm font-semibold text-white transition hover:bg-[#D9622B] disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={!canSubmit}
+                    className="rounded-lg bg-[#EE7230] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#D9622B] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                    Verify identity
+                    {isVerifying ? 'Verifying…' : 'Verify identity'}
                 </button>
             </div>
         </form>
     );
 }
 
-/* ─── Privacy & Security: Step 3 — Change Password ─────────────── */
-function ChangePasswordStep({ onDone }: { onDone: () => void }) {
+/* ─── Privacy & Security: step 3 – change password ─────────────── */
+function ChangePasswordStep({
+    resetPassword,
+}: {
+    resetPassword: (payload: { oldPassword: string; newPassword: string }) => Promise<unknown>;
+}) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [current, setCurrent] = useState('');
     const [next, setNext] = useState('');
     const [confirm, setConfirm] = useState('');
-    const [done, setDone] = useState(false);
-
-    // Return to step 1 after the success message so a new reset needs fresh verification
-    useEffect(() => {
-        if (!done) return;
-        const timer = setTimeout(onDone, 2500);
-        return () => clearTimeout(timer);
-    }, [done, onDone]);
 
     const results = useMemo(() => PASSWORD_RULES.map((rule) => ({ ...rule, passed: rule.test(next) })), [next]);
     const passedCount = results.filter((r) => r.passed).length;
     const isStrong = passedCount === PASSWORD_RULES.length;
     const mismatch = confirm.length > 0 && confirm !== next;
-    const canSubmit = !done && current.length > 0 && isStrong && confirm === next;
+    const sameAsOld = next.length > 0 && next === current;
+    const canSubmit = !isSubmitting && current.length > 0 && isStrong && confirm === next && !sameAsOld;
 
-    const handleSubmit = (event: FormEvent) => {
-        event.preventDefault();
-        if (!canSubmit) return;
-        // Dummy only: no request is sent
+    const finishSuccess = (source: unknown) => {
         setCurrent('');
         setNext('');
         setConfirm('');
-        setDone(true);
+        toast.success(getSuccessMessage(source, 'Password updated.'));
+    };
+
+    const handleSubmit = async (event: FormEvent) => {
+        event.preventDefault();
+        if (!canSubmit) return;
+        setIsSubmitting(true);
+        try {
+            await resetPassword({ oldPassword: current, newPassword: next });
+            setCurrent('');
+            setNext('');
+            setConfirm('');
+            toast.success('Password Reset Successful')
+        } catch {
+            toast.error('Password Reset failed')
+            // Error is set in store
+        }
     };
 
     return (
@@ -499,10 +716,33 @@ function ChangePasswordStep({ onDone }: { onDone: () => void }) {
             <div className="mt-5 border-t border-[#EEEAE6]" />
 
             <div className="mt-7 space-y-5">
-                <PasswordField id="current-password" label="Password" value={current} onChange={setCurrent} autoComplete="current-password" />
-                <PasswordField id="new-password" label="New Password" value={next} onChange={setNext} autoComplete="new-password" />
+                <PasswordField
+                    id="current-password"
+                    label="Current Password"
+                    value={current}
+                    onChange={setCurrent}
+                    autoComplete="current-password"
+                />
                 <div>
-                    <PasswordField id="confirm-password" label="Confirm Password" value={confirm} onChange={setConfirm} autoComplete="new-password" />
+                    <PasswordField
+                        id="new-password"
+                        label="New Password"
+                        value={next}
+                        onChange={setNext}
+                        autoComplete="new-password"
+                    />
+                    {sameAsOld && (
+                        <p className="mt-2 text-xs text-[#E22E41]">New password must be different from your current one.</p>
+                    )}
+                </div>
+                <div>
+                    <PasswordField
+                        id="confirm-password"
+                        label="Confirm Password"
+                        value={confirm}
+                        onChange={setConfirm}
+                        autoComplete="new-password"
+                    />
                     {mismatch && <p className="mt-2 text-xs text-[#E22E41]">Passwords do not match.</p>}
                 </div>
             </div>
@@ -521,7 +761,8 @@ function ChangePasswordStep({ onDone }: { onDone: () => void }) {
                 {results.map((rule) => (
                     <li key={rule.id} className="flex items-center gap-3 text-base text-[#52617A]">
                         <span
-                            className={`flex h-[22px] w-[22px] items-center justify-center rounded-full ${rule.passed ? 'bg-[#5BAA5F]' : 'bg-[#E3E0DD]'}`}
+                            className={`flex h-[22px] w-[22px] items-center justify-center rounded-full ${rule.passed ? 'bg-[#5BAA5F]' : 'bg-[#E3E0DD]'
+                                }`}
                         >
                             <Check className="h-3 w-3 text-white" strokeWidth={3} />
                         </span>
@@ -532,13 +773,12 @@ function ChangePasswordStep({ onDone }: { onDone: () => void }) {
 
             <div className="mt-6 border-t border-[#EEEAE6] pt-6">
                 <div className="flex items-center justify-end gap-4">
-                    {done && <p className="text-sm text-[#2E9A4F]">Password updated.</p>}
                     <button
                         type="submit"
                         disabled={!canSubmit}
                         className="rounded-lg bg-[#EE7230] px-8 py-3.5 text-sm font-semibold text-white transition hover:bg-[#D9622B] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        Reset Password
+                        {isSubmitting ? 'Updating…' : 'Reset Password'}
                     </button>
                 </div>
             </div>
@@ -546,35 +786,95 @@ function ChangePasswordStep({ onDone }: { onDone: () => void }) {
     );
 }
 
-/* ─── Tab: Privacy & Security (flow controller) ────────────────── */
-function PrivacySecurity() {
-    const [step, setStep] = useState<ResetStep>('phone');
+/* ─── Tab: Privacy & Security (verify number → OTP → change password) ─ */
+function PrivacySecurity({
+    initialPhone,
+    sendOtp,
+    verifyOtp,
+    resetPassword,
+}: {
+    initialPhone: string;
+    sendOtp: (phone: string) => Promise<unknown>;
+    verifyOtp: (phone: string, code: string) => Promise<unknown>;
+    resetPassword: (payload: { oldPassword: string; newPassword: string }) => Promise<unknown>;
+}) {
+    const [step, setStep] = useState<SecurityStep>('password');
+    const [phone, setPhone] = useState(initialPhone);
 
-    return (
-        <>
-            {step === 'phone' && <VerifyNumberStep onSent={() => setStep('otp')} />}
-            {step === 'otp' && <OtpStep onVerified={() => setStep('password')} onBack={() => setStep('phone')} />}
-            {step === 'password' && <ChangePasswordStep onDone={() => setStep('phone')} />}
-        </>
-    );
+    // If the profile loads after this tab opened, fill the number in (only while still empty)
+    useEffect(() => {
+        setPhone((current) => current || initialPhone);
+    }, [initialPhone]);
+
+    if (step === 'phone') {
+        return (
+            <VerifyPhoneStep
+                phone={phone}
+                onPhoneChange={setPhone}
+                editable={!initialPhone}
+                sendOtp={sendOtp}
+                onSent={() => setStep('otp')}
+            />
+        );
+    }
+
+    if (step === 'otp') {
+        return <OtpStep phone={phone} sendOtp={sendOtp} verifyOtp={verifyOtp} onVerified={() => setStep('password')} />;
+    }
+
+    return <ChangePasswordStep resetPassword={resetPassword} />;
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
 export default function AccountPage() {
     const [tab, setTab] = useState<TabId>('personal');
+    const { updateProfile, resetPassword } = useAuthStore();
 
-    const handleLogout = () => {
-        // Dummy only: hook up your sign-out flow here
+    const [me, setMe] = useState<any>(null);
+    const [meLoading, setMeLoading] = useState(true);
+    const [meError, setMeError] = useState<string | null>(null);
+
+    // Backend shape: { code, status, data: { userId, firstName, lastName, displayName, avatarUrl, bio } }
+    const loadMe = useCallback(async () => {
+        setMeError(null);
+        try {
+            const res: any = await getCurrentUser();
+            setMe(res?.data ?? res ?? null);
+        } catch (err) {
+            setMeError(getErrorMessage(err));
+        } finally {
+            setMeLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadMe();
+    }, [loadMe]);
+
+    const handleUpdateProfile = async (payload: ProfileFields) => {
+        await updateProfile(payload);
+        await loadMe(); // refresh so the page reflects what the server stored
+    };
+
+    // TODO: wire these to your OTP endpoints. They resolve immediately so the UI flow works for now.
+    const handleSendOtp = async (_phone: string) => {
+        // e.g. return sendPasswordOtp({ phone: _phone });
+    };
+    const handleVerifyOtp = async (_phone: string, _code: string) => {
+        // e.g. return verifyPasswordOtp({ phone: _phone, code: _code });
     };
 
     return (
         <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
             {/* ── Page header ── */}
-
             <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Your account</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">Your details, privacy and security. <span className="text-[#FF6500]"></span></h2>
-                <p className="mt-2 text-sm text-[#777486] sm:text-base">Keep your information current and choose how Hatiso protects you.</p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">
+                    Your details, privacy and security.
+                </h2>
+                <p className="mt-2 text-sm text-[#777486] sm:text-base">
+                    Keep your information current and choose how Hatiso protects you.
+                </p>
             </section>
 
             <main className="px-5 py-6 sm:px-8 lg:py-8">
@@ -608,14 +908,6 @@ export default function AccountPage() {
                                     </button>
                                 );
                             })}
-                            <button
-                                type="button"
-                                onClick={handleLogout}
-                                className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-[15px] font-medium text-[#E0431F] transition hover:bg-[#FFF3EE]"
-                            >
-                                <LogOut className="h-[18px] w-[18px] shrink-0" />
-                                Log Out
-                            </button>
                         </div>
                     </aside>
 
@@ -626,9 +918,24 @@ export default function AccountPage() {
                         aria-labelledby={`tab-${tab}`}
                         className="min-w-0 pt-3 lg:pr-6"
                     >
-                        {tab === 'personal' && <PersonalDetails />}
+                        {tab === 'personal' && (
+                            <PersonalDetails
+                                user={me}
+                                loading={meLoading}
+                                loadError={meError}
+                                onRetry={loadMe}
+                                updateProfile={handleUpdateProfile}
+                            />
+                        )}
                         {tab === 'notifications' && <NotificationSettings />}
-                        {tab === 'privacy' && <PrivacySecurity />}
+                        {tab === 'privacy' && (
+                            <PrivacySecurity
+                                initialPhone={me?.phoneNumber ?? me?.phone ?? PROFILE.phone}
+                                sendOtp={handleSendOtp}
+                                verifyOtp={handleVerifyOtp}
+                                resetPassword={resetPassword}
+                            />
+                        )}
                     </section>
                 </div>
             </main>

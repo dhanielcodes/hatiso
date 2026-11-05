@@ -183,16 +183,16 @@ interface AnalyticsResponse {
 }
 export function getDashboard(params: DashboardParams = {}) {
   const queryParams: Record<string, unknown> = { ...params };
-  return apiGet<DashboardResponse>('/api/v1/dashboard', queryParams);
+  return apiGet<DashboardResponse>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/dashboard`, queryParams);
 }
 
 
 export function getAnalytics(params: DashboardParams = {}) {
   const queryParams: Record<string, unknown> = { ...params };
-  return apiGet<AnalyticsResponse>('/api/v1/analytics', queryParams);
+  return apiGet<AnalyticsResponse>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/analytics`, queryParams);
 }
 
 export function getAnalyticsCSV(params: DashboardParams = {}) {
   const queryParams: Record<string, unknown> = { ...params };
-  return apiGet<unknown>('/api/v1/analytics/export', queryParams);
+  return apiGet<unknown>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/analytics/export`, queryParams);
 }
