@@ -1,4 +1,5 @@
 import { apiGet } from '@/lib/api/axios';
+import type { ApiResponse } from '@/types';
 import type { DigitalServiceCategory } from '@/lib/api/digitalServices';
 
 export interface DigitalServiceOrderHistory {
@@ -19,12 +20,6 @@ export interface DigitalServiceOrderHistory {
   quantity: number;
 }
 
-interface OrdersResponse {
-  code: number;
-  status: boolean;
-  data: DigitalServiceOrderHistory[];
-}
-
 export function getDigitalServiceOrders(page: number, size: number) {
-  return apiGet<OrdersResponse>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/digital-services/orders`, { page, size });
+  return apiGet<ApiResponse<DigitalServiceOrderHistory[]>>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/digital-services/orders`, { page, size });
 }

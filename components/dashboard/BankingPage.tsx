@@ -12,7 +12,10 @@ import {
   Building2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Formik, Form } from 'formik';
+import * as Yup from 'yup';
 import OtpInput from '@/components/auth/OtpInput';
+import { Button, PhoneField, SubmitButton } from '@/components/forms';
 import { useAuthStore } from '@/lib/store/authStore';
 
 export interface BankCardItem {
@@ -124,6 +127,13 @@ const BANKS: BankCardItem[] = [
 
 type FilterTab = 'All' | 'Popular' | 'Recently used' | 'Maintenance';
 
+const phoneStepSchema = Yup.object({
+  phone: Yup.string()
+    .trim()
+    .required('Enter your phone number.')
+    .test('digits', 'Enter a valid phone number.', (v = '') => v.replace(/\D/g, '').length >= 10),
+});
+
 export default function BankingPage() {
   const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
@@ -137,12 +147,6 @@ export default function BankingPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [otpError, setOtpError] = useState(false);
 
-  // Sync phone from user profile if available
-  React.useEffect(() => {
-    if (user?.phone) {
-      setPhoneNumber(user.phone);
-    }
-  }, [user]);
 
   // Filter banks
   const filteredBanks = useMemo(() => {
@@ -181,14 +185,11 @@ export default function BankingPage() {
   };
 
   // Handle step 1 continue
-  const handleContinueToOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phoneNumber.trim() || phoneNumber.length < 8) {
-      toast.error('Please enter a valid phone number');
-      return;
-    }
+  const handleContinueToOtp = ({ phone }: { phone: string }) => {
+    const value = phone.trim();
+    setPhoneNumber(value);
     setModalStep('otp');
-    toast.success(`OTP code sent to ${phoneNumber}`);
+    toast.success(`OTP code sent to ${value}`);
   };
 
   // Handle step 2 verify & redirect
@@ -416,44 +417,39 @@ export default function BankingPage() {
 
             {/* STEP 1: Phone Number */}
             {modalStep === 'phone' && (
-              <form onSubmit={handleContinueToOtp} className="mt-4">
-                <h2 className="text-xl font-bold text-[#1B3C4A]">
-                  Continue to {selectedBank.name}
-                </h2>
-                <p className="mt-2 text-xs leading-relaxed text-[#736F6D] sm:text-sm">
-                  You&apos;re about to open {selectedBank.name}&apos;s secure banking service. Hatiso will never see your username, password, PIN, or account details. Enter phone number to proceed to bank
-                </p>
+              <Formik
+                initialValues={{ phone: user?.phone || phoneNumber }}
+                validationSchema={phoneStepSchema}
+                onSubmit={handleContinueToOtp}
+              >
+                <Form className="mt-4" noValidate>
+                  <h2 className="text-xl font-bold text-[#1B3C4A]">
+                    Continue to {selectedBank.name}
+                  </h2>
+                  <p className="mt-2 text-xs leading-relaxed text-[#736F6D] sm:text-sm">
+                    You&apos;re about to open {selectedBank.name}&apos;s secure banking service. Hatiso will never see your username, password, PIN, or account details. Enter phone number to proceed to bank
+                  </p>
 
-                <div className="mt-6">
-                  <label className="block text-xs font-semibold text-[#3E3A39]">
-                    Phone Number <span className="text-[#E95312]">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="+234 904 637 3748"
-                    className="mt-1.5 w-full rounded-lg border border-[#E2E8F0] px-3.5 py-2.5 text-sm font-medium text-[#1B3C4A] placeholder:text-[#94A3B8] focus:border-[#E95312] focus:outline-none"
+                  <PhoneField
+                    name="phone"
+                    label="Phone Number"
                     required
+                    variant="dashboard"
+                    showCountryAffix={false}
+                    placeholder="+234 904 637 3748"
+                    className="mt-6"
                   />
-                </div>
 
-                <div className="mt-6 space-y-2.5">
-                  <button
-                    type="submit"
-                    className="w-full rounded-lg bg-[#FF6500] py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#E55B00] active:scale-[0.99]"
-                  >
-                    Continue to bank
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="w-full rounded-lg border border-[#E2E8F0] bg-white py-2.5 text-sm font-medium text-[#495057] transition-colors hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+                  <div className="mt-6 space-y-2.5">
+                    <SubmitButton variant="primary" fullWidth>
+                      Continue to bank
+                    </SubmitButton>
+                    <Button variant="secondary" fullWidth onClick={handleCloseModal}>
+                      Cancel
+                    </Button>
+                  </div>
+                </Form>
+              </Formik>
             )}
 
             {/* STEP 2: OTP Verification */}
@@ -480,12 +476,7 @@ export default function BankingPage() {
                 </div>
 
                 <div className="mt-6 space-y-2.5">
-                  <button
-                    type="button"
-                    onClick={handleVerifyOtp}
-                    disabled={isVerifying}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#E95312] py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#E55B00] disabled:opacity-60 active:scale-[0.99]"
-                  >
+                  <Button variant="primary" fullWidth onClick={handleVerifyOtp} disabled={isVerifying}>
                     {isVerifying ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -494,15 +485,10 @@ export default function BankingPage() {
                     ) : (
                       'Verify identity'
                     )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    disabled={isVerifying}
-                    className="w-full rounded-lg border border-[#E2E8F0] bg-white py-2.5 text-sm font-medium text-[#495057] transition-colors hover:bg-gray-50"
-                  >
+                  </Button>
+                  <Button variant="secondary" fullWidth onClick={handleCloseModal} disabled={isVerifying}>
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}

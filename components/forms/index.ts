@@ -10,6 +10,8 @@ export { default as MinorAmountField } from './MinorAmountField';
 export { default as CheckboxField } from './CheckboxField';
 export { default as PhoneField } from './PhoneField';
 export { default as SubmitButton } from './SubmitButton';
+export { default as Button } from './Button';
+export { useFormField } from './useFormField';
 
 export type { FieldShellProps } from './FieldShell';
 export type { TextFieldProps } from './TextField';
@@ -23,4 +25,6 @@ export type { MinorAmountFieldProps } from './MinorAmountField';
 export type { CheckboxFieldProps } from './CheckboxField';
 export type { PhoneFieldProps } from './PhoneField';
 export type { SubmitButtonProps } from './SubmitButton';
-export type { FieldVariant } from './styles';
+export type { ButtonProps } from './Button';
+export type { FieldVariant, ButtonVariant, ButtonSize } from './styles';
+export { buttonClass } from './styles';

@@ -327,8 +327,6 @@ export default function ServicePaymentForm({ activeSlug, activeTitle, billers, i
           key={`${selectedBiller.billerCode}-${selectedProduct.code}-${formResetKey}`}
           initialValues={initialValues}
           validationSchema={validationSchema}
-          validateOnBlur
-          validateOnChange={false}
           onSubmit={(values) => {
             const biller = billers.find((item) => item.billerCode === values.billerCode) ?? selectedBiller;
             const product = availableProducts(biller).find((item) => item.code === values.productCode) ?? selectedProduct;

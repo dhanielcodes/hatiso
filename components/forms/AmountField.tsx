@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useField } from 'formik';
+import { useFormField } from './useFormField';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldShellClass } from './styles';
 
@@ -61,11 +61,10 @@ export default function AmountField({
   onValueChange,
   ...rest
 }: AmountFieldProps) {
-  const [field, meta, helpers] = useField<number | ''>(name);
+  const { field, meta, setValue, hasError } = useFormField<number | ''>(name);
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState('');
   const inputId = id || name;
-  const hasError = Boolean(meta.touched && meta.error);
 
   const display = focused
     ? draft
@@ -107,17 +106,15 @@ export default function AmountField({
           onBlur={(e) => {
             setFocused(false);
             const next = toNumber(draft);
-            helpers.setValue(next);
-            helpers.setTouched(true);
+            setValue(next);
             onValueChange?.(next);
-            field.onBlur(e);
             rest.onBlur?.(e);
           }}
           onChange={(e) => {
             const nextDraft = stripToDigits(e.target.value, decimals);
             setDraft(nextDraft);
             const next = toNumber(nextDraft);
-            helpers.setValue(next);
+            setValue(next);
             onValueChange?.(next);
           }}
           required={required}

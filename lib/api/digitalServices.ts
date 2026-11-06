@@ -1,10 +1,5 @@
-import { apiClient, apiGet } from '@/lib/api/axios';
-
-export interface ApiResponse<T> {
-  code: number;
-  status: boolean;
-  data: T;
-}
+import { apiGet, apiPost } from '@/lib/api/axios';
+import type { ApiResponse } from '@/types';
 
 export type DigitalServiceCategory =
   | 'TELCO'
@@ -16,9 +11,7 @@ export type DigitalServiceCategory =
   | 'OTHER_SERVICES';
 
 export function getDigitalServiceCategories() {
-  return apiGet<ApiResponse<DigitalServiceCategory[]>>(
-    '/api/v1/digital-services/categories'
-  );
+  return apiGet<ApiResponse<DigitalServiceCategory[]>>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/digital-services/categories`);
 }
 
 export interface DigitalServiceFormField {
@@ -165,32 +158,30 @@ function createIdempotencyKey() {
   return globalThis.crypto?.randomUUID?.() ?? `hatiso-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export async function createDigitalServiceOrder(input: CreateDigitalServiceOrderInput) {
-  const response = await apiClient.post<ApiResponse<DigitalServiceOrder>>(
+export function createDigitalServiceOrder(input: CreateDigitalServiceOrderInput) {
+  return apiPost<ApiResponse<DigitalServiceOrder>>(
     '/api/public/digital-services/orders',
     input,
     { headers: { 'Idempotency-Key': createIdempotencyKey() } }
   );
-  return response.data;
 }
 
-export async function createGuestPaymentQuote(
+export function createGuestPaymentQuote(
   input: CreateGuestPaymentQuoteInput,
   guestToken: string
 ) {
-  const response = await apiClient.post<ApiResponse<GuestPaymentQuote>>(
+  return apiPost<ApiResponse<GuestPaymentQuote>>(
     '/api/public/guest-payments/quote',
     input,
     { headers: { 'X-Guest-Token': guestToken } }
   );
-  return response.data;
 }
 
-export async function createGuestPayment(
+export function createGuestPayment(
   input: CreateGuestPaymentInput,
   guestToken: string
 ) {
-  const response = await apiClient.post<ApiResponse<GuestPayment>>(
+  return apiPost<ApiResponse<GuestPayment>>(
     '/api/public/guest-payments',
     input,
     {
@@ -200,50 +191,43 @@ export async function createGuestPayment(
       },
     }
   );
-  return response.data;
 }
 
-export async function verifyGuestPayment(
+export function verifyGuestPayment(
   input: VerifyGuestPaymentInput,
   guestToken: string
 ) {
-  const response = await apiClient.post<ApiResponse<VerifiedGuestPayment>>(
+  return apiPost<ApiResponse<VerifiedGuestPayment>>(
     '/api/public/guest-payments/verify',
     input,
     { headers: { 'X-Guest-Token': guestToken } }
   );
-  return response.data;
 }
 
-
-
-
-export async function createDigitalServiceOrderAuthenticated(input: CreateDigitalServiceOrderInput) {
-  const response = await apiClient.post<ApiResponse<DigitalServiceOrder>>(
+export function createDigitalServiceOrderAuthenticated(input: CreateDigitalServiceOrderInput) {
+  return apiPost<ApiResponse<DigitalServiceOrder>>(
     `/api/${process.env.NEXT_PUBLIC_API_VERSION}/digital-services/orders`,
     input,
     { headers: { 'Idempotency-Key': createIdempotencyKey() } }
   );
-  return response.data;
 }
 
-export async function createGuestPaymentQuoteAuthenticated(
+export function createGuestPaymentQuoteAuthenticated(
   input: CreateGuestPaymentQuoteInput,
   guestToken: string
 ) {
-  const response = await apiClient.post<ApiResponse<GuestPaymentQuote>>(
+  return apiPost<ApiResponse<GuestPaymentQuote>>(
     `/api/${process.env.NEXT_PUBLIC_API_VERSION}/payments/quote`,
     input,
     { headers: { 'X-Guest-Token': guestToken } }
   );
-  return response.data;
 }
 
-export async function createGuestPaymentAuthenticated(
+export function createGuestPaymentAuthenticated(
   input: CreateGuestPaymentInput,
   guestToken: string
 ) {
-  const response = await apiClient.post<ApiResponse<GuestPayment>>(
+  return apiPost<ApiResponse<GuestPayment>>(
     `/api/${process.env.NEXT_PUBLIC_API_VERSION}/payments`,
     input,
     {
@@ -253,23 +237,22 @@ export async function createGuestPaymentAuthenticated(
       },
     }
   );
-  return response.data;
 }
 
-export async function verifyGuestPaymentAuthenticated(
+export function verifyGuestPaymentAuthenticated(
   input: VerifyGuestPaymentInput,
   guestToken: string
 ) {
-  const response = await apiClient.post<ApiResponse<VerifiedGuestPayment>>(
+  return apiPost<ApiResponse<VerifiedGuestPayment>>(
     `/api/${process.env.NEXT_PUBLIC_API_VERSION}/payments/verify`,
     input,
     { headers: { 'X-Guest-Token': guestToken } }
   );
-  return response.data;
 }
 
 export function getDigitalServiceCatalogues(category: DigitalServiceCategory, page: number = 0, size: number = 20) {
   return apiGet<ApiResponse<DigitalServiceBiller[]>>(
-    `/api/${process.env.NEXT_PUBLIC_API_VERSION}/digital-services/catalogue/grouped?category=${category}&page=${page}&size=${size}`
+    `/api/${process.env.NEXT_PUBLIC_API_VERSION}/digital-services/catalogue/grouped`,
+    { category, page, size }
   );
 }

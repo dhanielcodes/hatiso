@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useField } from 'formik';
+import { useFormField } from './useFormField';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldControlClass } from './styles';
 
@@ -42,9 +42,8 @@ export default function NumberField({
   onValueChange,
   ...rest
 }: NumberFieldProps) {
-  const [field, meta, helpers] = useField(name);
+  const { field, meta, setValue, markTouched, hasError } = useFormField(name);
   const inputId = id || name;
-  const hasError = Boolean(meta.touched && meta.error);
 
   const displayValue =
     field.value === null || field.value === undefined || field.value === ''
@@ -71,11 +70,11 @@ export default function NumberField({
         min={min}
         max={max}
         step={step}
-        onBlur={field.onBlur}
+        onBlur={markTouched}
         onChange={(e) => {
           const raw = e.target.value;
           const next = asNumber ? parseNumeric(raw) : raw;
-          helpers.setValue(next);
+          setValue(next);
           onValueChange?.(asNumber ? (next as number | '') : parseNumeric(raw));
         }}
         required={required}

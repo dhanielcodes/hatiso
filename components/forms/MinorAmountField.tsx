@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useField } from 'formik';
+import { useFormField } from './useFormField';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldShellClass } from './styles';
 
@@ -42,11 +42,10 @@ export default function MinorAmountField({
   placeholder = '0.00',
   ...rest
 }: MinorAmountFieldProps) {
-  const [field, meta, helpers] = useField<number | ''>(name);
+  const { field, meta, setValue, hasError } = useFormField<number | ''>(name);
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState('');
   const inputId = id || name;
-  const hasError = Boolean(meta.touched && meta.error);
   const nairaValue = toNairaAmount(field.value);
   const display = focused
     ? draft
@@ -80,9 +79,7 @@ export default function MinorAmountField({
           }}
           onBlur={(event) => {
             setFocused(false);
-            helpers.setValue(parseNaira(draft));
-            helpers.setTouched(true);
-            field.onBlur(event);
+            setValue(parseNaira(draft));
             rest.onBlur?.(event);
           }}
           onChange={(event) => {
@@ -90,8 +87,7 @@ export default function MinorAmountField({
             const [whole, decimal = ''] = sanitized.split('.');
             const nextDraft = sanitized.includes('.') ? `${whole}.${decimal.slice(0, 2)}` : whole;
             setDraft(nextDraft);
-            helpers.setValue(parseNaira(nextDraft));
-            helpers.setTouched(true, false);
+            setValue(parseNaira(nextDraft));
           }}
           required={required}
           aria-invalid={hasError}

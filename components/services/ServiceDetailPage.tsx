@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import { useMutation } from '@tanstack/react-query';
 import {
   Zap,
   ShieldCheck,
@@ -16,16 +15,14 @@ import Navbar from '@/components/marketplace/Navbar';
 import Footer from '@/components/marketplace/Footer';
 import ServiceTabsSelector from './ServiceTabsSelector';
 import ServicePaymentForm, { PendingPayment } from './ServicePaymentForm';
-import { useDigitalServiceCatalogues } from '@/lib/queries/useDigitalServiceCategories';
 import {
-  createDigitalServiceOrder,
-  createGuestPayment,
-  createGuestPaymentQuote,
-  verifyGuestPayment,
-  type DigitalServiceCategory,
-  type DigitalServiceOrder,
-  type GuestPaymentQuote,
-} from '@/lib/api/digitalServices';
+  useCreateDigitalServiceOrder,
+  useCreatePayment,
+  useCreatePaymentQuote,
+  useDigitalServiceCatalogues,
+  useVerifyPayment,
+} from '@/lib/queries/useDigitalServices';
+import type { DigitalServiceCategory, DigitalServiceOrder, GuestPaymentQuote } from '@/lib/api/digitalServices';
 import type { PaystackCheckoutRequest } from './PaystackCheckout';
 
 const PaystackCheckout = dynamic(() => import('./PaystackCheckout'), { ssr: false });
@@ -114,19 +111,10 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
   const [paymentError, setPaymentError] = useState('');
   const [paystackRequest, setPaystackRequest] = useState<PaystackCheckoutRequest | null>(null);
   const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? '';
-  const createOrderMutation = useMutation({ mutationFn: createDigitalServiceOrder });
-  const quoteMutation = useMutation({
-    mutationFn: ({ orderRef, email, guestToken }: { orderRef: string; email: string; guestToken: string }) =>
-      createGuestPaymentQuote({ orderRef, provider: 'PAYSTACK', email }, guestToken),
-  });
-  const createPaymentMutation = useMutation({
-    mutationFn: ({ orderRef, expectedTotalMinor, guestToken }: { orderRef: string; expectedTotalMinor: number; guestToken: string }) =>
-      createGuestPayment({ orderRef, provider: 'PAYSTACK', expectedTotalMinor }, guestToken),
-  });
-  const verifyPaymentMutation = useMutation({
-    mutationFn: ({ txnRef, guestToken }: { txnRef: string; guestToken: string }) =>
-      verifyGuestPayment({ txnRef }, guestToken),
-  });
+  const createOrderMutation = useCreateDigitalServiceOrder();
+  const quoteMutation = useCreatePaymentQuote();
+  const createPaymentMutation = useCreatePayment();
+  const verifyPaymentMutation = useVerifyPayment();
 
   if (initialSlug !== slugFromProp) {
     setSlugFromProp(initialSlug);
@@ -248,12 +236,12 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
         email: payment.email,
       });
       const quote = await quoteMutation.mutateAsync({
-        orderRef: order.data.reference,
+        orderRef: order.reference,
         email: payment.email,
-        guestToken: order.data.guestToken,
+        guestToken: order.guestToken,
       });
 
-      setPendingPayment({ ...payment, order: order.data, quote: quote.data });
+      setPendingPayment({ ...payment, order, quote });
       setIsConfirmModalOpen(true);
     } catch (error) {
       setPaymentError(error instanceof Error ? error.message : 'Unable to prepare your payment. Please try again.');
@@ -275,7 +263,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
         expectedTotalMinor: pendingPayment.quote.totalMinor,
         guestToken: pendingPayment.order.guestToken,
       });
-      const transaction = payment.data;
+      const transaction = payment;
       setTransactionRef(transaction.txnRef);
       setPaystackRequest({
         email: pendingPayment.email,
@@ -343,10 +331,10 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
               txnRef,
               guestToken: pendingPayment.order.guestToken,
             });
-            if (verification.data.status !== 'SUCCESSFUL') {
+            if (verification.status !== 'SUCCESSFUL') {
               throw new Error('Your payment is still being confirmed. Please check again shortly.');
             }
-            setTransactionRef(verification.data.txnRef);
+            setTransactionRef(verification.txnRef);
             setIsProcessing(false);
             setPaystackRequest(null);
             setIsConfirmModalOpen(false);

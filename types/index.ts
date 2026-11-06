@@ -1,5 +1,3 @@
-import { ProfileUpdatePayload } from "@/lib/api/auth";
-
 export interface User {
   id: string;
   name: string;
@@ -19,20 +17,9 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
   login: (credentials: { emailOrPhone: string; password: string }) => Promise<void>;
-  register: (payload: {
-    fullName: string;
-    email: string;
-    phone: string;
-    accountType: 'personal' | 'business';
-    password: string;
-  }) => Promise<any>;
   logout: () => void;
   clearError: () => void;
   setUser: (user: User | null) => void;
-  completeForgotPassword: ({ email, code, newPassword }: { email: string; code: string; newPassword: string }) => Promise<any>;
-  forgotPassword: ({ email }: { email: string }) => Promise<any>;
-  updateProfile: (payload: ProfileUpdatePayload) => Promise<any>;
-  resetPassword: ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => Promise<any>;
 }
 
 export interface CategoryItem {
@@ -64,15 +51,11 @@ export interface BillPaymentPayload {
   packageId?: string;
 }
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message?: string;
+/** Envelope every backend endpoint responds with: `{ code, status, data }`. */
+export interface ApiResponse<T = unknown> {
+  code: number;
+  status: boolean;
   data: T;
-  meta?: {
-    page?: number;
-    limit?: number;
-    total?: number;
-  };
 }
 
 export interface ApiError {

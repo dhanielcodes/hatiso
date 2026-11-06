@@ -1,6 +1,7 @@
 import { apiGet, apiPut } from '@/lib/api/axios';
-import type { DigitalServiceCategory } from '@/lib/api/digitalServices';
+import type { ApiResponse } from '@/types';
 
+/* ─── Types ────────────────────────────────────────────────────── */
 export interface Notification {
   id: string;
   title: string;
@@ -11,27 +12,26 @@ export interface Notification {
   readAt: string | null;
 }
 
-interface NotificationResponse {
-  code: number;
-  status: boolean;
-  data: Notification[];
+export type NotificationChannel = 'EMAIL' | 'SMS' | 'OFF';
+
+export interface NotificationSettings {
+  purchaseChannel: NotificationChannel;
+  availableChannels: NotificationChannel[];
 }
 
-interface NotificationSettingsResponse {
-  code: number;
-  status: boolean;
-  data: Notification;
+export interface UpdateNotificationSettingsPayload {
+  purchaseChannel: NotificationChannel;
 }
 
+/* ─── Endpoints ────────────────────────────────────────────────── */
 export function getNotifications(page: number, size: number, status: string | null, category: string | null) {
-  return apiGet<NotificationResponse>('/api/individual/notifications', { page, size, category, status });
+  return apiGet<ApiResponse<Notification[]>>('/api/individual/notifications', { page, size, category, status });
 }
-
 
 export function getNotificationSettings() {
-  return apiGet<NotificationSettingsResponse>('/api/individual/notifications/settings');
+  return apiGet<ApiResponse<NotificationSettings>>('/api/individual/notifications/settings');
 }
 
-export function updateNotificationSettings(settings: any) {
-  return apiPut<unknown>('/api/individual/notifications/settings', settings);
-} 
+export function updateNotificationSettings(payload: UpdateNotificationSettingsPayload) {
+  return apiPut<ApiResponse<NotificationSettings>>('/api/individual/notifications/settings', payload);
+}

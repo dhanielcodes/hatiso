@@ -1,8 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ComponentType, type FormEvent, type SVGProps } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
+import { Formik, Form, type FormikHelpers } from 'formik';
+import * as Yup from 'yup';
+import { DateField, SelectField, SubmitButton, TextAreaField, useFormField } from '@/components/forms';
 import {
-    Calendar,
     ChevronDown,
     ChevronLeft,
     ChevronRight,
@@ -42,6 +44,22 @@ const TABS: { id: SupportTab; label: string }[] = [
 ];
 
 const ENQUIRY_TYPES = ['Transaction', 'Onboarding', 'Status', 'Account', 'Other'];
+
+/* ─── Forms ────────────────────────────────────────────────────── */
+type EnquiryValues = { enquiryType: string; date: string; remark: string };
+const EMPTY_ENQUIRY: EnquiryValues = { enquiryType: '', date: '', remark: '' };
+const enquirySchema = Yup.object({
+    enquiryType: Yup.string().required('Select an enquiry type.'),
+    date: Yup.string().required('Pick a date.'),
+    remark: Yup.string().trim().required('Enter a remark.'),
+});
+
+type FeedbackValues = { rating: number; remark: string };
+const EMPTY_FEEDBACK: FeedbackValues = { rating: 0, remark: '' };
+const feedbackSchema = Yup.object({
+    rating: Yup.number().min(1, 'Choose a rating.'),
+    remark: Yup.string().trim(),
+});
 const PAGE_SIZES = [10, 20, 50];
 
 const STATUS_STYLES: Record<EnquiryStatus, string> = {
@@ -176,11 +194,6 @@ function formatDate(iso: string) {
     return y && m && d ? `${d}/${m}/${y}` : iso;
 }
 
-const fieldLabel = 'text-sm font-medium text-[#20232A]';
-const fieldBase =
-    'w-full rounded-lg border border-[#E6E3E0] bg-white text-sm text-[#20232A] outline-none transition placeholder:text-[#A3A8B1] focus:border-[#E95312]';
-const primaryButton =
-    'rounded-lg bg-[#EE7230] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#D9622B] disabled:cursor-not-allowed disabled:opacity-50';
 
 /* ─── Contact Us modal ─────────────────────────────────────────── */
 function ContactModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -256,9 +269,6 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
 /* ─── Tab: Help Center ─────────────────────────────────────────── */
 function HelpCenter() {
     const [history, setHistory] = useState<HistoryItem[]>(INITIAL_HISTORY);
-    const [enquiryType, setEnquiryType] = useState('');
-    const [date, setDate] = useState('');
-    const [remark, setRemark] = useState('');
     const [sent, setSent] = useState(false);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
@@ -271,27 +281,21 @@ function HelpCenter() {
         return () => clearTimeout(timer);
     }, [sent]);
 
-    const canSubmit = enquiryType !== '' && date !== '' && remark.trim().length > 0;
-
-    const handleSubmit = (event: FormEvent) => {
-        event.preventDefault();
-        if (!canSubmit) return;
+    const handleSubmit = (values: EnquiryValues, { resetForm }: FormikHelpers<EnquiryValues>) => {
         // Dummy only: no request is sent
-        const text = remark.trim();
+        const text = values.remark.trim();
         setHistory((h) => [
             {
                 id: Date.now(),
                 comment: text.length > 16 ? `${text.slice(0, 16)}...` : text,
-                type: enquiryType,
-                date: formatDate(date),
+                type: values.enquiryType,
+                date: formatDate(values.date),
                 status: 'In progress',
             },
             ...h,
         ]);
         setPage(1);
-        setEnquiryType('');
-        setDate('');
-        setRemark('');
+        resetForm();
         setSent(true);
     };
 
@@ -314,74 +318,42 @@ function HelpCenter() {
             <p className="mt-8 text-sm text-[#7A7F8A] sm:text-base">Hi there! 👋 Need a hand with anything today?</p>
 
             {/* Enquiry form */}
-            <form onSubmit={handleSubmit} className="mt-6" noValidate>
-                <div className="grid gap-5 md:grid-cols-2">
-                    <div>
-                        <label htmlFor="enquiry-type" className={fieldLabel}>
-                            Enquiry Type
-                        </label>
-                        <div className="relative mt-2">
-                            <select
-                                id="enquiry-type"
-                                value={enquiryType}
-                                onChange={(event) => setEnquiryType(event.target.value)}
-                                className={`${fieldBase} h-11 appearance-none px-3 pr-10 ${enquiryType === '' ? 'text-[#A3A8B1]' : ''}`}
-                            >
-                                <option value="" disabled>
-                                    Select enquiry type
-                                </option>
-                                {ENQUIRY_TYPES.map((type) => (
-                                    <option key={type} value={type} className="text-[#20232A]">
-                                        {type}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#52617A]" />
-                        </div>
+            <Formik<EnquiryValues> initialValues={EMPTY_ENQUIRY} validationSchema={enquirySchema} onSubmit={handleSubmit}>
+                <Form className="mt-6" noValidate>
+                    <div className="grid gap-5 md:grid-cols-2">
+                        <SelectField
+                            name="enquiryType"
+                            id="enquiry-type"
+                            label="Enquiry Type"
+                            required
+                            variant="dashboard"
+                            placeholder="Select enquiry type"
+                            options={ENQUIRY_TYPES.map((type) => ({ value: type, label: type }))}
+                        />
+                        <DateField name="date" id="enquiry-date" label="Date" required variant="dashboard" />
                     </div>
 
-                    <div>
-                        <label htmlFor="enquiry-date" className={fieldLabel}>
-                            Date
-                        </label>
-                        <div className="relative mt-2">
-                            <input
-                                id="enquiry-date"
-                                type="date"
-                                value={date}
-                                onChange={(event) => setDate(event.target.value)}
-                                className={`${fieldBase} h-11 px-3 pr-10 ${date === '' ? 'text-[#A3A8B1]' : ''} [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0`}
-                            />
-                            <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#52617A]" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-5">
-                    <label htmlFor="enquiry-remark" className={fieldLabel}>
-                        Remark
-                    </label>
-                    <textarea
+                    <TextAreaField
+                        name="remark"
                         id="enquiry-remark"
-                        value={remark}
-                        onChange={(event) => setRemark(event.target.value)}
+                        label="Remark"
+                        required
+                        variant="dashboard"
                         placeholder="Enter Remark"
                         rows={4}
-                        className={`${fieldBase} mt-2 resize-none p-3`}
+                        className="mt-5"
                     />
-                </div>
 
-                <div className="mt-6 flex items-center justify-end gap-4">
-                    {sent && (
-                        <p className="text-sm text-[#2E9A4F]" aria-live="polite">
-                            Enquiry sent.
-                        </p>
-                    )}
-                    <button type="submit" disabled={!canSubmit} className={primaryButton}>
-                        Send Enquiry
-                    </button>
-                </div>
-            </form>
+                    <div className="mt-6 flex items-center justify-end gap-4">
+                        {sent && (
+                            <p className="text-sm text-[#2E9A4F]" aria-live="polite">
+                                Enquiry sent.
+                            </p>
+                        )}
+                        <SubmitButton variant="primary">Send Enquiry</SubmitButton>
+                    </div>
+                </Form>
+            </Formik>
 
             {/* Recent Support History */}
             <section className="mt-8 rounded-xl border border-[#EBE6E1] bg-white px-5 py-6 sm:px-6" aria-labelledby="history-title">
@@ -566,46 +538,26 @@ function Faqs() {
 }
 
 /* ─── Tab: Feedback ────────────────────────────────────────────── */
-function Feedback() {
-    const [rating, setRating] = useState(0);
+// Star rating bound to Formik through the shared field hook
+function RatingField({ name }: { name: string }) {
+    const { field, setValue, error } = useFormField<number>(name);
     const [hover, setHover] = useState(0);
-    const [remark, setRemark] = useState('');
-    const [done, setDone] = useState(false);
-
-    useEffect(() => {
-        if (!done) return;
-        const timer = setTimeout(() => setDone(false), 3000);
-        return () => clearTimeout(timer);
-    }, [done]);
-
-    const shown = hover || rating;
-
-    const handleSubmit = (event: FormEvent) => {
-        event.preventDefault();
-        if (rating === 0) return;
-        // Dummy only: no request is sent
-        setRating(0);
-        setHover(0);
-        setRemark('');
-        setDone(true);
-    };
+    const shown = hover || field.value;
 
     return (
-        <form onSubmit={handleSubmit} noValidate>
-            <p className="text-sm text-[#7A7F8A] sm:text-base">How would you rate your experience with QApp today?</p>
-
-            <p id="rating-label" className="mt-7 text-base font-medium text-[#20232A]">
-                Rating
+        <div>
+            <p id={`${name}-label`} className="mt-7 text-base font-medium text-[#20232A]">
+                Rating <span className="text-[#E95312]">*</span>
             </p>
-            <div role="radiogroup" aria-labelledby="rating-label" className="mt-5 flex gap-4" onMouseLeave={() => setHover(0)}>
+            <div role="radiogroup" aria-labelledby={`${name}-label`} className="mt-5 flex gap-4" onMouseLeave={() => setHover(0)}>
                 {[1, 2, 3, 4, 5].map((value) => (
                     <button
                         key={value}
                         type="button"
                         role="radio"
-                        aria-checked={rating === value}
+                        aria-checked={field.value === value}
                         aria-label={`${value} star${value > 1 ? 's' : ''}`}
-                        onClick={() => setRating(value)}
+                        onClick={() => setValue(value)}
                         onMouseEnter={() => setHover(value)}
                         className="rounded-md transition hover:scale-105"
                     >
@@ -616,32 +568,53 @@ function Feedback() {
                     </button>
                 ))}
             </div>
+            {error ? <p className="mt-2 text-xs text-rose-600">{error}</p> : null}
+        </div>
+    );
+}
 
-            <div className="mt-7">
-                <label htmlFor="feedback-remark" className="text-sm font-medium text-[#20232A]">
-                    Remark
-                </label>
-                <textarea
+function Feedback() {
+    const [done, setDone] = useState(false);
+
+    useEffect(() => {
+        if (!done) return;
+        const timer = setTimeout(() => setDone(false), 3000);
+        return () => clearTimeout(timer);
+    }, [done]);
+
+    const handleSubmit = (_values: FeedbackValues, { resetForm }: FormikHelpers<FeedbackValues>) => {
+        // Dummy only: no request is sent
+        resetForm();
+        setDone(true);
+    };
+
+    return (
+        <Formik<FeedbackValues> initialValues={EMPTY_FEEDBACK} validationSchema={feedbackSchema} onSubmit={handleSubmit}>
+            <Form noValidate>
+                <p className="text-sm text-[#7A7F8A] sm:text-base">How would you rate your experience with QApp today?</p>
+
+                <RatingField name="rating" />
+
+                <TextAreaField
+                    name="remark"
                     id="feedback-remark"
-                    value={remark}
-                    onChange={(event) => setRemark(event.target.value)}
+                    label="Remark"
+                    variant="dashboard"
                     placeholder="Enter Remark"
                     rows={4}
-                    className={`${fieldBase} mt-2 resize-none p-3`}
+                    className="mt-7"
                 />
-            </div>
 
-            <div className="mt-4 flex items-center justify-end gap-4">
-                {done && (
-                    <p className="text-sm text-[#2E9A4F]" aria-live="polite">
-                        Thanks for your feedback.
-                    </p>
-                )}
-                <button type="submit" disabled={rating === 0} className={primaryButton}>
-                    Submit
-                </button>
-            </div>
-        </form>
+                <div className="mt-4 flex items-center justify-end gap-4">
+                    {done && (
+                        <p className="text-sm text-[#2E9A4F]" aria-live="polite">
+                            Thanks for your feedback.
+                        </p>
+                    )}
+                    <SubmitButton variant="primary">Submit</SubmitButton>
+                </div>
+            </Form>
+        </Formik>
     );
 }
 

@@ -1,5 +1,7 @@
 import { apiGet, apiPost, apiPut } from '@/lib/api/axios';
+import type { ApiResponse } from '@/types';
 
+/* ─── Types ────────────────────────────────────────────────────── */
 export interface LoginCredentials {
   identifier: string;
   password: string;
@@ -12,12 +14,6 @@ export interface LoginSession {
   expiresIn: number;
 }
 
-interface LoginResponse {
-  code: number;
-  status: boolean;
-  data: LoginSession;
-}
-
 export interface CurrentUserProfile {
   userId: string;
   firstName: string;
@@ -27,16 +23,10 @@ export interface CurrentUserProfile {
   bio: string | null;
 }
 
-interface CurrentUserResponse {
-  code: number;
-  status: boolean;
-  data: CurrentUserProfile;
-}
-
 export interface RegisterPayload {
   type: 'INDIVIDUAL' | 'BUSINESS';
-  email: string;
-  phone: string | null;
+  email?: string;
+  phone?: string | null;
   password: string;
   firstName: string;
   lastName: string;
@@ -47,32 +37,21 @@ export interface ProfileUpdatePayload {
   lastName: string;
   displayName: string;
   bio: string;
-
 }
 
-export interface RegisterResponseData {
-  userId: string;
-  message: string;
+export interface ResetPasswordPayload {
+  oldPassword: string;
+  newPassword: string;
 }
 
-interface RegisterResponse {
-  code: number;
-  status: boolean;
-  data: RegisterResponseData;
+export interface RecoverPasswordPayload {
+  email: string;
+  code: string;
+  newPassword: string;
 }
 
 export interface ResendVerificationPayload {
   userId: string;
-}
-
-export interface ResendVerificationResponseData {
-  message: string;
-}
-
-interface ResendVerificationResponse {
-  code: number;
-  status: boolean;
-  data: ResendVerificationResponseData;
 }
 
 export interface VerifyUserPayload {
@@ -81,114 +60,54 @@ export interface VerifyUserPayload {
   code: string;
 }
 
-export interface VerifyUserResponseData {
+export interface MessageData {
   message?: string;
+}
+
+export interface RegisterResponseData extends MessageData {
+  userId: string;
+}
+
+export interface VerifyUserResponseData extends MessageData {
   [key: string]: unknown;
 }
 
-interface VerifyUserResponse {
-  code: number;
-  status: boolean;
-  data: VerifyUserResponseData;
+/* ─── Session ──────────────────────────────────────────────────── */
+export function loginUser(credentials: LoginCredentials) {
+  return apiPost<ApiResponse<LoginSession>>('/api/public/auth/login', credentials);
 }
 
-export async function loginUser(credentials: LoginCredentials): Promise<LoginSession> {
-  const response = await apiPost<LoginResponse>('/api/public/auth/login', credentials);
-
-  if (!response.status || !response.data?.accessToken) {
-    throw new Error('Unable to sign in. Please verify your credentials and try again.');
-  }
-
-  return response.data;
+/* ─── Current user ─────────────────────────────────────────────── */
+export function getCurrentUser() {
+  return apiGet<ApiResponse<CurrentUserProfile>>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/users/me`);
 }
 
-export async function getCurrentUser() {
-  const response = await apiGet<CurrentUserResponse>('/api/v1/users/me');
-
-  if (!response.status || !response.data?.userId) {
-    throw new Error('Unable to retrieve your profile.');
-  }
-
-  return response.data;
+export function updateProfile(payload: ProfileUpdatePayload) {
+  return apiPut<ApiResponse<RegisterResponseData>>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/users/me`, payload);
 }
 
-export async function updateProfile(payload: ProfileUpdatePayload): Promise<RegisterResponseData> {
-  const response = await apiPut<RegisterResponse>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/users/me`, payload);
-
-  if (!response.status || !response.data?.userId) {
-    throw new Error(response.data?.message || 'Profile update failed. Please try again.');
-  }
-
-  return response.data;
+export function resetPassword(payload: ResetPasswordPayload) {
+  return apiPost<ApiResponse<MessageData>>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/users/me/password/reset`, payload);
 }
 
-export async function resetPassword(payload: {
-  oldPassword: string;
-  newPassword: string;
-}): Promise<{ message?: string }> {
-  const response = await apiPost<RegisterResponse>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/users/me/password/reset`, payload);
-
-  if (!response.status) {
-    throw new Error(response.data?.message || 'Password reset failed. Please try again.');
-  }
-
-  return { message: response.data?.message };
+/* ─── Password recovery (public) ───────────────────────────────── */
+export function forgotPassword(payload: { email: string }) {
+  return apiPost<ApiResponse<MessageData>>('/api/public/auth/password/forgot', payload);
 }
 
-export async function forgotPassword(payload: { email: string }): Promise<{
-  message: string;
-}> {
-  const response = await apiPost<RegisterResponse>('/api/public/auth/password/forgot', payload);
-
-  if (!response.status) {
-    throw new Error(response.data?.message || 'Registration failed. Please try again.');
-  }
-
-  return response.data;
+export function recoverPassword(payload: RecoverPasswordPayload) {
+  return apiPost<ApiResponse<MessageData>>('/api/public/auth/password/recover', payload);
 }
 
-export async function completeForgotPassword(payload: {
-  "email": string;
-  "code": string;
-  "newPassword": string;
-}): Promise<{
-  message: string;
-}> {
-  const response = await apiPost<RegisterResponse>('/api/public/auth/password/recover', payload);
-
-  if (!response.status) {
-    throw new Error(response.data?.message || 'Registration failed. Please try again.');
-  }
-
-  return response.data;
+/* ─── Registration (public) ────────────────────────────────────── */
+export function registerUser(payload: RegisterPayload) {
+  return apiPost<ApiResponse<RegisterResponseData>>('/api/public/users/register', payload);
 }
 
-export async function registerUser(payload: RegisterPayload): Promise<RegisterResponseData> {
-  const response = await apiPost<RegisterResponse>('/api/public/users/register', payload);
-
-  if (!response.status || !response.data?.userId) {
-    throw new Error(response.data?.message || 'Registration failed. Please try again.');
-  }
-
-  return response.data;
+export function resendVerification(payload: ResendVerificationPayload) {
+  return apiPost<ApiResponse<MessageData>>('/api/public/users/user/resend-verification', payload);
 }
 
-export async function resendVerification(payload: ResendVerificationPayload): Promise<ResendVerificationResponseData> {
-  const response = await apiPost<ResendVerificationResponse>('/api/public/users/user/resend-verification', payload);
-
-  if (!response.status) {
-    throw new Error(response.data?.message || 'Failed to resend verification code.');
-  }
-
-  return response.data;
-}
-
-export async function verifyUser(payload: VerifyUserPayload): Promise<VerifyUserResponseData> {
-  const response = await apiPost<VerifyUserResponse>('/api/public/users/user/verify', payload);
-
-  if (!response.status) {
-    throw new Error(response.data?.message || 'Verification failed. Please check the code.');
-  }
-
-  return response.data;
+export function verifyUser(payload: VerifyUserPayload) {
+  return apiPost<ApiResponse<VerifyUserResponseData>>('/api/public/users/user/verify', payload);
 }

@@ -2,7 +2,6 @@
 
 import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -24,23 +23,15 @@ import { getStoredUserEmail } from '@/lib/auth/session';
 import ProviderSelector from '@/components/services/ProviderSelector';
 import ServicePaymentForm, { type PendingPayment } from '@/components/services/ServicePaymentForm';
 import type { PaystackCheckoutRequest } from '@/components/services/PaystackCheckout';
+import type { DigitalServiceCategory, DigitalServiceOrder, GuestPaymentQuote } from '@/lib/api/digitalServices';
 import {
-  createDigitalServiceOrder,
-  createDigitalServiceOrderAuthenticated,
-  createGuestPayment,
-  createGuestPaymentAuthenticated,
-  createGuestPaymentQuote,
-  createGuestPaymentQuoteAuthenticated,
-  verifyGuestPayment,
-  verifyGuestPaymentAuthenticated,
-  type DigitalServiceCategory,
-  type DigitalServiceOrder,
-  type GuestPaymentQuote,
-} from '@/lib/api/digitalServices';
-import {
+  useCreateDigitalServiceOrder,
+  useCreatePayment,
+  useCreatePaymentQuote,
   useDigitalServiceCatalogues,
   useDigitalServiceCategories,
-} from '@/lib/queries/useDigitalServiceCategories';
+  useVerifyPayment,
+} from '@/lib/queries/useDigitalServices';
 
 const PaystackCheckout = dynamic(
   () => import('@/components/services/PaystackCheckout'),
@@ -126,19 +117,10 @@ export default function DigitalServicesPage() {
   const activeCategory = selectedCategory ?? 'TELCO';
   const { data: billers, isLoading: billersLoading, isError: billersError } = useDigitalServiceCatalogues(activeCategory);
 
-  const createOrderMutation = useMutation({ mutationFn: createDigitalServiceOrderAuthenticated });
-  const quoteMutation = useMutation({
-    mutationFn: ({ orderRef, email, guestToken }: { orderRef: string; email: string; guestToken: string }) =>
-      createGuestPaymentQuoteAuthenticated({ orderRef, provider: 'PAYSTACK', email }, guestToken),
-  });
-  const createPaymentMutation = useMutation({
-    mutationFn: ({ orderRef, expectedTotalMinor, guestToken }: { orderRef: string; expectedTotalMinor: number; guestToken: string }) =>
-      createGuestPaymentAuthenticated({ orderRef, provider: 'PAYSTACK', expectedTotalMinor }, guestToken),
-  });
-  const verifyPaymentMutation = useMutation({
-    mutationFn: ({ txnRef, guestToken }: { txnRef: string; guestToken: string }) =>
-      verifyGuestPaymentAuthenticated({ txnRef }, guestToken),
-  });
+  const createOrderMutation = useCreateDigitalServiceOrder(true);
+  const quoteMutation = useCreatePaymentQuote(true);
+  const createPaymentMutation = useCreatePayment(true);
+  const verifyPaymentMutation = useVerifyPayment(true);
 
   const services = useMemo(() => (categories ?? []).flatMap((category) => {
     const config = serviceConfig[category];
@@ -184,11 +166,11 @@ export default function DigitalServicesPage() {
       email: pendingPayment.email,
     });
     const quote = await quoteMutation.mutateAsync({
-      orderRef: order.data.reference,
+      orderRef: order.reference,
       email: pendingPayment.email,
-      guestToken: order.data.guestToken,
+      guestToken: order.guestToken,
     });
-    setPayment({ ...pendingPayment, order: order.data, quote: quote.data });
+    setPayment({ ...pendingPayment, order, quote });
     setStep('review');
   };
 
@@ -208,10 +190,10 @@ export default function DigitalServicesPage() {
       });
       setPaymentRequest({
         email: payment.email,
-        totalMinor: response.data.totalMinor,
-        txnRef: response.data.txnRef,
-        currency: response.data.currency,
-        orderRef: response.data.orderRef,
+        totalMinor: response.totalMinor,
+        txnRef: response.txnRef,
+        currency: response.currency,
+        orderRef: response.orderRef,
         guestToken: payment.order.guestToken,
       });
     } catch {
@@ -280,7 +262,7 @@ export default function DigitalServicesPage() {
         setIsProcessing(true);
         try {
           const verification = await verifyPaymentMutation.mutateAsync({ txnRef: response?.reference ?? response?.trxref ?? payment.order.paymentReference ?? '', guestToken: payment.order.guestToken });
-          if (verification.data.status !== 'SUCCESSFUL') throw new Error('Your payment is still being confirmed.');
+          if (verification.status !== 'SUCCESSFUL') throw new Error('Your payment is still being confirmed.');
           setPaymentRequest(null);
           setIsProcessing(false);
           setStep('success');

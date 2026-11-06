@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServiceCategories';
+import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServices';
 import type { DigitalServiceCategory } from '@/lib/api/digitalServices';
 
 export interface ServiceItem {

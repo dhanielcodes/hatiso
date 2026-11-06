@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { AuthState, User } from '@/types';
-import { completeForgotPassword, forgotPassword, getCurrentUser, loginUser, ProfileUpdatePayload, registerUser, resetPassword, updateProfile } from '@/lib/api/auth';
+import { getCurrentUser, loginUser } from '@/lib/api/auth';
 import { clearAuthSession, persistAuthSession, persistUserEmail } from '@/lib/auth/session';
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -25,7 +25,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null, user: null, token: null, isAuthenticated: false });
         try {
           const identifier = emailOrPhone.trim();
-          const session = await loginUser({ identifier, password });
+          const { data: session } = await loginUser({ identifier, password });
           persistAuthSession(session);
           if (identifier.includes('@')) persistUserEmail(identifier);
 
@@ -42,7 +42,7 @@ export const useAuthStore = create<AuthState>()(
 
           let user = fallbackUser;
           try {
-            const profile = await getCurrentUser();
+            const { data: profile } = await getCurrentUser();
             user = {
               ...fallbackUser,
               id: profile.userId,
@@ -67,119 +67,6 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async ({ fullName, email, phone, accountType, password }) => {
-        set({ isLoading: true, error: null });
-        try {
-          const parts = fullName.trim().split(/\s+/);
-          const firstName = parts[0] || '';
-          const lastName = parts.slice(1).join(' ') || parts[0] || '';
-
-          let formattedPhone: string | null = null;
-          const rawDigits = (phone || '').replace(/\D/g, '');
-          if (rawDigits) {
-            const nationalDigits = rawDigits.startsWith('234')
-              ? rawDigits.slice(3)
-              : rawDigits.startsWith('0')
-                ? rawDigits.slice(1)
-                : rawDigits;
-            if (nationalDigits) {
-              formattedPhone = `+234${nationalDigits}`;
-            }
-          }
-
-          const result = await registerUser({
-            type: accountType === 'business' ? 'BUSINESS' : 'INDIVIDUAL',
-            email: email.trim().toLowerCase(),
-            phone: formattedPhone,
-            password: password || '',
-            firstName,
-            lastName,
-          });
-
-          set({ isLoading: false, error: null });
-          return result;
-        } catch (err: unknown) {
-          set({
-            isLoading: false,
-            error: getErrorMessage(err, 'Registration failed. Please try again.'),
-          });
-          throw err;
-        }
-      },
-      updateProfile: async ({ firstName, lastName, displayName, bio }: ProfileUpdatePayload) => {
-        set({ isLoading: true, error: null });
-        try {
-          const result = await updateProfile({
-            bio,
-            displayName,
-            firstName,
-            lastName,
-          });
-
-          set({ isLoading: false, error: null });
-          return result;
-        } catch (err: unknown) {
-          set({
-            isLoading: false,
-            error: getErrorMessage(err, 'Profile update failed. Please try again.'),
-          });
-          throw err;
-        }
-      },
-      resetPassword: async ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => {
-        set({ isLoading: true, error: null });
-        try {
-          const result = await resetPassword({
-            oldPassword,
-            newPassword,
-          });
-
-          set({ isLoading: false, error: null });
-          return result;
-        } catch (err: unknown) {
-          set({
-            isLoading: false,
-            error: getErrorMessage(err, 'Password reset failed. Please try again.'),
-          });
-          throw err;
-        }
-      },
-      forgotPassword: async ({ email }: { email: string }) => {
-        set({ isLoading: true, error: null });
-        try {
-          const result = await forgotPassword({
-            email,
-          });
-
-          set({ isLoading: false, error: null });
-          return result;
-        } catch (err: unknown) {
-          set({
-            isLoading: false,
-            error: getErrorMessage(err, 'Registration failed. Please try again.'),
-          });
-          throw err;
-        }
-      },
-      completeForgotPassword: async ({ email, code, newPassword }: { email: string; code: string; newPassword: string }) => {
-        set({ isLoading: true, error: null });
-        try {
-          const result = await completeForgotPassword({
-            email,
-            code,
-            newPassword,
-          });
-
-          set({ isLoading: false, error: null });
-          return result;
-        } catch (err: unknown) {
-          set({
-            isLoading: false,
-            error: getErrorMessage(err, 'Registration failed. Please try again.'),
-          });
-          throw err;
-        }
-      },
       logout: () => {
         clearAuthSession();
         set({

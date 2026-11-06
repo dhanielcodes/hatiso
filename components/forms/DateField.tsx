@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useField } from 'formik';
+import { useFormField } from './useFormField';
 import { Calendar } from 'lucide-react';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldControlClass } from './styles';
@@ -34,9 +34,8 @@ export default function DateField({
   max,
   ...rest
 }: DateFieldProps) {
-  const [field, meta] = useField(name);
+  const { field, meta, hasError } = useFormField(name);
   const inputId = id || name;
-  const hasError = Boolean(meta.touched && meta.error);
 
   return (
     <FieldShell

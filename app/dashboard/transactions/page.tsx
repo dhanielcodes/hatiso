@@ -9,7 +9,7 @@ import {
   Eye,
   Search,
 } from 'lucide-react';
-import { useDigitalServiceOrders } from '@/lib/queries/useDigitalServiceOrders';
+import { useDigitalServiceOrders } from '@/lib/queries/useOrders';
 import type { DigitalServiceOrderHistory } from '@/lib/api/orders';
 import type { DigitalServiceCategory } from '@/lib/api/digitalServices';
 import Link from 'next/link';

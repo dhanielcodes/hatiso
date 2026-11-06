@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useField } from 'formik';
+import { useFormField } from './useFormField';
 import { ChevronDown } from 'lucide-react';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldControlClass, fieldShellClass } from './styles';
@@ -15,6 +15,8 @@ export interface PhoneFieldProps
   showError?: boolean;
   /** Show NG flag affix (contact-style). Default true for light, false for dark. */
   showCountryAffix?: boolean;
+  /** Fixed text before the number, e.g. "+234". Takes the place of the flag affix. */
+  dialCode?: React.ReactNode;
   icon?: React.ReactNode;
 }
 
@@ -25,15 +27,15 @@ export default function PhoneField({
   variant = 'light',
   showError = true,
   showCountryAffix,
+  dialCode,
   icon,
   className = '',
   id,
   required,
   ...rest
 }: PhoneFieldProps) {
-  const [field, meta] = useField(name);
+  const { field, meta, hasError } = useFormField(name);
   const inputId = id || name;
-  const hasError = Boolean(meta.touched && meta.error);
   const withAffix = showCountryAffix ?? variant === 'light';
 
   return (
@@ -46,7 +48,21 @@ export default function PhoneField({
       variant={variant}
       className={className}
     >
-      {withAffix ? (
+      {dialCode ? (
+        <div className={fieldShellClass(variant, { hasError })}>
+          <span className="mr-2 select-none text-sm font-medium text-slate-600">{dialCode}</span>
+          <input
+            id={inputId}
+            type="tel"
+            inputMode="tel"
+            {...field}
+            {...rest}
+            required={required}
+            aria-invalid={hasError}
+            className="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
+          />
+        </div>
+      ) : withAffix ? (
         <div className={fieldShellClass(variant, { hasError })}>
           <div className="flex items-center gap-1.5 border-r border-slate-200/60 pr-2">
             <svg className="h-4 w-5 overflow-hidden rounded-xs shadow-xs" viewBox="0 0 24 16">

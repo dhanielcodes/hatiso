@@ -1,4 +1,5 @@
 import { apiGet } from '@/lib/api/axios';
+import type { ApiResponse } from '@/types';
 
 export type DashboardBucket = 'DAY' | 'WEEK' | 'MONTH';
 
@@ -171,25 +172,15 @@ export interface AnalyticsData {
   topProviders: TopProviderItem[];
 }
 
-interface DashboardResponse {
-  code: number;
-  status: boolean;
-  data: DashboardData;
-}
-interface AnalyticsResponse {
-  code: number;
-  status: boolean;
-  data: AnalyticsData;
-}
 export function getDashboard(params: DashboardParams = {}) {
   const queryParams: Record<string, unknown> = { ...params };
-  return apiGet<DashboardResponse>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/dashboard`, queryParams);
+  return apiGet<ApiResponse<DashboardData>>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/dashboard`, queryParams);
 }
 
 
 export function getAnalytics(params: DashboardParams = {}) {
   const queryParams: Record<string, unknown> = { ...params };
-  return apiGet<AnalyticsResponse>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/analytics`, queryParams);
+  return apiGet<ApiResponse<AnalyticsData>>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/analytics`, queryParams);
 }
 
 export function getAnalyticsCSV(params: DashboardParams = {}) {

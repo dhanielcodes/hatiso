@@ -3,12 +3,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Formik, Form, useField } from 'formik';
+import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import { CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
-import { registerUser, resendVerification, verifyUser } from '@/lib/api/auth';
-import { TextField, PasswordField, CheckboxField, SubmitButton } from '@/components/forms';
+import { useRegister, useResendVerification, useVerifyUser } from '@/lib/queries/useAuth';
+import { TextField, PasswordField, PhoneField, CheckboxField, SubmitButton } from '@/components/forms';
 import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
 import StepIndicator from '@/components/auth/StepIndicator';
 import OtpInput from '@/components/auth/OtpInput';
@@ -103,38 +103,6 @@ function MethodTabs({
   );
 }
 
-/* ─── Phone input ───────────────────────────────────────────────── */
-function PhoneInputField({ name, ...rest }: { name: string;[k: string]: unknown }) {
-  const [field, meta] = useField(name);
-  const hasError = Boolean(meta.touched && meta.error);
-  return (
-    <div>
-      <label className="mb-1.5 block text-[13px] font-medium text-[#1C1C1C]">
-        Phone Number <span className="text-[#E95312]">*</span>
-      </label>
-      <div
-        className={`flex items-center rounded-xl border bg-white px-4 py-3.5 transition focus-within:ring-1 ${hasError
-          ? 'border-rose-400 focus-within:border-rose-500 focus-within:ring-rose-500'
-          : 'border-[#E8E4DE] focus-within:border-[#E95312] focus-within:ring-[#E95312]'
-          }`}
-      >
-        <span className="mr-2 select-none text-sm font-medium text-slate-600">+234</span>
-        <input
-          {...field}
-          {...(rest as React.InputHTMLAttributes<HTMLInputElement>)}
-          type="tel"
-          inputMode="numeric"
-          autoComplete="tel-national"
-          placeholder="_ _ _ _ _ _ _ _ _"
-          aria-invalid={hasError}
-          className="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
-        />
-      </div>
-      {hasError && <p className="mt-1.5 text-xs text-rose-600">{meta.error}</p>}
-    </div>
-  );
-}
-
 /* ─── Format phone to E.164 (+234...) ───────────────────────────── */
 function formatNigerianPhone(phone: string): string | null {
   const digits = (phone || '').replace(/\D/g, '');
@@ -173,13 +141,16 @@ export default function RegisterPage() {
   const [userId, setUserId] = useState('');
 
   const [registerError, setRegisterError] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
+  const register = useRegister();
+  const isRegistering = register.isPending;
 
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
+  const verify = useVerifyUser();
+  const isVerifying = verify.isPending;
   const [resendCount, setResendCount] = useState(60);
-  const [isResending, setIsResending] = useState(false);
+  const resend = useResendVerification();
+  const isResending = resend.isPending;
   const [resendFeedback, setResendFeedback] = useState('');
 
   const [showSuccess, setShowSuccess] = useState(false);
@@ -219,11 +190,10 @@ export default function RegisterPage() {
   /* ── Handle Resend Verification Code ── */
   const handleResendOtp = async () => {
     if (!userId || resendCount > 0 || isResending) return;
-    setIsResending(true);
     setOtpError('');
     setResendFeedback('');
     try {
-      const res = await resendVerification({ userId });
+      const res = await resend.mutateAsync({ userId });
       setResendFeedback(
         res.message ||
         `A new verification code has been sent to your ${isEmailMethod ? 'email' : 'phone'}.`
@@ -235,8 +205,6 @@ export default function RegisterPage() {
           ? err.message
           : 'Unable to resend verification code. Please try again later.';
       setOtpError(msg);
-    } finally {
-      setIsResending(false);
     }
   };
 
@@ -248,15 +216,14 @@ export default function RegisterPage() {
       );
       return;
     }
-    setIsVerifying(true);
     setOtpError('');
     try {
-      await verifyUser({
+      await verify.mutateAsync({
         // NOTE: confirm the exact purpose value your backend expects for phone sign-ups
         purpose: isEmailMethod ? 'VERIFY_EMAIL' : 'VERIFY_PHONE',
         userId,
         code: otp.trim(),
-      } as Parameters<typeof verifyUser>[0]);
+      });
 
       // Verification succeeded! Auto-login the user into dashboard session
       try {
@@ -276,8 +243,6 @@ export default function RegisterPage() {
           ? err.message
           : 'Invalid verification code. Please check and try again.';
       setOtpError(msg);
-    } finally {
-      setIsVerifying(false);
     }
   };
 
@@ -359,7 +324,16 @@ export default function RegisterPage() {
                           autoComplete="email"
                         />
                       ) : (
-                        <PhoneInputField name="phone" />
+                        <PhoneField
+                          name="phone"
+                          label="Phone Number"
+                          required
+                          variant="auth"
+                          dialCode="+234"
+                          inputMode="numeric"
+                          autoComplete="tel-national"
+                          placeholder="_ _ _ _ _ _ _ _ _"
+                        />
                       )}
 
                       <CheckboxField
@@ -423,7 +397,6 @@ export default function RegisterPage() {
                   validationSchema={step2Schema}
                   onSubmit={async (values) => {
                     setRegisterError('');
-                    setIsRegistering(true);
                     try {
                       const parts = step1Data.fullName.trim().split(/\s+/);
                       const firstName = parts[0] || 'User';
@@ -435,13 +408,13 @@ export default function RegisterPage() {
                           ? { email: step1Data.email.trim().toLowerCase() }
                           : { phone: formatNigerianPhone(step1Data.phone) };
 
-                      const res = await registerUser({
+                      const res = await register.mutateAsync({
                         type: 'INDIVIDUAL',
                         ...contact,
                         password: values.password,
                         firstName,
                         lastName,
-                      } as unknown as Parameters<typeof registerUser>[0]);
+                      });
 
                       setUserId(res.userId);
                       setSavedPassword(values.password);
@@ -456,8 +429,6 @@ export default function RegisterPage() {
                           ? err.message
                           : 'Registration failed. Please verify your details.';
                       setRegisterError(msg);
-                    } finally {
-                      setIsRegistering(false);
                     }
                   }}
                 >

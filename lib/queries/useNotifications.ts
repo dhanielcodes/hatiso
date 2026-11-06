@@ -1,37 +1,43 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getNotifications, getNotificationSettings, updateNotificationSettings, type Notification } from '../api/notifications';
+import {
+  getNotifications,
+  getNotificationSettings,
+  updateNotificationSettings,
+  type UpdateNotificationSettingsPayload,
+} from '@/lib/api/notifications';
+
+export const notificationsQueryKey = ['notifications'] as const;
+export const notificationSettingsQueryKey = ['notification-settings'] as const;
 
 export function useNotifications(page: number, size: number, status: string | null, category: string | null) {
   return useQuery({
-    queryKey: ['notifications', page, size, status, category],
+    queryKey: [...notificationsQueryKey, page, size, status, category],
     queryFn: () => getNotifications(page, size, status, category),
     select: (response) => response.data,
-    placeholderData: (previousData: any) => previousData,
+    placeholderData: (previousData) => previousData,
     staleTime: 30_000,
   });
 }
-
 
 export function useNotificationSettings() {
   return useQuery({
-    queryKey: ['notification-settings'],
-    queryFn: () => getNotificationSettings(),
+    queryKey: notificationSettingsQueryKey,
+    queryFn: getNotificationSettings,
     select: (response) => response.data,
-    placeholderData: (previousData: any) => previousData,
     staleTime: 30_000,
   });
 }
-
 
 export function useUpdateNotificationSettings() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (settings: { purchaseChannel: 'EMAIL' | 'SMS' | 'OFF' }) => updateNotificationSettings(settings),
+    mutationFn: (payload: UpdateNotificationSettingsPayload) =>
+      updateNotificationSettings(payload).then((response) => response.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notification-settings'] });
+      queryClient.invalidateQueries({ queryKey: notificationSettingsQueryKey });
     },
   });
 }

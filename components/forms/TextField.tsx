@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useField } from 'formik';
+import { useFormField } from './useFormField';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldControlClass, fieldShellClass } from './styles';
 
@@ -33,9 +33,8 @@ export default function TextField({
   required,
   ...rest
 }: TextFieldProps) {
-  const [field, meta] = useField(name);
+  const { field, meta, hasError } = useFormField(name);
   const inputId = id || name;
-  const hasError = Boolean(meta.touched && meta.error);
 
   return (
     <FieldShell

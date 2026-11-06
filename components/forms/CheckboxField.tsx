@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useField } from 'formik';
+import { useFormField } from './useFormField';
 import { FieldVariant, checkboxClass, fieldErrorClass } from './styles';
 
 export interface CheckboxFieldProps
@@ -21,9 +21,8 @@ export default function CheckboxField({
   id,
   ...rest
 }: CheckboxFieldProps) {
-  const [field, meta] = useField({ name, type: 'checkbox' });
+  const { field, meta, hasError } = useFormField({ name, type: 'checkbox' });
   const inputId = id || name;
-  const hasError = Boolean(meta.touched && meta.error);
 
   return (
     <div className={className}>

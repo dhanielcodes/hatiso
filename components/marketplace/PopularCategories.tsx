@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServiceCategories';
+import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServices';
 import type { DigitalServiceCategory } from '@/lib/api/digitalServices';
 
 // Custom precision SVG icons matching the exact iconography in the screenshot

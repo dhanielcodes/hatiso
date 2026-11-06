@@ -3,16 +3,16 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Formik, Form, useField } from 'formik';
+import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'sonner';
 import { Check, ArrowLeft } from 'lucide-react';
-import { PasswordField, SubmitButton } from '@/components/forms';
+import { PasswordField, SubmitButton, TextField } from '@/components/forms';
 import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
 import XnettLogo from '@/components/auth/XnettLogo';
 import OtpInput from '@/components/auth/OtpInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
-import { forgotPassword, recoverPassword } from '@/lib/api/passwordRecovery';
+import { useForgotPassword, useRecoverPassword } from '@/lib/queries/useAuth';
 
 /* ─── Constants ─────────────────────────────────────────────────── */
 const OTP_LENGTH = 6;
@@ -38,10 +38,9 @@ const step3Schema = Yup.object({
 });
 
 /* ─── Helpers ───────────────────────────────────────────────────── */
+// The axios interceptor rejects every failed request with `{ message, statusCode }`.
 const getErrorMessage = (err: unknown) =>
-  (err as any)?.response?.data?.message ??
-  (err as any)?.message ??
-  'Something went wrong. Please try again.';
+  (err as { message?: string } | null)?.message || 'Something went wrong. Please try again.';
 
 // The recover endpoint checks the code and sets the password in one call, so a bad or
 // expired code only shows up at the last step. These messages send the user back to step 2.
@@ -51,37 +50,6 @@ const looksLikeCodeError = (message: string) => /code|otp|expired|invalid/i.test
 const ORANGE_BTN =
   'w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(255,101,0,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
 
-/* ─── Email input component ─────────────────────────────────────── */
-function EmailInputField({ name }: { name: string }) {
-  const [field, meta] = useField(name);
-  const hasError = Boolean(meta.touched && meta.error);
-  return (
-    <div>
-      <label htmlFor={name} className="mb-1.5 block text-[13px] font-medium text-[#1C1C1C]">
-        Email <span className="text-[#E95312]">*</span>
-      </label>
-      <div
-        className={`flex items-center rounded-xl border bg-white px-4 py-3.5 transition focus-within:ring-1 ${hasError
-          ? 'border-rose-400 focus-within:border-rose-500 focus-within:ring-rose-500'
-          : 'border-[#E8E4DE] focus-within:border-[#E95312] focus-within:ring-[#E95312]'
-          }`}
-      >
-        <input
-          {...field}
-          id={name}
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          placeholder="you@example.com"
-          aria-invalid={hasError}
-          className="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
-        />
-      </div>
-      {hasError && <p className="mt-1.5 text-xs text-rose-600">{meta.error}</p>}
-    </div>
-  );
-}
-
 export default function ForgotPasswordPage() {
   const router = useRouter();
 
@@ -90,8 +58,11 @@ export default function ForgotPasswordPage() {
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
   const [resendCount, setResendCount] = useState(RESEND_SECONDS);
-  const [isSending, setIsSending] = useState(false);
-  const [isResending, setIsResending] = useState(false);
+  const sendCode = useForgotPassword();
+  const resendCode = useForgotPassword();
+  const recover = useRecoverPassword();
+  const isSending = sendCode.isPending || recover.isPending;
+  const isResending = resendCode.isPending;
   const [showSuccess, setShowSuccess] = useState(false);
 
   /* Countdown timer (single interval, cleaned up on unmount) */
@@ -130,17 +101,14 @@ export default function ForgotPasswordPage() {
 
   const handleResend = async () => {
     if (resendCount > 0 || isResending) return;
-    setIsResending(true);
     try {
-      await forgotPassword(email);
+      await resendCode.mutateAsync(email);
       setOtp('');
       setOtpError('');
       startCountdown();
       toast.success('A new code has been sent to your email.');
     } catch (err) {
       toast.error(getErrorMessage(err));
-    } finally {
-      setIsResending(false);
     }
   };
 
@@ -175,9 +143,8 @@ export default function ForgotPasswordPage() {
                   validationSchema={step1Schema}
                   onSubmit={async (values) => {
                     const value = values.email.trim();
-                    setIsSending(true);
                     try {
-                      await forgotPassword(value);
+                      await sendCode.mutateAsync(value);
                       setEmail(value);
                       setOtp('');
                       setOtpError('');
@@ -186,13 +153,20 @@ export default function ForgotPasswordPage() {
                       toast.success('We sent a code to your email.');
                     } catch (err) {
                       toast.error(getErrorMessage(err));
-                    } finally {
-                      setIsSending(false);
                     }
                   }}
                 >
                   <Form className="space-y-5" noValidate>
-                    <EmailInputField name="email" />
+                    <TextField
+                      name="email"
+                      type="email"
+                      label="Email"
+                      required
+                      variant="auth"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="you@example.com"
+                    />
 
                     <SubmitButton
                       disabled={isSending}
@@ -307,9 +281,8 @@ export default function ForgotPasswordPage() {
                   initialValues={{ password: '', confirmPassword: '' }}
                   validationSchema={step3Schema}
                   onSubmit={async (values) => {
-                    setIsSending(true);
                     try {
-                      await recoverPassword({
+                      await recover.mutateAsync({
                         email,
                         code: otp,
                         newPassword: values.password,
@@ -326,8 +299,6 @@ export default function ForgotPasswordPage() {
                       } else {
                         toast.error(message);
                       }
-                    } finally {
-                      setIsSending(false);
                     }
                   }}
                 >

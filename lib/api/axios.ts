@@ -3,6 +3,7 @@ import axios, {
   AxiosInstance,
   InternalAxiosRequestConfig,
   AxiosResponse,
+  AxiosRequestConfig,
 } from 'axios';
 import { toast } from 'sonner';
 import { ApiError } from '@/types';
@@ -73,6 +74,17 @@ apiClient.interceptors.request.use(
  */
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
+    // Some failures come back as HTTP 2xx with `status: false` in the envelope.
+    // Reject them here so every endpoint fails the same way (and callers never need to check).
+    const body = response.data as { status?: unknown; data?: { message?: string }; message?: string } | undefined;
+    if (body && typeof body === 'object' && body.status === false) {
+      const formattedError: ApiError = {
+        message: body.data?.message || body.message || 'The request could not be completed. Please try again.',
+        statusCode: response.status,
+      };
+      if (typeof window !== 'undefined') toast.error(formattedError.message);
+      return Promise.reject(formattedError);
+    }
     return response;
   },
   (error: AxiosError<BackendErrorResponse>) => {
@@ -135,13 +147,13 @@ export async function apiGet<T>(url: string, params?: Record<string, unknown>): 
   return response.data;
 }
 
-export async function apiPost<T>(url: string, data?: unknown): Promise<T> {
-  const response = await apiClient.post<T>(url, data);
+export async function apiPost<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+  const response = await apiClient.post<T>(url, data, config);
   return response.data;
 }
 
-export async function apiPut<T>(url: string, data?: unknown): Promise<T> {
-  const response = await apiClient.put<T>(url, data);
+export async function apiPut<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+  const response = await apiClient.put<T>(url, data, config);
   return response.data;
 }
 
