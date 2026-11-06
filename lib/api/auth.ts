@@ -122,11 +122,17 @@ export async function updateProfile(payload: ProfileUpdatePayload): Promise<Regi
   return response.data;
 }
 
-export function resetPassword(payload: {
-  "oldPassword": string;
-  "newPassword": string;
-}) {
-  return apiPost<RegisterResponse>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/users/me/password/reset`, payload);
+export async function resetPassword(payload: {
+  oldPassword: string;
+  newPassword: string;
+}): Promise<{ message?: string }> {
+  const response = await apiPost<RegisterResponse>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/users/me/password/reset`, payload);
+
+  if (!response.status) {
+    throw new Error(response.data?.message || 'Password reset failed. Please try again.');
+  }
+
+  return { message: response.data?.message };
 }
 
 export async function forgotPassword(payload: { email: string }): Promise<{

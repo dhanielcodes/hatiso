@@ -29,7 +29,7 @@ export function useUpdateNotificationSettings() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (settings: any) => updateNotificationSettings(settings),
+    mutationFn: (settings: { purchaseChannel: 'EMAIL' | 'SMS' | 'OFF' }) => updateNotificationSettings(settings),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notification-settings'] });
     },

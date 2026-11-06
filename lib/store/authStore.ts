@@ -121,7 +121,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (err: unknown) {
           set({
             isLoading: false,
-            error: getErrorMessage(err, 'Registration failed. Please try again.'),
+            error: getErrorMessage(err, 'Profile update failed. Please try again.'),
           });
           throw err;
         }
@@ -139,7 +139,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (err: unknown) {
           set({
             isLoading: false,
-            error: getErrorMessage(err, 'Registration failed. Please try again.'),
+            error: getErrorMessage(err, 'Password reset failed. Please try again.'),
           });
           throw err;
         }
