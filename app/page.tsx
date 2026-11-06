@@ -8,7 +8,7 @@ import CtaBanner from '@/components/marketplace/CtaBanner';
 import Footer from '@/components/marketplace/Footer';
 
 export const metadata = {
-  title: 'XNETT - One platform. Every service you need.',
+  title: 'QAPP by Hatiso - One platform. Every service you need.',
   description:
     'Discover digital services from trusted providers, manage your banking, and get things done. All from one place.',
 };

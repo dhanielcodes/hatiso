@@ -198,7 +198,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
     body: 'Fulfill digital transactions instantly and securely across top providers in Nigeria.',
     image: '/images/airtime_hero_2x.png',
     cardTitle: 'Pay instantly',
-    cardSubtitle: 'Safe and encrypted digital payments on XNETT.',
+    cardSubtitle: 'Safe and encrypted digital payments on Hatiso.',
   };
 
 
