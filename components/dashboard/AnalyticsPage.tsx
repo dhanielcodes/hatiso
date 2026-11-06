@@ -4,6 +4,7 @@ import { useMemo, useState, useSyncExternalStore } from 'react';
 import { CalendarDays, ChevronDown, Upload } from 'lucide-react';
 import { ServiceUsageChart, SpendingChart } from '@/components/dashboard/DashboardCharts';
 import { useAuthStore } from '@/lib/store/authStore';
+import { ChartSkeleton, MetricCardSkeleton, ProgressListSkeleton } from '@/components/ui/Skeleton';
 import { useAnalytics, useAnalyticsCSV } from '@/lib/queries/useDashboard';
 import { DashboardBucket } from '@/lib/api/dashboard';
 
@@ -528,7 +529,8 @@ export default function AnalyticsPage() {
                 {/* ── Metric cards ── */}
                 <section>
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                        {metrics.map((metric) => (
+                        {isLoading && Array.from({ length: 4 }, (_, index) => <MetricCardSkeleton key={index} className={`${CARD} px-5 py-6`} />)}
+                        {!isLoading && metrics.map((metric) => (
                             <article key={metric.label} className={`${CARD} px-5 py-6`}>
                                 <p className="text-sm text-[#52617A]">{metric.label}</p>
                                 <p className="mt-3 text-[26px] font-semibold tracking-[-0.03em] text-[#364259]">{metric.value}</p>
@@ -548,7 +550,7 @@ export default function AnalyticsPage() {
                     <CardHeader title="Spending Insights" subtitle="Compare how you spend the most each month." />
                     <div className="mt-6 h-[260px] sm:h-[300px]">
                         {isLoading ? (
-                            <EmptyState message="Loading spending…" />
+                            <ChartSkeleton shape="bars" label="Loading spending" />
                         ) : spendingSeries.length === 0 ? (
                             <EmptyState message="No spending in this period." />
                         ) : (
@@ -562,8 +564,9 @@ export default function AnalyticsPage() {
                     <article className={`${CARD} p-5 sm:p-6`}>
                         <CardHeader title="Transaction Rate by Digital Services" subtitle="Transaction distribution across Hatiso digital services." />
                         {isLoading ? (
-                            <div className="mt-6">
-                                <EmptyState message="Loading services…" />
+                            <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row">
+                                <ChartSkeleton shape="donut" className="h-[200px] w-[200px] shrink-0" label="Loading services" />
+                                <ProgressListSkeleton rows={4} className="w-full flex-1" />
                             </div>
                         ) : usageRows.length === 0 ? (
                             <div className="mt-6">
@@ -604,9 +607,7 @@ export default function AnalyticsPage() {
                     <article className={`${CARD} p-5 sm:p-6`}>
                         <CardHeader title="This month vs last month" subtitle={comparisonSubtitle} />
                         {isLoading ? (
-                            <div className="mt-6">
-                                <EmptyState message="Loading comparison…" />
-                            </div>
+                            <ChartSkeleton shape="bars" className="mt-6 h-[220px] w-full" label="Loading comparison" />
                         ) : !comparison || comparisonPoints.length === 0 ? (
                             <div className="mt-6">
                                 <EmptyState message="No comparison data yet." />
@@ -664,7 +665,7 @@ export default function AnalyticsPage() {
 
                         <div className="mt-4 overflow-x-auto">
                             {isLoading ? (
-                                <EmptyState message="Loading activity…" />
+                                <ChartSkeleton shape="heatmap" label="Loading activity" />
                             ) : (
                                 <div className="mx-auto grid min-w-[300px] max-w-[360px] grid-cols-[44px_repeat(4,1fr)] gap-2">
                                     <span />
@@ -692,9 +693,7 @@ export default function AnalyticsPage() {
                     <article className={`${CARD} p-5 sm:p-6`}>
                         <CardHeader title="Top providers" subtitle="Where most of your money went." />
                         {isLoading ? (
-                            <div className="mt-6">
-                                <EmptyState message="Loading providers…" />
-                            </div>
+                            <ProgressListSkeleton rows={5} className="mt-6" />
                         ) : providers.length === 0 ? (
                             <div className="mt-6">
                                 <EmptyState message="No provider spending in this period." />

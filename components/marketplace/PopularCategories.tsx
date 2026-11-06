@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServices';
+import { Skeleton } from '@/components/ui/Skeleton';
 import type { DigitalServiceCategory } from '@/lib/api/digitalServices';
 
 // Custom precision SVG icons matching the exact iconography in the screenshot
@@ -230,7 +231,7 @@ export default function PopularCategories() {
           <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-5 lg:col-span-8 lg:gap-3.5 xl:col-span-9" aria-live="polite">
             {isLoading &&
               Array.from({ length: 6 }, (_, index) => (
-                <div key={index} className="min-h-47.5 animate-pulse rounded-xl bg-white/10" />
+                <Skeleton key={index} tone="dark" className="min-h-47.5 rounded-xl" />
               ))}
             {hasCategoryRequestError && (
               <p className="col-span-full self-center text-sm text-slate-300">

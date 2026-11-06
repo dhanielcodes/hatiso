@@ -10,6 +10,7 @@ import { useCurrentUser, useResetPassword, useUpdateProfile } from '@/lib/querie
 import type { CurrentUserProfile } from '@/lib/api/auth';
 import type { NotificationChannel } from '@/lib/api/notifications';
 import { Button, PasswordField, SubmitButton, TextAreaField, TextField } from '@/components/forms';
+import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 type TabId = 'personal' | 'notifications' | 'privacy';
@@ -127,7 +128,20 @@ function PersonalDetails() {
         return (
             <div>
                 <h2 className="text-xl font-medium text-[#243B4A]">Personal Details</h2>
-                <p className="mt-8 text-sm text-[#7A7F8A]">Loading your details…</p>
+                <SkeletonGroup label="Loading your details">
+                    <div className="mt-8 flex items-center gap-5 rounded-2xl bg-[#F6F6F7] px-6 py-5">
+                        <Skeleton className="h-[65px] w-[65px] shrink-0 rounded-full" />
+                        <Skeleton strong className="h-5 w-40" />
+                    </div>
+                    <div className="mt-6 rounded-2xl border border-[#F0EDEA] bg-[#F9F9FA] px-6 pb-6 pt-5">
+                        {Array.from({ length: 4 }, (_, index) => (
+                            <div key={index} className={`space-y-2 px-3 py-5 ${index > 0 ? 'border-t border-[#E6E3E0]' : ''}`}>
+                                <Skeleton className="h-3.5 w-24" />
+                                <Skeleton strong className="h-5 w-48" />
+                            </div>
+                        ))}
+                    </div>
+                </SkeletonGroup>
             </div>
         );
     }
@@ -269,7 +283,17 @@ function NotificationSettings() {
                 </div>
 
                 {isLoading ? (
-                    <p className="text-sm text-[#7A7F8A]">Loading…</p>
+                    <SkeletonGroup className="space-y-5" label="Loading notification settings">
+                        {CHANNEL_OPTIONS.map((opt) => (
+                            <div key={opt.value} className="flex items-start gap-4">
+                                <Skeleton className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-full" />
+                                <div className="flex-1 space-y-2">
+                                    <Skeleton strong className="h-4 w-16" />
+                                    <Skeleton className="h-3 w-full max-w-[260px]" />
+                                </div>
+                            </div>
+                        ))}
+                    </SkeletonGroup>
                 ) : isError ? (
                     <p className="text-sm text-[#E22E41]">Couldn&apos;t load your notification settings.</p>
                 ) : (

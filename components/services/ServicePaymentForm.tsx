@@ -18,6 +18,7 @@ import type {
   DigitalServiceFormField,
   DigitalServiceProduct,
 } from '@/lib/api/digitalServices';
+import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import ProviderSelector, {
   type ProviderItem,
   type ProviderSelectorType,
@@ -75,24 +76,24 @@ const providerSelectorType: ProviderSelectorType = 'image';
 
 function ServiceFormSkeleton() {
   return (
-    <div className="animate-pulse space-y-6 py-1" aria-label="Loading available services" role="status">
+    <SkeletonGroup className="space-y-6 py-1" label="Loading available services">
       <div className="space-y-2">
-        <div className="h-6 w-36 rounded-md bg-slate-200" />
-        <div className="h-4 w-56 rounded-md bg-slate-100" />
+        <Skeleton strong className="h-6 w-36" />
+        <Skeleton className="h-4 w-56" />
       </div>
       <div className="grid grid-cols-3 gap-3">
         {Array.from({ length: 3 }, (_, index) => (
-          <div key={index} className="h-20 rounded-xl bg-slate-100" />
+          <Skeleton key={index} className="h-20 rounded-xl" />
         ))}
       </div>
       {Array.from({ length: 3 }, (_, index) => (
         <div key={index} className="space-y-2">
-          <div className="h-3 w-24 rounded bg-slate-100" />
-          <div className="h-12 rounded-xl bg-slate-100" />
+          <Skeleton className="h-3.5 w-24" />
+          <Skeleton className="h-12 rounded-xl" />
         </div>
       ))}
-      <div className="h-12 rounded-xl bg-slate-200" />
-    </div>
+      <Skeleton strong className="h-12 rounded-xl" />
+    </SkeletonGroup>
   );
 }
 

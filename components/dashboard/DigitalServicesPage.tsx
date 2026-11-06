@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { useAuthStore } from '@/lib/store/authStore';
 import { getStoredUserEmail } from '@/lib/auth/session';
 import ProviderSelector from '@/components/services/ProviderSelector';
+import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import ServicePaymentForm, { type PendingPayment } from '@/components/services/ServicePaymentForm';
 import type { PaystackCheckoutRequest } from '@/components/services/PaystackCheckout';
 import type { DigitalServiceCategory, DigitalServiceOrder, GuestPaymentQuote } from '@/lib/api/digitalServices';
@@ -226,7 +227,7 @@ export default function DigitalServicesPage() {
 
         <h3 className="mt-10 text-lg font-medium text-[#777486]">What would you like to do?</h3>
         <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {categoriesLoading && Array.from({ length: 6 }, (_, index) => <div key={index} className="h-30 animate-pulse rounded-xl border border-[#E7E3E1] bg-white" />)}
+          {categoriesLoading && Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-30 rounded-xl" />)}
           {visibleServices.map((service) => {
             const Icon = service.Icon;
             return <button key={service.category} type="button" onClick={() => openService(service.category)} className="group flex min-h-30 items-center gap-4 rounded-xl border border-[#E7E3E1] bg-white p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[#E95312]/35 hover:shadow-lg hover:shadow-[#204657]/5 active:scale-[0.99]">
@@ -246,7 +247,7 @@ export default function DigitalServicesPage() {
       {selectedCategory && selectedService && <ModalShell onClose={resetFlow} canClose={!isProcessing} title={step === 'success' ? 'Payment complete' : `Buy ${selectedService.name}`}>
         {step !== 'success' && <StepIndicator step={step} />}
 
-        {step === 'service' && <div className="space-y-6 px-6 py-8 sm:px-8"><div><h3 className="text-lg font-medium text-[#34425D]">Select biller</h3><p className="mt-1 text-sm text-slate-500">Choose the provider you want to pay.</p></div>{billersLoading ? <div className="grid grid-cols-3 gap-3"><div className="h-20 animate-pulse rounded-xl bg-slate-100" /><div className="h-20 animate-pulse rounded-xl bg-slate-100" /><div className="h-20 animate-pulse rounded-xl bg-slate-100" /></div> : billersError || !billers?.length ? <p className="rounded-xl bg-rose-50 p-4 text-sm text-rose-600">Providers are unavailable right now. Please try again.</p> : <ProviderSelector type='image' providers={billers.map((biller) => ({ id: biller.billerCode, name: biller.billerName, imageSrc: biller.logoUrl }))} selectedId={selectedBiller?.billerCode ?? ''} onSelect={(id) => setSelectedBillerCode(id)} />}</div>}
+        {step === 'service' && <div className="space-y-6 px-6 py-8 sm:px-8"><div><h3 className="text-lg font-medium text-[#34425D]">Select biller</h3><p className="mt-1 text-sm text-slate-500">Choose the provider you want to pay.</p></div>{billersLoading ? <SkeletonGroup label="Loading providers" className="grid grid-cols-3 gap-3">{Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-20 rounded-xl" />)}</SkeletonGroup> : billersError || !billers?.length ? <p className="rounded-xl bg-rose-50 p-4 text-sm text-rose-600">Providers are unavailable right now. Please try again.</p> : <ProviderSelector type='image' providers={billers.map((biller) => ({ id: biller.billerCode, name: biller.billerName, imageSrc: biller.logoUrl }))} selectedId={selectedBiller?.billerCode ?? ''} onSelect={(id) => setSelectedBillerCode(id)} />}</div>}
 
         {step === 'details' && <div className="px-6 py-2 sm:px-8"><button type="button" onClick={() => setStep('service')} className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-[#204657]"><ArrowLeft className="h-4 w-4" />Change provider</button><ServicePaymentForm key={`${selectedCategory}-${selectedBiller?.billerCode}-${receiptEmail}-${formResetKey}`} activeSlug={selectedService.slug} billers={billers ?? []} isLoading={billersLoading} isError={billersError} initialBillerCode={selectedBiller?.billerCode} initialEmail={receiptEmail} variant="dashboard" hideBillerSelector onValidated={handleDetailsSubmit} formResetKey={formResetKey} /></div>}
 

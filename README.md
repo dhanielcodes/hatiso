@@ -15,6 +15,7 @@ This README is for frontend developers joining the project. It covers how to run
 - [Endpoint structure](#endpoint-structure)
 - [Forms](#forms)
 - [Buttons](#buttons)
+- [Loading states](#loading-states)
 - [State management](#state-management)
 - [Errors and notifications](#errors-and-notifications)
 - [Styling](#styling)
@@ -101,6 +102,7 @@ Only run one `next dev` per checkout. A second one in the same folder won't star
 │
 ├── components/
 │   ├── forms/                  # ⭐ Shared Formik fields, buttons and styles (see "Forms")
+│   ├── ui/Skeleton.tsx         # ⭐ Shared loading skeletons (see "Loading states")
 │   ├── dashboard/              # Dashboard page bodies (ProfilePage, SupportPage, …) + sidebar, charts
 │   ├── services/               # Service checkout pieces (payment form, selectors, Paystack)
 │   ├── marketplace/            # Public site sections (Navbar, Hero, Footer, …)
@@ -135,6 +137,7 @@ Only run one `next dev` per checkout. A second one in the same folder won't star
 | A backend call | `lib/api/<domain>.ts` |
 | A hook that uses it | `lib/queries/use<Domain>.ts` |
 | A form input | Reuse `components/forms`. Only add a new field there if none fits. |
+| A loading state | A skeleton from `components/ui/Skeleton.tsx`, never "Loading…" text |
 | A reusable Yup rule | `lib/validation/schemas.ts` |
 | A shared type | Next to its API function, or `types/index.ts` if it's app-wide |
 
@@ -432,6 +435,42 @@ For a new style that will be reused, add a variant to `buttonClass()` instead of
 
 ---
 
+## Loading states
+
+**Every loading state is a skeleton.** Don't show "Loading…" text in cards, lists, charts or pages. Skeletons keep each card's shape, so the layout doesn't jump when data arrives. Everything lives in `components/ui/Skeleton.tsx`:
+
+| Component | Use for |
+| --- | --- |
+| `Skeleton` | Base block. Size it with `className`. `strong` gives a darker shade for headline values; `tone="dark"` is for dark backgrounds. |
+| `SkeletonGroup` | Wraps your own skeleton layout. Adds `role="status"` and a screen-reader label (`label="Loading …"`). |
+| `MetricCardSkeleton` | Stat cards (label, big value, change line) |
+| `ChartSkeleton` | Charts: `shape="bars"` (bar/line/area), `"donut"` (pass a square container) or `"heatmap"` |
+| `ListSkeleton` | List rows (`rows`, `avatar`, `trailing`); `card` makes each row its own bordered card |
+| `ProgressListSkeleton` | Label + value + progress bar rows (e.g. top providers) |
+| `TableRowsSkeleton` | Table body rows. Render it inside `<tbody>` with `columns`. |
+| `TextSkeleton` | A few lines of text |
+| `FormSkeleton` | Label + input pairs, optional button |
+
+```tsx
+const { data, isLoading } = useDashboard(params);
+
+{isLoading ? <ChartSkeleton shape="bars" label="Loading spending" /> : <SpendingChart data={data.spendingOverview} />}
+
+{isLoading
+  ? Array.from({ length: 4 }, (_, i) => <MetricCardSkeleton key={i} />)
+  : metrics.map((m) => <MetricCard key={m.label} {...m} />)}
+```
+
+Rules:
+
+- **Match the content.** Render the skeleton in the same container and size as the real content, inside the card's own header if it has one.
+- **Custom layouts:** build them from `Skeleton` blocks inside one `SkeletonGroup`. See the Profile details skeleton for an example.
+- **Don't nest groups.** One `SkeletonGroup` per loading region, so screen readers announce "Loading" once.
+- **Button spinners are separate.** "Saving…" inside a button comes from `SubmitButton`'s `loadingLabel`, not from a skeleton.
+- **Empty and error states are still text.** Skeletons are only for "still loading".
+
+---
+
 ## State management
 
 | Kind of state | Where it lives |
@@ -483,6 +522,7 @@ Before opening a PR:
 - [ ] Mutations invalidate the queries they change
 - [ ] Forms use Formik, a Yup schema and `components/forms` fields; custom controls use `useFormField`
 - [ ] Submit buttons are `SubmitButton`; other buttons are `Button`
+- [ ] Loading states use the skeletons in `components/ui/Skeleton.tsx`, never "Loading…" text
 - [ ] No duplicate error toasts for HTTP failures
 - [ ] **This README is updated in the same change** for any new feature, route, endpoint, hook, form component, button variant, env var or convention (and `lib/api/README.md` for endpoint-layer changes)
 - [ ] `npx tsc --noEmit` and `npm run lint` show no new problems

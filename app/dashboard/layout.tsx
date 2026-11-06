@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Bell, ChevronDown, LayoutPanelTop, Menu } from 'lucide-react';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
+import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import { useAuthStore } from '@/lib/store/authStore';
 import Link from 'next/link';
 
@@ -102,10 +103,33 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Shown while the dashboard shell loads: sidebar, header and a few content cards
+function DashboardShellSkeleton() {
+  return (
+    <SkeletonGroup label="Loading dashboard" className="flex h-screen bg-[#FFFAF7]">
+      <div className="hidden w-[260px] shrink-0 space-y-4 border-r border-[#F0E9E5] bg-white p-5 lg:block">
+        <Skeleton strong className="h-8 w-32" />
+        {Array.from({ length: 8 }, (_, index) => (
+          <Skeleton key={index} className="h-9 w-full rounded-lg" />
+        ))}
+      </div>
+      <div className="flex-1 space-y-6 p-5 sm:p-8">
+        <Skeleton strong className="h-8 w-56" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton key={index} className="h-28 rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-72 w-full rounded-xl" />
+      </div>
+    </SkeletonGroup>
+  );
+}
+
 // 2. Wrap the layout in Suspense at the top export level
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#FFFAF7]">Loading dashboard...</div>}>
+    <Suspense fallback={<DashboardShellSkeleton />}>
       <DashboardContent>{children}</DashboardContent>
     </Suspense>
   );

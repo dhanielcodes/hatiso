@@ -4,6 +4,7 @@ import React, { useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServices';
+import { Skeleton } from '@/components/ui/Skeleton';
 import type { DigitalServiceCategory } from '@/lib/api/digitalServices';
 
 export interface ServiceItem {
@@ -377,7 +378,7 @@ export default function ServiceTabsSelector({
           }}
         >
           {isLoading && Array.from({ length: 6 }, (_, index) => (
-            <div key={index} className="h-[125px] w-[105px] shrink-0 animate-pulse rounded-2xl bg-white/10 sm:h-[142px] sm:w-[124px]" />
+            <Skeleton key={index} tone="dark" className="h-[125px] w-[105px] shrink-0 rounded-2xl sm:h-[142px] sm:w-[124px]" />
           ))}
           {services.map((srv) => {
             const isActive = activeSlug === srv.slug;

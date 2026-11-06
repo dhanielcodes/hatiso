@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useNotifications } from '@/lib/queries/useNotifications';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 type CategoryFilter = 'All' | 'Payment Updates' | 'Reminders' | 'Offers' | 'Security Alerts';
@@ -200,11 +201,7 @@ export default function NotificationsPage() {
 
                 {/* ── Notification list ── */}
                 <section className="mt-6 space-y-4" aria-live="polite">
-                    {isLoading && (
-                        <div className="rounded-xl border border-[#F4EFEB] bg-white px-6 py-16 text-center text-sm text-slate-500">
-                            Loading notifications…
-                        </div>
-                    )}
+                    {isLoading && <ListSkeleton rows={4} card avatar={false} label="Loading notifications" />}
 
                     {!isLoading &&
                         visible.map((item) => {
