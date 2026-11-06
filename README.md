@@ -396,6 +396,15 @@ Don't call `helpers.setValue(x)` followed by `helpers.setTouched(true)`. In Form
 
 `lib/validation/schemas.ts` exports `emailSchema`, `phoneSchema`, `passwordSchema`, `requiredString()`, `amountSchema()`, `numberSchema()`, `dateSchema()` and full schemas such as `loginSchema` and `registerSchema`. Reuse them before writing new rules.
 
+### OTP codes
+
+Use `components/auth/OtpInput` (`value`, `onChange`, `length`, `hasError`) for verification codes. It is used in register, forgot-password and Banking.
+
+- It handles fast typing, backspace across boxes, arrow keys and pasting a whole code.
+- It tracks the latest value itself, so digits aren't lost when keys arrive faster than React re-renders.
+- Clearing `value` from outside (for example after a rejected code) moves the cursor back to the first box.
+- The boxes shrink below the `sm` breakpoint so six of them fit on a 375px screen.
+
 ### Not every input is a form
 
 Search boxes and list filters (on Transactions, Notifications, Analytics, Banks…) don't submit anything. They stay as plain controlled inputs.
