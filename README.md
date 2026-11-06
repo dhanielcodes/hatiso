@@ -508,6 +508,9 @@ The React Query defaults in `app/providers.tsx` are: retry once, no refetch on w
   - Muted text `#52617A` / `#7A7F8A`
   - Borders `#E6E3E0`
 - **Form and button styles live in `components/forms/styles.ts`** (`fieldControlClass`, `fieldLabelClass`, `buttonClass`, …). Use these rather than copying class strings.
+- **Charts** are Chart.js wrappers in `components/dashboard/DashboardCharts.tsx`:
+  - `SpendingChart`: line/area chart.
+  - `ServiceUsageChart`: a pie by default; pass `donut` for the ring with rounded segments used on Analytics.
 - **Icons** come from `lucide-react`.
 - **Remote images** must come from a host listed under `images.remotePatterns` in `next.config.ts`.
 

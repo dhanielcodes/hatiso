@@ -5,6 +5,7 @@ import {
   ArcElement,
   CategoryScale,
   Chart,
+  DoughnutController,
   Filler,
   LineController,
   LineElement,
@@ -18,6 +19,7 @@ import {
 Chart.register(
   ArcElement,
   CategoryScale,
+  DoughnutController,
   Filler,
   LineController,
   LineElement,
@@ -98,31 +100,52 @@ export function SpendingChart({ data }: { data: SpendingDatum[] }) {
   return <canvas ref={canvasRef} aria-label="Monthly spending chart" role="img" />;
 }
 
-export function ServiceUsageChart({ data }: { data: UsageDatum[] }) {
+/**
+ * Share of transactions per digital service.
+ * `donut` draws a ring with rounded, slightly separated segments (analytics design);
+ * otherwise a plain pie.
+ */
+export function ServiceUsageChart({ data, donut = false }: { data: UsageDatum[]; donut?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const chart = new Chart(canvas, {
-      type: 'pie',
-      data: {
-        labels: data.map((item) => item.name),
-        datasets: [{ data: data.map((item) => item.value), backgroundColor: data.map((item) => item.color), borderWidth: 0 }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: (item: TooltipItem<'pie'>) => `${item.label}: ${item.raw}%` } },
-        },
-      },
-    });
+    const tooltip = { callbacks: { label: (item: TooltipItem<'pie' | 'doughnut'>) => `${item.label}: ${item.raw}%` } };
+    const labels = data.map((item) => item.name);
+    const values = data.map((item) => item.value);
+    const colors = data.map((item) => item.color);
+
+    const chart = donut
+      ? new Chart(canvas, {
+          type: 'doughnut',
+          data: {
+            labels,
+            datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, borderRadius: 8, spacing: 3 }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '52%',
+            plugins: { legend: { display: false }, tooltip },
+          },
+        })
+      : new Chart(canvas, {
+          type: 'pie',
+          data: {
+            labels,
+            datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip },
+          },
+        });
 
     return () => chart.destroy();
-  }, [data]);
+  }, [data, donut]);
 
   return <canvas ref={canvasRef} aria-label="Digital services usage chart" role="img" />;
 }

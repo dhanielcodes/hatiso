@@ -565,7 +565,7 @@ export default function AnalyticsPage() {
                         <CardHeader title="Transaction Rate by Digital Services" subtitle="Transaction distribution across Hatiso digital services." />
                         {isLoading ? (
                             <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row">
-                                <ChartSkeleton shape="donut" className="h-[200px] w-[200px] shrink-0" label="Loading services" />
+                                <ChartSkeleton shape="donut" className="h-[220px] w-[220px] shrink-0" label="Loading services" />
                                 <ProgressListSkeleton rows={4} className="w-full flex-1" />
                             </div>
                         ) : usageRows.length === 0 ? (
@@ -574,10 +574,10 @@ export default function AnalyticsPage() {
                             </div>
                         ) : (
                             <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row">
-                                <div className="relative h-[200px] w-[200px] shrink-0">
-                                    <ServiceUsageChart data={usageRows} />
+                                <div className="relative h-[220px] w-[220px] shrink-0">
+                                    <ServiceUsageChart data={usageRows} donut />
                                     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                        <span className="text-2xl font-semibold text-[#18202A]">100%</span>
+                                        <span className="text-[28px] font-medium tracking-[-0.02em] text-[#18202A]">100%</span>
                                     </div>
                                 </div>
 
