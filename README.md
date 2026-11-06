@@ -1,36 +1,488 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hatiso (QApp)
 
-## Getting Started
+Hatiso is a digital marketplace and personal finance dashboard. The public side lists services (airtime, data, electricity, cable TV, education, insurance…) and lets guests pay for them with Paystack. Signed-in users get a dashboard with spending analytics, transactions, banking, rewards, notifications, support and account settings.
 
-First, run the development server:
+This README is for frontend developers joining the project. It covers how to run the app, where things live, and the conventions for **endpoints**, **forms** and **buttons**. Please follow them so the codebase stays consistent.
+
+---
+
+## Contents
+
+- [Tech stack](#tech-stack)
+- [Getting started](#getting-started)
+- [Folder structure](#folder-structure)
+- [Routing and authentication](#routing-and-authentication)
+- [Endpoint structure](#endpoint-structure)
+- [Forms](#forms)
+- [Buttons](#buttons)
+- [State management](#state-management)
+- [Errors and notifications](#errors-and-notifications)
+- [Styling](#styling)
+- [Conventions checklist](#conventions-checklist)
+
+---
+
+## Tech stack
+
+| Concern | Library |
+| --- | --- |
+| Framework | [Next.js 16](https://nextjs.org) (App Router, Turbopack) with React 19 |
+| Language | TypeScript (strict), path alias `@/*` → project root |
+| Styling | Tailwind CSS v4 |
+| Server state / data fetching | [TanStack Query v5](https://tanstack.com/query) on top of an [axios](https://axios-http.com) client |
+| Client state | [Zustand](https://zustand.docs.pmnd.rs) (session, UI, marketplace) |
+| Forms | [Formik](https://formik.org) + [Yup](https://github.com/jquense/yup) |
+| Toasts | [sonner](https://sonner.emilkowal.ski) |
+| Icons | [lucide-react](https://lucide.dev) |
+| Charts | chart.js |
+| Payments | Paystack (`react-paystack`) |
+
+> **Next.js 16 note:** this version has breaking changes from older Next.js (for example, route protection lives in `proxy.ts`, not `middleware.ts`). Read the bundled docs in `node_modules/next/dist/docs/` before using an API you haven't used in this version.
+
+---
+
+## Getting started
+
+### Requirements
+
+- Node.js 20+
+- npm (the repo uses `package-lock.json`)
+
+### Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```bash
+cp .env.example .env.local
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Then fill in `.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | Backend base URL. All requests go through the axios client in `lib/api/axios.ts`. |
+| `NEXT_PUBLIC_API_VERSION` | Version segment used in versioned routes, e.g. `v1` → `/api/v1/...`. |
+| `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | Paystack public key for checkout. Checkout shows an error without it. |
 
-## Learn More
+### Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the dev server on [http://localhost:3000](http://localhost:3000) |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run lint` | Run ESLint |
+| `npx tsc --noEmit` | Type-check the project (run before opening a PR) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Only run one `next dev` per checkout. A second one in the same folder won't start.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Folder structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```text
+.
+├── app/                        # Routes (Next.js App Router). Pages stay thin.
+│   ├── layout.tsx              # Root layout
+│   ├── providers.tsx           # React Query client + <Toaster />
+│   ├── page.tsx                # Marketplace home
+│   ├── auth/                   # login, register, forgot-password, reset-password
+│   ├── services/               # Public service catalogue + [slug] checkout
+│   ├── categories/[slug]/      # Category listing
+│   ├── banks/                  # Banks directory
+│   ├── contact/, contact-us/   # Contact pages
+│   └── dashboard/              # Signed-in area (protected by proxy.ts)
+│       ├── layout.tsx          # Sidebar + header shell
+│       ├── page.tsx            # Overview
+│       ├── analytics/  banking/  notifications/  profile/
+│       ├── rewards/  services/  support/  transactions/[id]/
+│
+├── components/
+│   ├── forms/                  # ⭐ Shared Formik fields, buttons and styles (see "Forms")
+│   ├── dashboard/              # Dashboard page bodies (ProfilePage, SupportPage, …) + sidebar, charts
+│   ├── services/               # Service checkout pieces (payment form, selectors, Paystack)
+│   ├── marketplace/            # Public site sections (Navbar, Hero, Footer, …)
+│   └── auth/                   # Auth UI pieces (brand panel, OTP input, step indicator, …)
+│
+├── lib/
+│   ├── api/                    # ⭐ Request functions, one file per backend domain (see "Endpoint structure")
+│   │   ├── axios.ts            # Axios instance, interceptors, apiGet/apiPost/apiPut/apiPatch/apiDelete
+│   │   ├── auth.ts             # Login, current user, profile, password, registration
+│   │   ├── dashboard.ts        # Dashboard + analytics
+│   │   ├── digitalServices.ts  # Categories, catalogue, orders, payments
+│   │   ├── notifications.ts    # Notifications + notification settings
+│   │   └── orders.ts           # Order history
+│   ├── queries/                # ⭐ React Query hooks, one file per lib/api module (useAuth.ts ↔ auth.ts, …)
+│   ├── store/                  # Zustand stores (authStore, uiStore, marketplaceStore)
+│   ├── auth/session.ts         # Token/cookie persistence helpers
+│   ├── validation/             # Reusable Yup schemas (email, phone, password, amount, …)
+│   └── constants/              # Static data (categories)
+│
+├── types/index.ts              # Shared types: ApiResponse<T>, ApiError, User, AuthState, …
+├── proxy.ts                    # Route protection (redirects for /dashboard and auth pages)
+├── public/                     # Static assets
+└── next.config.ts              # Next.js config (remote image hosts, Turbopack, …)
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Where does new code go?
+
+| You're adding… | Put it in… |
+| --- | --- |
+| A new route | `app/<route>/page.tsx`, kept thin. It sets `metadata` and renders a component. |
+| The UI for a dashboard page | `components/dashboard/<Name>Page.tsx` |
+| A backend call | `lib/api/<domain>.ts` |
+| A hook that uses it | `lib/queries/use<Domain>.ts` |
+| A form input | Reuse `components/forms`. Only add a new field there if none fits. |
+| A reusable Yup rule | `lib/validation/schemas.ts` |
+| A shared type | Next to its API function, or `types/index.ts` if it's app-wide |
+
+Example of a thin route file:
+
+```tsx
+// app/dashboard/profile/page.tsx
+import AccountPage from '@/components/dashboard/ProfilePage';
+
+export const metadata = { title: 'Account | Hatiso' };
+
+export default function DashboardAccountPage() {
+  return <AccountPage />;
+}
+```
+
+---
+
+## Routing and authentication
+
+- **Route protection** is handled in `proxy.ts`. It checks for the `hasito_auth_token` cookie:
+  - `/dashboard/*` without a session → redirect to `/auth/login?redirect=<path>`
+  - `/auth/login` or `/auth/register` with a session → redirect to `/dashboard`
+- **Logging in** (`useAuthStore().login`) calls the login endpoint and saves the session through `lib/auth/session.ts`. The token goes to `localStorage` plus a cookie, so `proxy.ts` can see it. The store then loads the current user.
+- **Every request** gets `Authorization: Bearer <token>` from the axios request interceptor.
+- **On a `401`**, the response interceptor clears the session, resets the auth store and redirects to the login page.
+
+---
+
+## Endpoint structure
+
+Every backend call goes through **three layers**. The dashboard page is the reference implementation.
+
+```text
+lib/api/<domain>.ts      →    lib/queries/use<Domain>.ts    →    page / component
+typed request functions       React Query hooks                  uses hooks only
+```
+
+The full write-up with more examples is in [`lib/api/README.md`](lib/api/README.md).
+
+### The response shape
+
+Every endpoint responds with the same structure, typed as `ApiResponse<T>` in `types/index.ts`:
+
+```ts
+interface ApiResponse<T> {
+  code: number;    // e.g. 200
+  status: boolean; // false means the request failed
+  data: T;         // the payload
+}
+```
+
+### 1. Request functions (`lib/api/<domain>.ts`)
+
+- Declare the request and response types in this file.
+- Use the helpers from `lib/api/axios.ts` (`apiGet`, `apiPost`, `apiPut`, `apiPatch`, `apiDelete`). `apiPost` and `apiPut` take an optional axios config, for custom headers.
+- **Return the full response as-is.** No unwrapping, `try/catch` or `status` checks here.
+- Versioned routes use `` `/api/${process.env.NEXT_PUBLIC_API_VERSION}/...` ``. Public routes use `/api/public/...`.
+
+```ts
+// lib/api/auth.ts
+import { apiGet, apiPut } from '@/lib/api/axios';
+import type { ApiResponse } from '@/types';
+
+export interface CurrentUserProfile {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+}
+
+export function getCurrentUser() {
+  return apiGet<ApiResponse<CurrentUserProfile>>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/users/me`);
+}
+
+export function updateProfile(payload: ProfileUpdatePayload) {
+  return apiPut<ApiResponse<RegisterResponseData>>(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/users/me`, payload);
+}
+```
+
+### 2. Hooks (`lib/queries/use<Domain>.ts`)
+
+The hooks file is named after its API module: `auth.ts` → `useAuth.ts`, `orders.ts` → `useOrders.ts`.
+
+- **Reads** use `useQuery` with `select: (response) => response.data`, so components get the payload directly.
+- **Writes** use `useMutation`. The `mutationFn` returns `.data`, and `onSuccess` invalidates the queries the write affects.
+- **Query keys** are exported as constants (`currentUserQueryKey`, `notificationSettingsQueryKey`, …) so other hooks can invalidate them.
+
+```ts
+// lib/queries/useAuth.ts
+export const currentUserQueryKey = ['current-user'] as const;
+
+export function useCurrentUser() {
+  return useQuery({
+    queryKey: currentUserQueryKey,
+    queryFn: getCurrentUser,
+    select: (response) => response.data,
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ProfileUpdatePayload) => updateProfile(payload).then((response) => response.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: currentUserQueryKey }),
+  });
+}
+```
+
+### 3. Pages and components
+
+- **Only call hooks.** Never import request functions from `lib/api` into a component; import **types** only.
+- **Read loading and error state from the hook** (`isLoading`, `isError`, `isPending`) instead of keeping your own flags.
+
+```tsx
+const { data: user, isLoading, isError, refetch } = useCurrentUser();
+const updateProfile = useUpdateProfile();
+
+await updateProfile.mutateAsync({ firstName, lastName, displayName, bio });
+```
+
+### Available hooks
+
+| File | Hooks |
+| --- | --- |
+| `useAuth.ts` | `useCurrentUser`, `useUpdateProfile`, `useResetPassword`, `useForgotPassword`, `useRecoverPassword`, `useRegister`, `useVerifyUser`, `useResendVerification` |
+| `useDashboard.ts` | `useDashboard`, `useAnalytics`, `useAnalyticsCSV` |
+| `useDigitalServices.ts` | `useDigitalServiceCategories`, `useDigitalServiceCatalogues`, `useCreateDigitalServiceOrder`, `useCreatePaymentQuote`, `useCreatePayment`, `useVerifyPayment` |
+| `useNotifications.ts` | `useNotifications`, `useNotificationSettings`, `useUpdateNotificationSettings` |
+| `useOrders.ts` | `useDigitalServiceOrders` |
+
+The checkout hooks take `authenticated` (default `false`): pass `true` on the dashboard to use the signed-in endpoints, and leave it off for guest checkout.
+
+### Adding a new endpoint
+
+1. Add the types and a function to `lib/api/<domain>.ts`. Create the file if the domain is new.
+2. Add a `useQuery` or `useMutation` hook to `lib/queries/use<Domain>.ts`, with an exported query key.
+3. Use the hook in your component.
+
+---
+
+## Forms
+
+**Every form uses Formik, a Yup schema, and the shared components in `components/forms`.** Don't build forms from `useState` and raw `<input>`s.
+
+### Available components
+
+Import them from `@/components/forms`:
+
+| Component | Use for |
+| --- | --- |
+| `TextField` | Text, email, etc. Supports `icon` (trailing) and `startIcon` (leading). |
+| `PasswordField` | Password with a show/hide toggle |
+| `PhoneField` | Phone numbers. `dialCode="+234"` shows a fixed prefix; `showCountryAffix` shows the NG flag. |
+| `TextAreaField` | Multi-line text |
+| `SelectField` | Native select. Takes `options: { value, label }[]` and `placeholder`. |
+| `DateField` | Date picker (`minDate`, `maxDate`) |
+| `NumberField` | Numbers (stored as a `number` by default) |
+| `AmountField` | Naira amounts, formatted while typing |
+| `MinorAmountField` | Naira entered by the user, stored in kobo |
+| `CheckboxField` | Checkbox with a label |
+| `SubmitButton` | Submit button that shows a spinner while Formik is submitting |
+| `Button` | Non-submit actions (Cancel, Edit, Back…) |
+| `FieldShell` | Label + error + hint wrapper, for building a new field |
+| `useFormField` | Hook for building custom Formik-bound controls (see below) |
+
+All fields take `name`, `label`, `required`, `hint`, and a `variant`:
+
+| `variant` | Where |
+| --- | --- |
+| `light` (default) | Public marketplace pages |
+| `auth` | Login, register and recovery screens |
+| `dashboard` | Signed-in dashboard pages |
+| `dark` | Dark panels |
+
+### Example
+
+```tsx
+import { Formik, Form, type FormikHelpers } from 'formik';
+import * as Yup from 'yup';
+import { PasswordField, SubmitButton, TextField } from '@/components/forms';
+import { emailSchema } from '@/lib/validation';
+
+type Values = { email: string; password: string };
+
+const schema = Yup.object({
+  email: emailSchema,
+  password: Yup.string().required('Enter your password.'),
+});
+
+export function ExampleForm() {
+  const mutation = useSomething(); // a hook from lib/queries
+
+  const handleSubmit = async (values: Values, { resetForm }: FormikHelpers<Values>) => {
+    await mutation.mutateAsync(values); // return/await the promise so the button shows its spinner
+    resetForm();
+  };
+
+  return (
+    <Formik<Values> initialValues={{ email: '', password: '' }} validationSchema={schema} onSubmit={handleSubmit}>
+      <Form noValidate className="space-y-5">
+        <TextField name="email" type="email" label="Email" required variant="dashboard" />
+        <PasswordField name="password" label="Password" required variant="dashboard" />
+        <SubmitButton variant="primary" loadingLabel="Saving…">Save</SubmitButton>
+      </Form>
+    </Formik>
+  );
+}
+```
+
+### How validation behaves
+
+The shared fields handle this through `useFormField`. You don't need to configure anything:
+
+- **Errors appear while typing.** A field counts as touched on its first change, not only on blur.
+- **Errors show after a submit attempt**, even on fields the user never touched.
+- **Errors match the current value.** Values are always validated against the new value.
+
+Don't set `validateOnChange={false}` on a `<Formik>`: it brings back errors that lag behind what the user typed.
+
+### Building a custom field
+
+Use `useFormField` instead of Formik's `useField`. The support page's star rating is an example:
+
+```tsx
+import { useFormField } from '@/components/forms';
+
+function RatingField({ name }: { name: string }) {
+  const { field, setValue, error } = useFormField<number>(name);
+  return (
+    <>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button key={n} type="button" aria-checked={field.value === n} onClick={() => setValue(n)}>
+          ★
+        </button>
+      ))}
+      {error && <p className="mt-2 text-xs text-rose-600">{error}</p>}
+    </>
+  );
+}
+```
+
+`useFormField` returns:
+
+- `field`: spread it on an input. Its `onChange` also marks the field touched.
+- `setValue(v)`: validates the new value and marks the field touched.
+- `markTouched()`: marks the field touched without validating.
+- `hasError`, `error`, `meta`, `helpers`.
+
+Don't call `helpers.setValue(x)` followed by `helpers.setTouched(true)`. In Formik that validates the previous value.
+
+### Reusable rules
+
+`lib/validation/schemas.ts` exports `emailSchema`, `phoneSchema`, `passwordSchema`, `requiredString()`, `amountSchema()`, `numberSchema()`, `dateSchema()` and full schemas such as `loginSchema` and `registerSchema`. Reuse them before writing new rules.
+
+### Not every input is a form
+
+Search boxes and list filters (on Transactions, Notifications, Analytics, Banks…) don't submit anything. They stay as plain controlled inputs.
+
+---
+
+## Buttons
+
+| Component | When |
+| --- | --- |
+| `SubmitButton` | The submit button inside a `<Formik>` form. It disables itself and shows a spinner while submitting. |
+| `Button` | Any other action button. It defaults to `type="button"`. |
+
+Both take `variant`, `size` and `fullWidth`, built from `buttonClass()` in `components/forms/styles.ts`:
+
+| Prop | Values |
+| --- | --- |
+| `variant` | `primary` (orange), `secondary` (outlined), `ghost` (text) |
+| `size` | `sm`, `md` (default), `lg` |
+| `fullWidth` | `true` to stretch |
+
+```tsx
+<div className="flex justify-end gap-2">
+  <Button variant="secondary" size="sm" onClick={onCancel}>Cancel</Button>
+  <SubmitButton variant="primary" size="sm" loadingLabel="Saving…">Save</SubmitButton>
+</div>
+```
+
+How `SubmitButton` uses `loadingLabel`:
+
+- **Plain text:** shows the built-in spinner next to the text.
+- **A JSX element:** shows the element as given.
+
+If you leave `variant` off, `SubmitButton` adds no styles of its own, so you can style it fully with `className`. The auth pages do this.
+
+For a new style that will be reused, add a variant to `buttonClass()` instead of copying long class strings.
+
+---
+
+## State management
+
+| Kind of state | Where it lives |
+| --- | --- |
+| Data from the backend | React Query, through hooks in `lib/queries` |
+| Session (token, logged-in user, `login`, `logout`) | `lib/store/authStore.ts` (Zustand, persisted to `localStorage`) |
+| UI state (mobile menu, language) | `lib/store/uiStore.ts` |
+| Marketplace search / selected category | `lib/store/marketplaceStore.ts` |
+| Form state | Formik |
+
+Don't put API calls in Zustand stores. The auth store keeps `login` because it also persists the session, but every other account action is a hook in `useAuth.ts`.
+
+The React Query defaults in `app/providers.tsx` are: retry once, no refetch on window focus.
+
+---
+
+## Errors and notifications
+
+- **All failed requests reject with the same `ApiError` shape** (`{ message, statusCode, errors? }`, in `types/index.ts`). The axios response interceptor does this for:
+  - HTTP errors
+  - responses with `status: false`, even when the HTTP status is 2xx
+- **The interceptor shows the error toast for you** (sonner, top-right), except on `401`, where it logs the user out instead.
+  - Don't toast HTTP failures again in components.
+  - Only toast errors your own code throws, such as `new Error(...)`. `ProfilePage` has a `notifyError` helper that does exactly this.
+- **Success toasts are up to the component**: `toast.success('Profile updated.')`.
+
+---
+
+## Styling
+
+- **Tailwind CSS v4**, configured through `app/globals.css`, with utility classes in JSX.
+- **Brand colours used throughout:**
+  - Orange `#E95312` / `#EE7230` / `#FF6500`
+  - Navy `#243B4A` / `#20232A`
+  - Muted text `#52617A` / `#7A7F8A`
+  - Borders `#E6E3E0`
+- **Form and button styles live in `components/forms/styles.ts`** (`fieldControlClass`, `fieldLabelClass`, `buttonClass`, …). Use these rather than copying class strings.
+- **Icons** come from `lucide-react`.
+- **Remote images** must come from a host listed under `images.remotePatterns` in `next.config.ts`.
+
+---
+
+## Conventions checklist
+
+Before opening a PR:
+
+- [ ] Backend calls live in `lib/api/<domain>.ts`, return `ApiResponse<T>`, and are only used through hooks in `lib/queries/use<Domain>.ts`
+- [ ] Components import only **types** from `lib/api`
+- [ ] Mutations invalidate the queries they change
+- [ ] Forms use Formik, a Yup schema and `components/forms` fields; custom controls use `useFormField`
+- [ ] Submit buttons are `SubmitButton`; other buttons are `Button`
+- [ ] No duplicate error toasts for HTTP failures
+- [ ] **This README is updated in the same change** for any new feature, route, endpoint, hook, form component, button variant, env var or convention (and `lib/api/README.md` for endpoint-layer changes)
+- [ ] `npx tsc --noEmit` and `npm run lint` show no new problems
