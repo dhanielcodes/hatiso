@@ -520,6 +520,15 @@ The React Query defaults in `app/providers.tsx` are: retry once, no refetch on w
 - **Charts** are Chart.js wrappers in `components/dashboard/DashboardCharts.tsx`:
   - `SpendingChart`: line/area chart.
   - `ServiceUsageChart`: a pie by default; pass `donut` for the ring with rounded segments used on Analytics.
+- **Auth brand panel** (`components/auth/AuthBrandPanel.tsx`) is the left side of login, register and forgot-password on desktop:
+  - It stays in the viewport while the form scrolls, and the photo frame shrinks to fit shorter screens.
+  - Photos live in the `SLIDES` array (`src`, `alt`, plus `position` and `zoom` to set the crop). They cross-fade inside a squircle frame every 6s.
+  - Picking a slide with the dots or a swipe restarts the countdown, and it pauses while the tab is in the background.
+  - The floating icon bubbles use the `auth-float*` animations in `globals.css`, which turn off when reduced motion is preferred.
+- **Guest sign-up invite** (`components/marketplace/CustomerInvitePopup.tsx`):
+  - When a guest closes the payment receipt on a service page ("Make another payment" or "Return to marketplace"), `ServiceDetailPage` shows the "Ready to make it official?" popup before continuing.
+  - Its buttons link to `/auth/login` and `/auth/register`. Closing it (✕, Escape or the backdrop) carries on where the guest was going.
+  - `shouldInviteGuest(isAuthenticated)` skips logged-in users, and guests who already saw it this browser session (`sessionStorage` key `hasito_invite_shown`).
 - **Icons** come from `lucide-react`.
 - **Remote images** must come from a host listed under `images.remotePatterns` in `next.config.ts`.
 

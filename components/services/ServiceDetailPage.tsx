@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import {
@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import Navbar from '@/components/marketplace/Navbar';
 import Footer from '@/components/marketplace/Footer';
+import CustomerInvitePopup, { shouldInviteGuest } from '@/components/marketplace/CustomerInvitePopup';
+import { useAuthStore } from '@/lib/store/authStore';
 import ServiceTabsSelector from './ServiceTabsSelector';
 import ServicePaymentForm, { PendingPayment } from './ServicePaymentForm';
 import {
@@ -110,6 +112,11 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
   const [formResetKey, setFormResetKey] = useState(0);
   const [paymentError, setPaymentError] = useState('');
   const [paystackRequest, setPaystackRequest] = useState<PaystackCheckoutRequest | null>(null);
+  // Guest sign-up invite, shown after the receipt is dismissed. `inviteNext` is where to go once it closes.
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteNext, setInviteNext] = useState<string | null>(null);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const router = useRouter();
   const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? '';
   const createOrderMutation = useCreateDigitalServiceOrder();
   const quoteMutation = useCreatePaymentQuote();
@@ -285,6 +292,22 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
     setPaymentError('');
     setPaystackRequest(null);
     setFormResetKey((k) => k + 1);
+  };
+
+  /** Leaving the receipt: guests get the sign-up invite first, then continue to `next` (if any). */
+  const finishService = (next?: string) => {
+    if (shouldInviteGuest(isAuthenticated)) {
+      setInviteNext(next ?? null);
+      setInviteOpen(true);
+    } else if (next) {
+      router.push(next);
+    }
+  };
+
+  const closeInvite = () => {
+    setInviteOpen(false);
+    if (inviteNext) router.push(inviteNext);
+    setInviteNext(null);
   };
 
 
@@ -482,13 +505,15 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
               </div>
 
               <div className="space-y-3 pt-1">
-                <button type="button" onClick={handleReset} className="w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#E95312]/20 transition hover:bg-[#E04B14] active:scale-[0.98]">Make another payment</button>
-                <Link href="/" className="block w-full rounded-xl border border-slate-200 py-3 text-center text-sm font-semibold text-[#304A57] transition hover:bg-slate-50 active:scale-[0.98]">Return to marketplace</Link>
+                <button type="button" onClick={() => { handleReset(); finishService(); }} className="w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#E95312]/20 transition hover:bg-[#E04B14] active:scale-[0.98]">Make another payment</button>
+                <button type="button" onClick={() => { setIsSuccessModalOpen(false); finishService('/'); }} className="block w-full rounded-xl border border-slate-200 py-3 text-center text-sm font-semibold text-[#304A57] transition hover:bg-slate-50 active:scale-[0.98]">Return to marketplace</button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {inviteOpen && <CustomerInvitePopup onClose={closeInvite} />}
 
       <Footer />
     </div>

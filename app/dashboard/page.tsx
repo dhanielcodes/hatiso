@@ -25,6 +25,7 @@ import {
   Skeleton,
 } from "@/components/ui/Skeleton";
 import type { DashboardBucket } from "@/lib/api/dashboard";
+import moment from "moment";
 
 const usageColors = [
   "#F45A08",
@@ -229,7 +230,7 @@ export default function DashboardPage() {
     <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
       <section className="border-b border-[#F2EAE5] px-5 py-5 sm:px-8 sm:py-6">
         <p className="text-sm font-medium text-[#FA5B0B]">
-          {data ? formatRange(data.from, data.to) : "Dashboard overview"}
+          {moment(today).format("DD MMMM YYYY")}
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-[-0.04em] sm:text-[26px]">
           Welcome back, {displayName} 👋
