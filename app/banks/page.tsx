@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import Image from 'next/image';
+import React, { useState, useMemo } from "react";
+import Image from "next/image";
 import {
   Search,
   ArrowUpRight,
@@ -13,15 +13,15 @@ import {
   Menu,
   ExternalLink,
   X,
-} from 'lucide-react';
-import Navbar from '@/components/marketplace/Navbar';
-import Footer from '@/components/marketplace/Footer';
+} from "lucide-react";
+import Navbar from "@/components/marketplace/Navbar";
+import Footer from "@/components/marketplace/Footer";
 
 export interface BankItem {
   id: string;
   name: string;
   logo: string;
-  status: 'Online' | 'Degraded' | 'Down';
+  status: "Online" | "Degraded" | "Down";
   services: string[];
   websiteUrl: string;
   description?: string;
@@ -29,13 +29,38 @@ export interface BankItem {
 
 const BANKS_DATA: BankItem[] = [
   {
-    id: 'tm30',
-    status: 'Online',
-    name: 'TM30 MFB',
-    services: ['Transfer', 'Bills', 'Airtime & data', 'Card', 'USSD', 'Virtual account'],
-    logo: '/images/bank_ab_mfb_hq.png',
-    websiteUrl: 'https://tm-30-bank.vercel.app/',
-    description: 'Licensed by the Central Bank of Nigeria to deliver innovative microfinance and retail banking services.',
+    id: "tm30",
+    status: "Online",
+    name: "TM30 MFB",
+    services: [
+      "Transfer",
+      "Bills",
+      "Airtime & data",
+      "Card",
+      "USSD",
+      "Virtual account",
+    ],
+    logo: "/images/bank_ab_mfb_hq.png",
+    websiteUrl: "https://tm-30-bank.vercel.app/",
+    description:
+      "Licensed by the Central Bank of Nigeria to deliver innovative microfinance and retail banking services.",
+  },
+  {
+    id: "tm302",
+    status: "Online",
+    name: "TM30 MFB 2",
+    services: [
+      "Transfer",
+      "Bills",
+      "Airtime & data",
+      "Card",
+      "USSD",
+      "Virtual account",
+    ],
+    logo: "/images/bank_ab_mfb_hq.png",
+    websiteUrl: "https://tm-30-bank.vercel.app/",
+    description:
+      "Licensed by the Central Bank of Nigeria to deliver innovative microfinance and retail banking services.",
   },
   /* {
     id: 'ibile',
@@ -129,39 +154,52 @@ const BANKS_DATA: BankItem[] = [
   }, */
 ];
 
-const ALL_SERVICES = ['Transfer', 'Bills', 'Airtime & data', 'Card', 'USSD', 'Virtual account'];
-const ALL_STATUSES: Array<'Online' | 'Degraded' | 'Down'> = ['Online', 'Degraded', 'Down'];
+const ALL_SERVICES = [
+  "Transfer",
+  "Bills",
+  "Airtime & data",
+  "Card",
+  "USSD",
+  "Virtual account",
+];
+const ALL_STATUSES: Array<"Online" | "Degraded" | "Down"> = [
+  "Online",
+  "Degraded",
+  "Down",
+];
 
 export default function BanksPage() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedBankNames, setSelectedBankNames] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [selectedBankModal, setSelectedBankModal] = useState<BankItem | null>(null);
+  const [selectedBankModal, setSelectedBankModal] = useState<BankItem | null>(
+    null,
+  );
 
   // Toggle bank checkbox
   const toggleBank = (name: string) => {
     setSelectedBankNames((prev) =>
-      prev.includes(name) ? prev.filter((b) => b !== name) : [...prev, name]
+      prev.includes(name) ? prev.filter((b) => b !== name) : [...prev, name],
     );
   };
 
   // Toggle service checkbox
   const toggleService = (srv: string) => {
     setSelectedServices((prev) =>
-      prev.includes(srv) ? prev.filter((s) => s !== srv) : [...prev, srv]
+      prev.includes(srv) ? prev.filter((s) => s !== srv) : [...prev, srv],
     );
   };
 
   // Toggle status checkbox
   const toggleStatus = (st: string) => {
     setSelectedStatuses((prev) =>
-      prev.includes(st) ? prev.filter((s) => s !== st) : [...prev, st]
+      prev.includes(st) ? prev.filter((s) => s !== st) : [...prev, st],
     );
   };
 
   const clearAllFilters = () => {
-    setSearchQuery('');
+    setSearchQuery("");
     setSelectedBankNames([]);
     setSelectedServices([]);
     setSelectedStatuses([]);
@@ -179,7 +217,10 @@ export default function BanksPage() {
       }
 
       // 2. Bank Name checkbox filter
-      if (selectedBankNames.length > 0 && !selectedBankNames.includes(bank.name)) {
+      if (
+        selectedBankNames.length > 0 &&
+        !selectedBankNames.includes(bank.name)
+      ) {
         return false;
       }
 
@@ -223,13 +264,16 @@ export default function BanksPage() {
             <div className="flex flex-col lg:col-span-7">
               <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
                 <span className="text-[#E95312]">Every bank.</span>
-                <span className="block text-white mt-1">One place to choose from.</span>
+                <span className="block text-white mt-1">
+                  One place to choose from.
+                </span>
               </h1>
 
               <p className="mt-4 text-sm leading-relaxed text-slate-300 sm:text-base max-w-xl">
-                Discover digital services from trusted providers, manage your banking.
-                Browse banks and fintechs, then tap any one to visit its official website.
-                Hatiso takes you straight to the bank&apos;s own domain.
+                Discover digital services from trusted providers, manage your
+                banking. Browse banks and fintechs, then tap any one to visit
+                its official website. Hatiso takes you straight to the
+                bank&apos;s own domain.
               </p>
             </div>
 
@@ -282,7 +326,8 @@ export default function BanksPage() {
               Choose a bank
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              Filter by service supported, status and reliability before you tap to visit its official website
+              Filter by service supported, status and reliability before you tap
+              to visit its official website
             </p>
           </div>
 
@@ -293,7 +338,9 @@ export default function BanksPage() {
             <aside className="lg:col-span-4 xl:col-span-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-6">
               {/* Header with Clear button */}
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-sm font-bold text-slate-900">Filters</span>
+                <span className="text-sm font-bold text-slate-900">
+                  Filters
+                </span>
                 {hasActiveFilters && (
                   <button
                     type="button"
@@ -324,7 +371,7 @@ export default function BanksPage() {
                   {searchQuery && (
                     <button
                       type="button"
-                      onClick={() => setSearchQuery('')}
+                      onClick={() => setSearchQuery("")}
                       className="text-slate-400 hover:text-slate-600"
                     >
                       <X className="h-3 w-3" />
@@ -334,23 +381,27 @@ export default function BanksPage() {
 
                 {/* Scrollable Checkbox List */}
                 <div className="max-h-48 overflow-y-auto space-y-2 pr-1 no-scrollbar text-xs">
-                  {Array.from(new Set(BANKS_DATA.map((b) => b.name))).map((bName) => {
-                    const isChecked = selectedBankNames.includes(bName);
-                    return (
-                      <label
-                        key={bName}
-                        className="flex items-center gap-2.5 cursor-pointer select-none py-0.5 hover:text-[#E95312] transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleBank(bName)}
-                          className="h-4 w-4 rounded border-slate-300 text-[#E95312] focus:ring-[#E95312]"
-                        />
-                        <span className="font-medium text-slate-700">{bName}</span>
-                      </label>
-                    );
-                  })}
+                  {Array.from(new Set(BANKS_DATA.map((b) => b.name))).map(
+                    (bName) => {
+                      const isChecked = selectedBankNames.includes(bName);
+                      return (
+                        <label
+                          key={bName}
+                          className="flex items-center gap-2.5 cursor-pointer select-none py-0.5 hover:text-[#E95312] transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleBank(bName)}
+                            className="h-4 w-4 rounded border-slate-300 text-[#E95312] focus:ring-[#E95312]"
+                          />
+                          <span className="font-medium text-slate-700">
+                            {bName}
+                          </span>
+                        </label>
+                      );
+                    },
+                  )}
                 </div>
               </div>
 
@@ -373,7 +424,9 @@ export default function BanksPage() {
                           onChange={() => toggleService(srv)}
                           className="h-4 w-4 rounded border-slate-300 text-[#E95312] focus:ring-[#E95312]"
                         />
-                        <span className="font-medium text-slate-700">{srv}</span>
+                        <span className="font-medium text-slate-700">
+                          {srv}
+                        </span>
                       </label>
                     );
                   })}
@@ -389,11 +442,11 @@ export default function BanksPage() {
                   {ALL_STATUSES.map((status) => {
                     const isChecked = selectedStatuses.includes(status);
                     const dotColor =
-                      status === 'Online'
-                        ? 'bg-emerald-500'
-                        : status === 'Degraded'
-                          ? 'bg-amber-500'
-                          : 'bg-red-500';
+                      status === "Online"
+                        ? "bg-emerald-500"
+                        : status === "Degraded"
+                          ? "bg-amber-500"
+                          : "bg-red-500";
 
                     return (
                       <label
@@ -407,7 +460,9 @@ export default function BanksPage() {
                             onChange={() => toggleStatus(status)}
                             className="h-4 w-4 rounded border-slate-300 text-[#E95312] focus:ring-[#E95312]"
                           />
-                          <span className="font-medium text-slate-700">{status}</span>
+                          <span className="font-medium text-slate-700">
+                            {status}
+                          </span>
                         </div>
                         <span className={`h-2 w-2 rounded-full ${dotColor}`} />
                       </label>
@@ -450,11 +505,11 @@ export default function BanksPage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {filteredBanks.map((bank, index) => {
                     const dotColor =
-                      bank.status === 'Online'
-                        ? 'bg-emerald-500'
-                        : bank.status === 'Degraded'
-                          ? 'bg-amber-500'
-                          : 'bg-red-500';
+                      bank.status === "Online"
+                        ? "bg-emerald-500"
+                        : bank.status === "Degraded"
+                          ? "bg-amber-500"
+                          : "bg-red-500";
 
                     return (
                       <div
@@ -466,7 +521,9 @@ export default function BanksPage() {
                         <div className="relative h-44 w-full bg-white p-5 flex items-center justify-center">
                           {/* Status Badge floating at top-left */}
                           <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-xs border border-slate-200/80 backdrop-blur-sm">
-                            <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${dotColor}`}
+                            />
                             <span>{bank.status}</span>
                           </div>
 
@@ -551,22 +608,27 @@ export default function BanksPage() {
 
               <div className="rounded-xl bg-[#EEF7FB] p-3.5 space-y-2">
                 <div className="flex justify-between">
-                  <span className="font-semibold text-slate-500">Gateway Status:</span>
+                  <span className="font-semibold text-slate-500">
+                    Gateway Status:
+                  </span>
                   <span
-                    className={`font-bold ${selectedBankModal.status === 'Online'
-                      ? 'text-emerald-700'
-                      : selectedBankModal.status === 'Degraded'
-                        ? 'text-amber-700'
-                        : 'text-red-700'
-                      }`}
+                    className={`font-bold ${
+                      selectedBankModal.status === "Online"
+                        ? "text-emerald-700"
+                        : selectedBankModal.status === "Degraded"
+                          ? "text-amber-700"
+                          : "text-red-700"
+                    }`}
                   >
                     {selectedBankModal.status}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-semibold text-slate-500">Official Domain:</span>
+                  <span className="font-semibold text-slate-500">
+                    Official Domain:
+                  </span>
                   <span className="font-mono font-medium text-slate-800">
-                    {selectedBankModal.websiteUrl.replace('https://', '')}
+                    {selectedBankModal.websiteUrl.replace("https://", "")}
                   </span>
                 </div>
               </div>

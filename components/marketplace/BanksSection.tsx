@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowUpRight, ArrowRight } from 'lucide-react';
+import React, { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { ArrowUpRight, ArrowRight } from "lucide-react";
 
 interface BankItem {
   id: string;
@@ -17,13 +17,24 @@ interface BankItem {
 
 const BANKS_LIST: BankItem[] = [
   {
-    id: 'tm30',
-    slug: 'tm30',
-    code: 'tm3o',
-    name: 'TM30 MFB',
-    logo: '/images/bank_ab_mfb_hq.png',
-    url: 'https://tm-30-bank.vercel.app/',
-    description: 'Licensed by the Central Bank of Nigeria to deliver innovative microfinance and retail banking services.',
+    id: "tm30",
+    slug: "tm30",
+    code: "tm3o",
+    name: "TM30 MFB",
+    logo: "/images/bank_ab_mfb_hq.png",
+    url: "https://tm-30-bank.vercel.app/",
+    description:
+      "Licensed by the Central Bank of Nigeria to deliver innovative microfinance and retail banking services.",
+  },
+  {
+    id: "tm302",
+    slug: "tm302",
+    code: "tm3o2",
+    name: "TM30 MFB 2",
+    logo: "/images/bank_ab_mfb_hq.png",
+    url: "https://tm-30-bank.vercel.app/",
+    description:
+      "Licensed by the Central Bank of Nigeria to deliver innovative microfinance and retail banking services.",
   },
   /*  {
      id: 'ibile',
@@ -237,8 +248,9 @@ export default function BanksSection() {
 
             {/* Privacy copy */}
             <p className="text-sm text-slate-500 leading-relaxed mb-6">
-              You&apos;re about to open {selectedBank.name}&apos;s secure banking service.
-              Hatiso will never see your username, password, PIN, or account details.
+              You&apos;re about to open {selectedBank.name}&apos;s secure
+              banking service. Hatiso will never see your username, password,
+              PIN, or account details.
             </p>
 
             {/* Secure destination card */}

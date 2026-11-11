@@ -38,6 +38,15 @@ const BANKS: BankCardItem[] = [
     url: "https://tm-30-bank.vercel.app/",
     categories: ["All", "Popular"],
   },
+  {
+    id: "tm302",
+    name: "TM30 MFB 2",
+    logo: "/images/bank_ab_mfb_hq.png",
+    badge: "Popular",
+    subtitle: "Internet & Mobile Banking",
+    url: "https://tm-30-bank.vercel.app/",
+    categories: ["All", "Popular"],
+  },
   /*  {
      id: 'ibile',
      name: 'IBILE MFB',
