@@ -532,7 +532,7 @@ export default function DashboardPage() {
                       <span className="font-semibold text-[#39475E]">
                         {formatNaira(transaction.totalMinor)}
                       </span>
-                      <StatusBadge status={transaction.paymentStatus} />
+                      <StatusBadge status={transaction.fulfilmentStatus} />
                     </div>
                   </div>
                 ))
