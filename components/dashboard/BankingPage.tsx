@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import Image from 'next/image';
+import React, { useState, useMemo } from "react";
+import Image from "next/image";
 import {
   Search,
   Landmark,
@@ -10,33 +10,33 @@ import {
   X,
   Loader2,
   Building2,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { Formik, Form } from 'formik';
-import * as Yup from 'yup';
-import OtpInput from '@/components/auth/OtpInput';
-import { Button, PhoneField, SubmitButton } from '@/components/forms';
-import { useAuthStore } from '@/lib/store/authStore';
+} from "lucide-react";
+import { toast } from "sonner";
+import { Formik, Form } from "formik";
+import * as Yup from "yup";
+import OtpInput from "@/components/auth/OtpInput";
+import { Button, PhoneField, SubmitButton } from "@/components/forms";
+import { useAuthStore } from "@/lib/store/authStore";
 
 export interface BankCardItem {
   id: string;
   name: string;
   logo: string;
-  badge?: 'Popular' | 'Recently used' | 'Maintenance';
+  badge?: "Popular" | "Recently used" | "Maintenance";
   subtitle?: string;
   url: string;
-  categories: Array<'All' | 'Popular' | 'Recently used' | 'Maintenance'>;
+  categories: Array<"All" | "Popular" | "Recently used" | "Maintenance">;
 }
 
 const BANKS: BankCardItem[] = [
   {
-    id: 'tm30',
-    name: 'TM30 MFB',
-    logo: '/images/bank_ab_mfb_hq.png',
-    badge: 'Popular',
-    subtitle: 'Internet & Mobile Banking',
-    url: 'https://tm-30-bank.vercel.app/',
-    categories: ['All', 'Popular'],
+    id: "tm30",
+    name: "TM30 MFB",
+    logo: "/images/bank_ab_mfb_hq.png",
+    badge: "Popular",
+    subtitle: "Internet & Mobile Banking",
+    url: "https://tm-30-bank.vercel.app/",
+    categories: ["All", "Popular"],
   },
   /*  {
      id: 'ibile',
@@ -125,34 +125,37 @@ const BANKS: BankCardItem[] = [
    }, */
 ];
 
-type FilterTab = 'All' | 'Popular' | 'Recently used' | 'Maintenance';
+type FilterTab = "All" | "Popular" | "Recently used" | "Maintenance";
 
 const phoneStepSchema = Yup.object({
   phone: Yup.string()
     .trim()
-    .required('Enter your phone number.')
-    .test('digits', 'Enter a valid phone number.', (v = '') => v.replace(/\D/g, '').length >= 10),
+    .required("Enter your phone number.")
+    .test(
+      "digits",
+      "Enter a valid phone number.",
+      (v = "") => v.replace(/\D/g, "").length >= 10,
+    ),
 });
 
 export default function BankingPage() {
   const { user } = useAuthStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<FilterTab>('All');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<FilterTab>("All");
 
   // Redirection Modal State
   const [selectedBank, setSelectedBank] = useState<BankCardItem | null>(null);
-  const [modalStep, setModalStep] = useState<'phone' | 'otp' | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState('+234 904 637 3748');
-  const [otp, setOtp] = useState('');
+  const [modalStep, setModalStep] = useState<"phone" | "otp" | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState("+234 904 637 3748");
+  const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [otpError, setOtpError] = useState(false);
-
 
   // Filter banks
   const filteredBanks = useMemo(() => {
     return BANKS.filter((bank) => {
       // Tab filter
-      if (activeTab !== 'All' && !bank.categories.includes(activeTab)) {
+      if (activeTab !== "All" && !bank.categories.includes(activeTab)) {
         return false;
       }
       // Search filter
@@ -170,8 +173,8 @@ export default function BankingPage() {
   // Open modal step 1
   const handleBankClick = (bank: BankCardItem) => {
     setSelectedBank(bank);
-    setModalStep('phone');
-    setOtp('');
+    setModalStep("phone");
+    setOtp("");
     setOtpError(false);
   };
 
@@ -179,7 +182,7 @@ export default function BankingPage() {
   const handleCloseModal = () => {
     setSelectedBank(null);
     setModalStep(null);
-    setOtp('');
+    setOtp("");
     setOtpError(false);
     setIsVerifying(false);
   };
@@ -188,7 +191,7 @@ export default function BankingPage() {
   const handleContinueToOtp = ({ phone }: { phone: string }) => {
     const value = phone.trim();
     setPhoneNumber(value);
-    setModalStep('otp');
+    setModalStep("otp");
     toast.success(`OTP code sent to ${value}`);
   };
 
@@ -196,7 +199,7 @@ export default function BankingPage() {
   const handleVerifyOtp = () => {
     if (!otp || otp.length < 4) {
       setOtpError(true);
-      toast.error('Please enter the 6-digit verification code');
+      toast.error("Please enter the 6-digit verification code");
       return;
     }
 
@@ -207,31 +210,31 @@ export default function BankingPage() {
       setIsVerifying(false);
       if (selectedBank) {
         toast.success(`Verified! Opening ${selectedBank.name}...`);
-        window.open(selectedBank.url, '_blank', 'noopener,noreferrer');
+        window.open(selectedBank.url, "_blank", "noopener,noreferrer");
       }
       handleCloseModal();
     }, 800);
   };
 
   // Badge styling helper
-  const renderBadge = (badge: BankCardItem['badge']) => {
+  const renderBadge = (badge: BankCardItem["badge"]) => {
     if (!badge) return null;
 
-    if (badge === 'Popular') {
+    if (badge === "Popular") {
       return (
         <span className="rounded-full bg-[#EEF2F6] px-2 py-0.5 text-[11px] font-medium text-[#4B5563]">
           Popular
         </span>
       );
     }
-    if (badge === 'Recently used') {
+    if (badge === "Recently used") {
       return (
         <span className="rounded-full bg-[#E6F8ED] px-2 py-0.5 text-[11px] font-medium text-[#1E7E44]">
           Recently used
         </span>
       );
     }
-    if (badge === 'Maintenance') {
+    if (badge === "Maintenance") {
       return (
         <span className="rounded-full bg-[#FEF6E6] px-2 py-0.5 text-[11px] font-medium text-[#B7791F]">
           Maintenance
@@ -245,17 +248,25 @@ export default function BankingPage() {
     <div className="min-h-full bg-[#FFFAF7] space-y-6">
       {/* Top Header */}
       <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Banking</p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">Your bank is <span className="text-[#FF6500]">one tap away.</span></h2>
-        <p className="mt-2 text-sm text-[#777486] sm:text-base">Visit your bank's secure digital banking service. Hatiso never sees or stores your login details.</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">
+          Banking
+        </p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">
+          Your bank is <span className="text-[#FF6500]">one tap away.</span>
+        </h2>
+        <p className="mt-2 text-sm text-[#777486] sm:text-base">
+          Visit your bank&apos;s secure digital banking service. Hatiso never
+          sees or stores your login details.
+        </p>
       </section>
 
       {/* Security Handoff Cyan Banner */}
-      <section className='px-5 sm:px-8 space-y-6'>
+      <section className="px-5 sm:px-8 space-y-6">
         <div className="flex items-center gap-3 rounded-xl border border-[#CFE8EC] bg-[#EAF6F8] px-4 py-3 text-xs sm:text-sm text-[#1B3C4A]">
           <Landmark className="h-5 w-5 shrink-0 text-[#147D8F]" />
           <span>
-            A secure handoff, every time. You&apos;ll always see where you&apos;re going before leaving Hatiso.
+            A secure handoff, every time. You&apos;ll always see where
+            you&apos;re going before leaving Hatiso.
           </span>
         </div>
         {/* Search and Filter Tabs */}
@@ -274,17 +285,20 @@ export default function BankingPage() {
 
           {/* Filter Pills */}
           <div className="flex flex-wrap items-center gap-2">
-            {(['All', 'Popular', 'Recently used', 'Maintenance'] as FilterTab[]).map((tab) => {
+            {(
+              ["All", "Popular", "Recently used", "Maintenance"] as FilterTab[]
+            ).map((tab) => {
               const isActive = activeTab === tab;
               return (
                 <button
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`rounded-full px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${isActive
-                    ? 'bg-[#1B3C4A] text-white'
-                    : 'border border-[#E8E3DF] bg-white text-[#524E4E] hover:bg-[#F9F7F5]'
-                    }`}
+                  className={`rounded-full px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-[#1B3C4A] text-white"
+                      : "border border-[#E8E3DF] bg-white text-[#524E4E] hover:bg-[#F9F7F5]"
+                  }`}
                 >
                   {tab}
                 </button>
@@ -294,9 +308,8 @@ export default function BankingPage() {
         </div>
       </section>
 
-
       {/* Section Subheader */}
-      <section className='px-5 py-7 space-y-6 sm:px-8'>
+      <section className="px-5 py-7 space-y-6 sm:px-8">
         <div>
           <p className="text-sm font-medium text-[#656160]">
             Where would you like to bank today?
@@ -307,9 +320,12 @@ export default function BankingPage() {
         {filteredBanks.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#DDD7D2] bg-white p-12 text-center">
             <Building2 className="mx-auto h-10 w-10 text-[#C4C0BE]" />
-            <h3 className="mt-3 text-base font-semibold text-[#1B3C4A]">No banks found</h3>
+            <h3 className="mt-3 text-base font-semibold text-[#1B3C4A]">
+              No banks found
+            </h3>
             <p className="mt-1 text-xs text-[#8A8583]">
-              No partner banks matched your search query. Try searching with a different keyword.
+              No partner banks matched your search query. Try searching with a
+              different keyword.
             </p>
           </div>
         ) : (
@@ -342,7 +358,7 @@ export default function BankingPage() {
                       {renderBadge(bank.badge)}
                     </div>
                     <p className="mt-0.5 text-xs text-[#8A8583]">
-                      {bank.subtitle || 'Internet & Mobile Banking'}
+                      {bank.subtitle || "Internet & Mobile Banking"}
                     </p>
                   </div>
                 </div>
@@ -380,7 +396,6 @@ export default function BankingPage() {
               className="object-contain"
               quality={95}
             />
-
           </div>
 
           {/* Right: banking.png — anchored to right edge, partially overflowing top */}
@@ -395,7 +410,6 @@ export default function BankingPage() {
             />
           </div>
         </div>
-
       </section>
 
       {/* ── 2-STEP REDIRECTION MODAL ─────────────────────────────────── */}
@@ -416,21 +430,30 @@ export default function BankingPage() {
             </div>
 
             {/* STEP 1: Phone Number */}
-            {modalStep === 'phone' && (
+            {modalStep === "phone" && (
               <Formik
                 initialValues={{ phone: user?.phone || phoneNumber }}
                 validationSchema={phoneStepSchema}
-                onSubmit={handleContinueToOtp}
+                onSubmit={() => {
+                  window.open(
+                    selectedBank.url,
+                    "_blank",
+                    "noopener,noreferrer",
+                  );
+                  handleCloseModal();
+                }}
               >
                 <Form className="mt-4" noValidate>
                   <h2 className="text-xl font-bold text-[#1B3C4A]">
                     Continue to {selectedBank.name}
                   </h2>
                   <p className="mt-2 text-xs leading-relaxed text-[#736F6D] sm:text-sm">
-                    You&apos;re about to open {selectedBank.name}&apos;s secure banking service. Hatiso will never see your username, password, PIN, or account details. Enter phone number to proceed to bank
+                    You&apos;re about to open {selectedBank.name}&apos;s secure
+                    banking service. Hatiso will never see your username,
+                    password, PIN, or account details.
                   </p>
 
-                  <PhoneField
+                  {/* <PhoneField
                     name="phone"
                     label="Phone Number"
                     required
@@ -439,12 +462,16 @@ export default function BankingPage() {
                     placeholder="+234 904 637 3748"
                     className="mt-6"
                   />
-
+ */}
                   <div className="mt-6 space-y-2.5">
                     <SubmitButton variant="primary" fullWidth>
                       Continue to bank
                     </SubmitButton>
-                    <Button variant="secondary" fullWidth onClick={handleCloseModal}>
+                    <Button
+                      variant="secondary"
+                      fullWidth
+                      onClick={handleCloseModal}
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -453,13 +480,14 @@ export default function BankingPage() {
             )}
 
             {/* STEP 2: OTP Verification */}
-            {modalStep === 'otp' && (
+            {modalStep === "otp" && (
               <div className="mt-4">
                 <h2 className="text-xl font-bold text-[#1B3C4A]">
                   Continue to {selectedBank.name}
                 </h2>
                 <p className="mt-2 text-xs leading-relaxed text-[#736F6D] sm:text-sm">
-                  An OTP (One-Time Password) has been sent to your phone number. Enter OTP below to verify your phone number.
+                  An OTP (One-Time Password) has been sent to your phone number.
+                  Enter OTP below to verify your phone number.
                 </p>
 
                 <div className="mt-6">
@@ -476,17 +504,27 @@ export default function BankingPage() {
                 </div>
 
                 <div className="mt-6 space-y-2.5">
-                  <Button variant="primary" fullWidth onClick={handleVerifyOtp} disabled={isVerifying}>
+                  <Button
+                    variant="primary"
+                    fullWidth
+                    onClick={handleVerifyOtp}
+                    disabled={isVerifying}
+                  >
                     {isVerifying ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <span>Verifying identity...</span>
                       </>
                     ) : (
-                      'Verify identity'
+                      "Verify identity"
                     )}
                   </Button>
-                  <Button variant="secondary" fullWidth onClick={handleCloseModal} disabled={isVerifying}>
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    onClick={handleCloseModal}
+                    disabled={isVerifying}
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -498,4 +536,3 @@ export default function BankingPage() {
     </div>
   );
 }
-
