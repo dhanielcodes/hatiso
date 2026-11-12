@@ -1,286 +1,213 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-import { Globe, Menu, X, ChevronDown, User as UserIcon, LogOut, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { ChevronDown, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
+import XnettLogo from '@/components/auth/XnettLogo';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useUiStore } from '@/lib/store/uiStore';
 
+type NavKey = 'personal' | 'business' | 'banks' | 'contact';
+
+const LINKS: { key: NavKey; label: string; href: string }[] = [
+  { key: 'personal', label: 'Personal', href: '/' },
+  { key: 'business', label: 'Business', href: '/#business' },
+  { key: 'banks', label: 'Banks', href: '/banks' },
+  { key: 'contact', label: 'Contact us', href: '/contact' },
+];
+
+function activeKey(pathname: string): NavKey | null {
+  if (pathname.startsWith('/banks')) return 'banks';
+  if (pathname.startsWith('/contact')) return 'contact';
+  if (pathname === '/' || pathname.startsWith('/services') || pathname.startsWith('/categories')) return 'personal';
+  return null;
+}
+
+/** Landing navbar from the web redesign: logo, centred links, outlined + filled pill actions. */
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuthStore();
-  const { language, setLanguage, isMobileMenuOpen, toggleMobileMenu, setMobileMenuOpen } = useUiStore();
-  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const { isMobileMenuOpen, toggleMobileMenu, setMobileMenuOpen } = useUiStore();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const active = activeKey(pathname);
+  const signedIn = isAuthenticated && !!user;
 
-  const languages = ['English', 'Français', 'Español'];
+  // Close the profile menu on outside click or Escape
+  useEffect(() => {
+    if (!profileOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!profileRef.current?.contains(e.target as Node)) setProfileOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setProfileOpen(false);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [profileOpen]);
+
+  const signOut = () => {
+    logout();
+    setProfileOpen(false);
+    setMobileMenuOpen(false);
+    router.push('/');
+  };
 
   return (
-    <header className="relative z-50 w-full bg-transparent px-4 py-5 sm:px-8 lg:px-14">
-      <div className="mx-auto flex max-w-7xl items-center justify-between">
-        {/* Brand Logo & Left Nav */}
-        <div className="flex items-center gap-10">
-          <Link href="/" className="group flex items-center gap-2.5">
-            {/* Stylized XNETT Logo mark */}
-            <svg width="80" height="49" viewBox="0 0 80 49" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5.02148 7.3892C5.02148 7.51023 5.99496 8.4935 7.53007 9.91556C7.81462 10.1803 8.47361 10.8081 8.99025 11.3149C9.50697 11.8217 10.0761 12.3663 10.2633 12.5251C10.4505 12.684 10.8848 13.1 11.2368 13.4328C11.5887 13.7732 12.0755 14.2346 12.3151 14.4539C12.5622 14.6808 13.2062 15.2935 13.7379 15.8154C14.2771 16.3449 14.8387 16.8743 14.9809 16.9878C15.1232 17.1089 15.7298 17.6913 16.3288 18.2737C16.9279 18.8637 17.5344 19.4386 17.6767 19.5596C18.1859 19.968 19.0246 20.8681 19.0246 21.0043C19.0246 21.0875 18.6577 21.5186 18.1784 21.9952L17.3247 22.8424H16.6359C15.8271 22.8424 15.5651 22.9407 15.1756 23.3794C14.7413 23.8634 14.584 24.2946 14.6215 24.9224C14.6439 25.2099 14.7039 25.5351 14.7638 25.641C15.1981 26.42 15.7672 26.7756 16.5835 26.7756C17.1675 26.7756 17.5344 26.6394 17.8864 26.2991C18.4031 25.7998 18.4555 25.6713 18.5004 24.8241L18.5454 24.0374L19.9232 22.6608C20.687 21.9044 21.6006 21.0194 21.9675 20.6866C22.3869 20.3085 22.619 20.0361 22.619 19.9378C22.619 19.7562 20.0355 17.1543 19.4664 16.7685C19.2717 16.6323 18.4405 15.8609 17.6168 15.0515C16.8006 14.2421 15.8795 13.342 15.5725 13.0546C14.1048 11.6628 13.3335 10.861 13.3335 10.74C13.3335 10.619 13.4308 10.5963 14.2171 10.5585C14.6963 10.5358 15.273 10.4904 15.4901 10.4677C16.0368 10.4072 16.8455 10.619 17.4371 10.9745C17.9388 11.2846 18.4855 11.7611 19.9457 13.1681C20.4474 13.6521 21.009 14.1741 21.1963 14.3405C21.3759 14.4993 21.9526 15.0439 22.4692 15.5507C22.9859 16.0499 23.5925 16.6323 23.8171 16.8365C24.0418 17.0408 24.5585 17.5325 24.9778 17.9333C25.7866 18.7124 26.4231 19.31 26.76 19.5898C27.0895 19.8773 27.0296 20.0436 26.3482 20.6639C26.0112 20.9665 25.2623 21.6775 24.6783 22.2372C24.0942 22.7969 23.2181 23.6138 22.7313 24.0525C22.2446 24.4912 21.2037 25.4897 20.4025 26.2764C19.6087 27.0554 18.8823 27.7514 18.785 27.8194C18.6876 27.8799 18.0661 28.4623 17.3996 29.1128C16.7332 29.7633 15.6099 30.8374 14.906 31.503C14.2022 32.1687 13.0265 33.2882 12.2851 33.9991C11.5513 34.7026 10.473 35.7237 9.88889 36.2683C9.30481 36.8053 8.23393 37.8265 7.50012 38.5375C6.76626 39.241 5.90511 40.0579 5.5906 40.3377C4.692 41.1546 4.65456 41.132 7.0658 41.1849C10.0611 41.2529 16.0368 41.2454 17.3922 41.1698C18.6203 41.1093 18.6053 41.1093 19.0246 40.6933C19.0471 40.6706 19.2493 40.489 19.4739 40.2848C19.6986 40.0806 20.4249 39.3771 21.0839 38.7342C21.7429 38.0836 22.619 37.2289 23.0308 36.8356C23.4427 36.4423 24.2439 35.6708 24.8131 35.1186C25.4421 34.4984 25.8989 34.1126 25.9887 34.1126C26.0786 34.1126 26.3707 34.3244 26.6552 34.5891C26.9323 34.8463 27.3142 35.1943 27.5088 35.3683L27.8533 35.6783L27.8084 36.3969C27.7485 37.3953 27.8009 37.5845 28.2352 38.0685C28.7295 38.6207 28.9766 38.7266 29.7179 38.7266C30.4368 38.7266 30.6015 38.6736 31.0134 38.2954C32.3388 37.0853 31.56 34.8009 29.8227 34.7934C29.4408 34.7934 29.4034 34.7707 28.9991 34.3925C28.7669 34.1656 28.4899 33.9311 28.385 33.863C28.2802 33.7873 27.5239 33.0537 26.7001 32.2216C25.1051 30.618 25.0303 30.5651 24.6408 30.8374C24.536 30.9055 23.9894 31.4047 23.4277 31.9493C22.8661 32.4939 21.7653 33.5453 20.994 34.279C20.2227 35.0203 19.1295 36.0641 18.5753 36.5935C18.0137 37.1306 17.4521 37.6298 17.3247 37.698C16.9728 37.8794 13.3559 37.8794 13.2811 37.7055C13.2287 37.5618 14.936 35.8448 16.8155 34.1504C17.1825 33.8176 17.6543 33.394 17.8564 33.2049C18.2833 32.8192 19.2119 31.9417 20.3725 30.8223C20.8068 30.4063 21.361 29.8768 21.6081 29.6499C21.8552 29.4306 22.5666 28.7497 23.1807 28.1447C23.8022 27.5396 24.4611 26.9042 24.6408 26.7453C24.828 26.5789 25.4047 26.0344 25.9213 25.5351C26.438 25.0283 27.0296 24.4686 27.2318 24.287C27.4339 24.1055 28.2053 23.3718 28.9466 22.6533C29.6879 21.9422 30.4967 21.1707 30.7438 20.9514C31.8296 19.9756 31.8371 19.9454 31.238 19.4007C31.0958 19.2797 30.946 19.136 30.9011 19.0982C30.8561 19.0528 30.6989 18.9242 30.5566 18.8032C30.4143 18.6897 29.6056 17.9031 28.7594 17.0634C27.9132 16.2238 27.1045 15.4448 26.9622 15.3238C26.8199 15.2028 26.0112 14.4388 25.1651 13.6143C24.3188 12.7974 23.4802 11.9956 23.293 11.8293C23.1057 11.6704 22.8362 11.4132 22.6939 11.2695C22.5441 11.1258 22.2446 10.8384 22.0199 10.6341C21.7953 10.4223 20.9416 9.60542 20.1179 8.81875C19.3017 8.02457 18.5978 7.35138 18.5454 7.32113C18.5004 7.29087 15.4377 7.26062 11.746 7.26062C5.38841 7.26062 5.02148 7.26818 5.02148 7.3892Z" fill="#E95312" />
-              <path d="M39.8498 7.79554C39.5428 8.07584 39.1667 8.40918 39.0209 8.53033C38.8751 8.65157 38.5605 8.93192 38.3302 9.1667C38.0923 9.39396 37.6164 9.84095 37.2557 10.1516C36.9026 10.4621 36.0353 11.2651 35.3369 11.9318C32.9499 14.212 32.6813 14.4696 32.6046 14.4696C32.5662 14.4696 32.1211 14.0833 31.6145 13.606L30.7011 12.75L30.6551 12.0379C30.6014 11.2272 30.4633 10.8712 30.0718 10.5303C29.4732 10.0152 28.6443 9.86369 27.8691 10.1212C27.493 10.2501 26.879 10.8257 26.7409 11.1742C26.6411 11.4318 26.6411 12.5075 26.7409 12.7651C26.8483 13.0379 27.47 13.6742 27.7769 13.8181C27.9535 13.9015 28.2528 13.9394 28.767 13.9394H29.5038L31.2154 15.5529C33.6253 17.8332 33.4949 17.7271 33.7405 17.7271C33.9861 17.7271 34.2701 17.4847 36.1505 15.6893C36.8258 15.0378 37.532 14.3711 37.7239 14.212C37.908 14.0454 38.737 13.2651 39.5735 12.4772C40.4025 11.6818 41.2237 10.9394 41.4079 10.8182L41.7302 10.6061H43.7948C45.3298 10.6061 45.8517 10.6288 45.8517 10.697C45.8517 10.7425 45.5447 11.0757 45.1763 11.4318C44.0481 12.5075 42.6128 13.8181 42.444 13.9318C42.3519 13.9924 41.6228 14.6742 40.8093 15.4469C39.42 16.7726 38.7062 17.4468 35.3369 20.568C34.5694 21.2725 33.3798 22.3861 32.689 23.03C31.9982 23.6739 30.8393 24.7497 30.1179 25.4163C27.6081 27.7269 26.9711 28.3632 26.9711 28.5602C26.9711 28.742 28.0379 29.8254 30.0488 31.7041C30.4019 32.0298 30.9698 32.5602 31.3075 32.8783C31.6452 33.1965 32.029 33.5298 32.1518 33.6283C32.2823 33.7192 32.8809 34.2798 33.4949 34.8707C34.1089 35.4616 34.7689 36.0827 34.9532 36.2419C35.145 36.401 35.8512 37.0525 36.5266 37.6812C37.6471 38.7266 38.1306 39.1736 39.5351 40.4993C40.3411 41.2645 39.75 41.2114 47.4482 41.2114C53.8568 41.2114 54.1408 41.2038 54.1408 41.0751C54.1408 40.9387 53.6726 40.4766 51.1859 38.1812C50.4414 37.4919 49.3055 36.4389 48.6532 35.8327C48.0084 35.2267 46.9493 34.2571 46.3122 33.6737C45.184 32.651 43.6029 31.1662 41.0165 28.7193C40.3411 28.0754 39.7884 27.4921 39.7884 27.4315C39.7884 27.28 40.5866 26.4921 41.17 26.0678C41.5614 25.7724 41.6151 25.7572 42.1217 25.7572C42.7664 25.7572 43.3496 25.5072 43.7334 25.0678C44.0481 24.7042 44.1632 24.333 44.1632 23.6891C44.1632 23.0528 44.0941 22.8861 43.649 22.4164C43.1271 21.8634 42.9429 21.7876 42.16 21.78C41.5614 21.78 41.4693 21.8028 41.1316 22.0074C40.9244 22.1361 40.6327 22.4013 40.4868 22.6134C40.2182 22.977 40.2105 23.0149 40.1722 23.8028L40.1338 24.6285L39.044 25.6663C38.4453 26.2345 37.5627 27.0754 37.0715 27.53C36.3731 28.1739 36.1812 28.3935 36.1812 28.5526C36.1812 28.7041 36.3577 28.9239 36.9333 29.4769C37.3401 29.8784 37.7622 30.2571 37.862 30.3253C37.9618 30.3935 38.9979 31.3783 40.1645 32.5223C41.3312 33.6586 42.4056 34.6737 42.5515 34.7722C42.6973 34.8782 42.9429 35.0752 43.0887 35.2267C43.2345 35.3707 43.5492 35.651 43.7794 35.848C44.7389 36.651 45.7213 37.6282 45.6829 37.7343C45.6061 37.9312 44.6083 38.0449 43.2038 38.0145L41.8991 37.9918L41.5153 37.7343C41.0932 37.4464 40.2336 36.6736 37.9464 34.5071C37.1099 33.7116 35.8281 32.5223 35.1067 31.8556C32.9883 29.9011 31.6452 28.6056 31.6683 28.5224C31.6989 28.4163 34.0168 26.227 34.838 25.53C35.8281 24.6891 39.2435 21.53 42.1293 18.7877C44.3013 16.7272 46.0129 15.1287 46.389 14.8181C46.5348 14.7045 46.9186 14.3635 47.2332 14.0605C47.5479 13.7651 48.4459 12.9242 49.2288 12.197C52.6365 9.00767 54.1408 7.53797 54.1408 7.39403C54.1408 7.2804 53.5882 7.27283 47.2793 7.27283H40.4101L39.8498 7.79554Z" fill="#E95312" />
-              <path d="M45.0098 22.9237V27.5377H45.3842H45.7586V23.9751C45.7586 20.6772 45.7661 20.42 45.8859 20.4427C45.9982 20.4654 46.8743 21.5319 46.8818 21.6529C46.8818 21.6832 47.1439 22.0614 47.4659 22.5001C48.095 23.3624 48.8288 24.3987 49.3904 25.2307C50.1093 26.2821 50.9929 27.4469 51.1127 27.4923C51.1802 27.5149 51.4871 27.5377 51.7942 27.5377H52.3483V22.9237V18.3097H51.9739H51.5994L51.5845 21.2369C51.5695 23.3321 51.5396 24.1642 51.4797 24.1869C51.3973 24.2171 50.1318 22.5606 49.9446 22.1748C49.8922 22.069 49.7274 21.8269 49.5776 21.6378C49.4278 21.4487 49.031 20.8814 48.694 20.3746C48.357 19.8678 48.05 19.4367 48.0051 19.4064C47.9677 19.3837 47.7879 19.1493 47.6157 18.8921C47.4434 18.6349 47.2712 18.4004 47.2263 18.3701C47.1814 18.3399 46.6646 18.3097 46.0806 18.3097H45.0098V22.9237Z" fill="white" />
-              <path d="M53.5 22.9237V27.5377H56.5702H59.6404V27.1595V26.7813H57.7159C56.6526 26.7813 55.739 26.751 55.6866 26.7208C55.6192 26.6678 55.5967 26.2442 55.6117 24.8449L55.6342 23.0371L57.3414 23.0144L59.0413 22.9993V22.6968V22.3942H57.4163C56.5178 22.3942 55.739 22.3639 55.6866 22.3337C55.6192 22.2808 55.5967 21.8874 55.6117 20.6091L55.6342 18.9526L57.5661 18.9299L59.4906 18.9148V18.6122V18.3097H56.4953H53.5V22.9237Z" fill="white" />
-              <path d="M60.5 18.6122V18.9148H61.9228H63.3455V23.2262V27.5377H64.4688H65.592L65.607 23.2413L65.6294 18.9526L68.6098 18.9299L71.5826 18.9148V23.2262V27.5377H72.5562C73.4322 27.5377 73.5446 27.5225 73.6794 27.3864C73.8291 27.2351 73.8291 27.1368 73.8291 23.0749V18.9148H75.2519H76.6747V18.6122V18.3097H68.5874H60.5V18.6122Z" fill="white" />
-              <path d="M45.9678 29.0294C45.4885 29.09 45.2939 29.8161 45.6383 30.2321C45.7432 30.3532 45.9753 30.5347 46.17 30.633C46.4995 30.807 46.8065 31.102 46.8065 31.2457C46.8065 31.397 46.492 31.6163 46.2823 31.6163C46.1625 31.6163 46.0577 31.6466 46.0577 31.692C46.0577 31.7298 46.2299 31.7676 46.4396 31.7676C46.7616 31.7676 46.8514 31.7298 47.0386 31.5482C47.2109 31.3667 47.2558 31.2609 47.2558 30.9885C47.2558 30.6104 47.0087 30.2321 46.7092 30.1338C46.4845 30.0657 46.0727 29.7481 45.9753 29.5665C45.7657 29.1656 46.4321 29.0446 46.7841 29.4228C46.8964 29.5438 47.0162 29.6497 47.0461 29.6497C47.1435 29.6497 47.1135 29.2186 47.0162 29.143C46.9039 29.0521 46.2673 28.9841 45.9678 29.0294Z" fill="white" />
-              <path d="M52.1846 29.0973C52.1695 29.1275 52.1771 29.6646 52.1995 30.2773C52.237 31.3967 52.237 31.4043 52.4467 31.5859C52.6189 31.7372 52.7387 31.7674 53.1056 31.7674C53.3527 31.7674 53.5475 31.7372 53.5475 31.6917C53.5475 31.6463 53.48 31.6161 53.3902 31.6161C53.3078 31.6161 53.1355 31.5102 53.0083 31.3892L52.7836 31.1623L52.8061 30.1184L52.8286 29.0822L52.5215 29.0595C52.3493 29.0444 52.1995 29.067 52.1846 29.0973Z" fill="white" />
-              <path d="M53.9888 29.097C53.9888 29.1348 53.9888 29.6113 53.9963 30.1559C54.0037 31.1393 54.0037 31.162 53.8165 31.3511C53.6068 31.5629 53.5844 31.6158 53.6967 31.6158C53.8165 31.6158 54.0786 31.3132 54.0337 31.2376C54.0037 31.1922 54.0187 31.162 54.0636 31.162C54.1011 31.162 54.146 30.7686 54.161 30.2316C54.176 29.7248 54.2209 29.2483 54.2508 29.1726C54.2958 29.0743 54.2808 29.0441 54.1535 29.0441C54.0636 29.0441 53.9963 29.0668 53.9888 29.097Z" fill="white" />
-              <path d="M59.3782 29.0972C59.3782 29.1274 59.3782 29.6645 59.3857 30.2772C59.3931 31.0411 59.3707 31.4269 59.3108 31.5025C59.161 31.684 59.2958 31.7673 59.7302 31.7673C60.0297 31.7673 60.1345 31.737 60.1345 31.6614C60.1345 31.6009 60.097 31.5252 60.0522 31.5025C59.9997 31.4647 59.9773 31.0487 59.9922 30.262L60.0147 29.0821L59.7002 29.0594C59.5279 29.0443 59.3857 29.0594 59.3782 29.0972Z" fill="white" />
-              <path d="M64.8906 29.1197C64.8606 29.165 64.8831 29.2483 64.928 29.3088C65.0029 29.4071 65.0478 29.4071 65.235 29.3088C65.3474 29.2483 65.5121 29.1953 65.602 29.1953C65.7443 29.1953 65.7518 29.2407 65.7518 30.2391C65.7518 31.0409 65.7293 31.3208 65.6394 31.4342C65.4298 31.7141 65.4971 31.7671 66.0513 31.7671C66.4556 31.7671 66.5754 31.7444 66.5754 31.6612C66.5754 31.6007 66.5455 31.525 66.5006 31.5023C66.4556 31.472 66.4257 30.9955 66.4257 30.3224C66.4257 29.2634 66.4332 29.1953 66.5679 29.1953C66.6503 29.1953 66.815 29.2861 66.9424 29.3919C67.2119 29.6189 67.3243 29.5811 67.3243 29.2634V29.0441H66.1336C65.3848 29.0441 64.9206 29.0743 64.8906 29.1197Z" fill="white" />
-              <path d="M72.11 30.2258C72.125 31.02 72.11 31.4285 72.0501 31.4889C72.0052 31.5343 71.9678 31.6176 71.9678 31.6705C71.9678 31.7537 72.1774 31.7688 73.0011 31.7537L74.0271 31.731L74.0495 31.4814C74.0795 31.194 73.9671 31.1638 73.7125 31.4058C73.5852 31.5267 73.4354 31.5798 73.2258 31.5798C72.7615 31.5798 72.7166 31.4663 72.7391 30.2636L72.754 29.2349L72.9862 29.2122C73.121 29.1971 73.3531 29.2425 73.5103 29.3106C73.7575 29.4088 73.8098 29.4164 73.8997 29.3181C74.1169 29.1063 73.9222 29.0458 72.9936 29.0458H72.0801L72.11 30.2258Z" fill="white" />
-              <path d="M73.3145 29.9077C73.3145 29.9683 73.2021 30.1044 73.0748 30.2103C72.94 30.3162 72.8726 30.407 72.925 30.407C72.9774 30.407 73.1048 30.4977 73.2021 30.6037L73.3893 30.8079V30.3011C73.3893 30.0288 73.3743 29.8019 73.3519 29.8019C73.3294 29.8019 73.3145 29.8472 73.3145 29.9077Z" fill="white" />
-              <path d="M45.459 31.3518C45.459 31.5333 45.4964 31.6165 45.5639 31.6165C45.6238 31.6165 45.7211 31.6392 45.7885 31.6619C45.8783 31.6997 45.8709 31.6468 45.7511 31.3972C45.5713 31.019 45.459 30.9963 45.459 31.3518Z" fill="#F9FAFB" />
-            </svg>
+    <header
+      className="lp-rise relative z-50 mx-auto flex w-full max-w-[1280px] items-center gap-x-10 gap-y-3 px-4 py-5 sm:px-6 sm:py-6"
+      style={{ '--d': '0s' } as React.CSSProperties}
+    >
+      <XnettLogo href="/" className="shrink-0 [&_svg]:h-10 [&_svg]:w-auto" />
 
-          </Link>
-
-          {/* Desktop Navigation Links */}
-          <nav className="hidden items-center gap-7 md:flex">
-            <Link
-              href="/#solutions"
-              className="text-sm font-medium text-white transition-colors hover:text-[#FF6500]"
-            >
-              Personal
-            </Link>
-            <Link
-              href="/#solutions"
-              className="text-sm font-medium text-slate-300 transition-colors hover:text-[#FF6500]"
-            >
-              Business
-            </Link>
-            <Link
-              href="/banks"
-              className={`text-sm font-medium transition-colors ${pathname === '/banks'
-                ? 'text-[#E95312] font-semibold'
-                : 'text-slate-300 hover:text-[#FF6500]'
-                }`}
-            >
-              Banks
-            </Link>
-          </nav>
-        </div>
-
-        {/* Right Navigation & Action Buttons */}
-        <div className="hidden items-center gap-6 md:flex">
+      <nav aria-label="Main" className="hidden flex-1 items-center justify-center gap-[34px] text-base lg:flex">
+        {LINKS.map((link) => (
           <Link
-            href="/contact"
-            className={`text-sm font-medium transition-colors ${pathname === '/contact'
-              ? 'text-[#E95312] font-semibold'
-              : 'text-slate-300 hover:text-white'
-              }`}
+            key={link.key}
+            href={link.href}
+            aria-current={active === link.key ? 'page' : undefined}
+            className={`py-2.5 transition-colors ${
+              active === link.key ? 'font-bold text-white' : 'text-[#9AA8B0] hover:text-white'
+            }`}
           >
-            Contact us
+            {link.label}
           </Link>
+        ))}
+      </nav>
 
-          {/* Language Selector */}
-          <div className="relative">
+      <div className="ml-auto hidden items-center gap-3 lg:ml-0 lg:flex">
+        {signedIn ? (
+          <div className="relative" ref={profileRef}>
             <button
-              onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-              className="flex items-center gap-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white"
-              aria-label="Change language"
+              type="button"
+              onClick={() => setProfileOpen((open) => !open)}
+              aria-expanded={profileOpen}
+              aria-haspopup="menu"
+              className="flex items-center gap-2.5 rounded-full border-[1.5px] border-white/80 py-2 pl-2 pr-4 font-semibold text-white transition hover:border-white"
             >
-              <span>{language}</span>
-              <Globe className="h-4 w-4 text-slate-400" />
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EE6E2D] text-sm font-extrabold text-[#14252E]">
+                {user.name.charAt(0).toUpperCase()}
+              </span>
+              <span className="max-w-[140px] truncate">{user.name}</span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
             </button>
-
-            {isLangDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-700/80 bg-[#162F3B] py-1 shadow-xl backdrop-blur-md">
-                {languages.map((lang) => (
-                  <button
-                    key={lang}
-                    onClick={() => {
-                      setLanguage(lang);
-                      setIsLangDropdownOpen(false);
-                    }}
-                    className={`block w-full px-4 py-1.5 text-left text-xs transition-colors ${language === lang
-                      ? 'bg-[#E95312]/20 font-semibold text-[#E95312]'
-                      : 'text-slate-200 hover:bg-slate-700/40'
-                      }`}
-                  >
-                    {lang}
-                  </button>
-                ))}
+            {profileOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full mt-2 w-60 overflow-hidden rounded-2xl border border-[#2A3740] bg-[#10181D] p-1.5 shadow-2xl"
+              >
+                <div className="px-3 py-2.5">
+                  <p className="truncate text-sm font-semibold text-white">{user.name}</p>
+                  <p className="truncate text-xs text-[#9AA8B0]">{user.email}</p>
+                </div>
+                <Link
+                  href="/dashboard"
+                  role="menuitem"
+                  onClick={() => setProfileOpen(false)}
+                  className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-[#DCE3E7] hover:bg-white/5"
+                >
+                  <LayoutDashboard className="h-4 w-4" /> Dashboard
+                </Link>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={signOut}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm text-[#F49A66] hover:bg-white/5"
+                >
+                  <LogOut className="h-4 w-4" /> Sign out
+                </button>
               </div>
             )}
           </div>
-
-          {/* Auth Action Buttons */}
-          {isAuthenticated && user ? (
-            <div className="relative">
-              <button
-                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="flex items-center gap-2.5 rounded-full border border-slate-700 bg-[#183643] py-1.5 pl-2 pr-3 text-sm text-white transition hover:border-[#E95312]/60"
-              >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E95312] text-xs font-bold text-white">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-                <span className="max-w-[120px] truncate font-medium">{user.name}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-              </button>
-
-              {isProfileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-52 rounded-xl border border-slate-700/80 bg-[#152E3A] p-2 shadow-2xl backdrop-blur-lg">
-                  <div className="border-b border-slate-700/60 px-3 py-2">
-                    <p className="text-xs font-semibold text-white">{user.name}</p>
-                    <p className="truncate text-[11px] text-slate-400">{user.email}</p>
-                    {user.balance !== undefined && (
-                      <p className="mt-1 text-xs font-medium text-emerald-400">
-                        Balance: ₦{user.balance.toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setIsProfileDropdownOpen(false)}
-                    className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/40 hover:text-white"
-                  >
-                    <LayoutDashboard className="h-3.5 w-3.5 text-slate-400" />
-                    Dashboard
-                  </Link>
-                  <button
-                    onClick={() => {
-                      logout();
-                      setIsProfileDropdownOpen(false);
-                      router.push('/');
-                    }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-rose-400 hover:bg-rose-500/10"
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    Sign out
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Link
-                href="/auth/login"
-                className="rounded-lg bg-[#E15F09] px-5 py-2 text-sm font-semibold text-white shadow-md shadow-[#E95312]/20 transition-all duration-200 hover:bg-[#E84D15] hover:shadow-lg hover:shadow-[#E95312]/30 active:scale-95"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/auth/register"
-                className="rounded-lg border border-slate-600/80 bg-[#1C3B49]/60 px-4 py-2 text-sm font-medium text-slate-200 backdrop-blur-sm transition-all duration-200 hover:border-slate-400 hover:bg-[#1C3B49] hover:text-white active:scale-95"
-              >
-                Create a new account
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Mobile Hamburger Button */}
-        <div className="flex items-center gap-3 md:hidden">
-          {!isAuthenticated && (
+        ) : (
+          <>
             <Link
               href="/auth/login"
-              className="rounded-lg bg-[#E95312] px-3.5 py-1.5 text-xs font-semibold text-white shadow"
+              className="rounded-full border-[1.5px] border-white px-7 py-3.5 font-semibold text-white transition hover:bg-white hover:text-[#0A1014]"
             >
               Sign in
             </Link>
-          )}
-          <button
-            onClick={toggleMobileMenu}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-700 bg-[#162F3B] text-slate-200"
-            aria-label="Toggle Menu"
-          >
-            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
+            <Link
+              href="/auth/register"
+              className="rounded-full bg-[#1E2A31] px-7 py-[15px] font-semibold text-white transition hover:bg-[#2A3740]"
+            >
+              Create a new account
+            </Link>
+          </>
+        )}
       </div>
 
-      {/* Mobile Menu Drawer */}
-      {isMobileMenuOpen && (
-        <div className="mt-4 rounded-2xl border border-slate-700/80 bg-[#142C37]/95 p-5 shadow-2xl backdrop-blur-xl md:hidden">
-          <nav className="flex flex-col gap-3">
-            <Link
-              href="/#solutions"
-              onClick={() => setMobileMenuOpen(false)}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-white hover:bg-slate-700/40"
-            >
-              Personal
-            </Link>
-            <Link
-              href="/#solutions"
-              onClick={() => setMobileMenuOpen(false)}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white"
-            >
-              Business
-            </Link>
-            <Link
-              href="/banks"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${pathname === '/banks'
-                ? 'bg-[#E95312]/15 text-[#E95312] font-semibold'
-                : 'text-slate-300 hover:bg-slate-700/40 hover:text-white'
-                }`}
-            >
-              Banks
-            </Link>
-            <Link
-              href="/contact"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${pathname === '/contact'
-                ? 'bg-[#E95312]/15 text-[#E95312] font-semibold'
-                : 'text-slate-300 hover:bg-slate-700/40 hover:text-white'
-                }`}
-            >
-              Contact us
-            </Link>
+      <button
+        type="button"
+        onClick={toggleMobileMenu}
+        aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+        aria-expanded={isMobileMenuOpen}
+        className="ml-auto flex h-11 w-11 items-center justify-center rounded-full border border-[#2A3740] bg-[#10181D] text-white lg:hidden"
+      >
+        {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </button>
 
-            <div className="my-2 border-t border-slate-700/60 pt-3">
-              {isAuthenticated && user ? (
-                <div className="flex flex-col gap-2">
-                  <div className="px-3 py-1 text-xs text-slate-400">
-                    Signed in as <span className="font-semibold text-white">{user.name}</span>
-                  </div>
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-lg bg-[#E95312]/20 px-3 py-2 text-sm font-semibold text-[#E95312]"
-                  >
-                    <LayoutDashboard className="h-4 w-4" />
-                    Go to Dashboard
-                  </Link>
-                  <button
-                    onClick={() => {
-                      logout();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-rose-400 hover:bg-rose-500/10"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign out
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2.5">
-                  <Link
-                    href="/auth/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full rounded-lg bg-[#E95312] py-2.5 text-center text-sm font-semibold text-white shadow-md shadow-[#E95312]/20"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    href="/auth/register"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full rounded-lg border border-slate-600 bg-[#1C3B49] py-2.5 text-center text-sm font-medium text-white"
-                  >
-                    Create a new account
-                  </Link>
-                </div>
-              )}
-            </div>
+      {isMobileMenuOpen && (
+        <div className="absolute inset-x-4 top-full z-50 rounded-3xl border border-[#2A3740] bg-[#10181D] p-4 shadow-2xl sm:inset-x-6 lg:hidden">
+          <nav aria-label="Mobile" className="flex flex-col">
+            {LINKS.map((link) => (
+              <Link
+                key={link.key}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                aria-current={active === link.key ? 'page' : undefined}
+                className={`rounded-xl px-3 py-3 text-base ${
+                  active === link.key ? 'font-bold text-white' : 'text-[#9AA8B0]'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
+          <div className="mt-3 flex flex-col gap-2.5 border-t border-[#1E2A31] pt-4">
+            {signedIn ? (
+              <>
+                <p className="px-3 text-sm text-[#9AA8B0]">
+                  Signed in as <span className="font-semibold text-white">{user.name}</span>
+                </p>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-full bg-[#EE6E2D] px-6 py-3.5 text-center font-bold text-[#14252E]"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="rounded-full border-[1.5px] border-white px-6 py-3.5 font-semibold text-white"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-full border-[1.5px] border-white px-6 py-3.5 text-center font-semibold text-white"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/auth/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-full bg-[#EE6E2D] px-6 py-3.5 text-center font-bold text-[#14252E]"
+                >
+                  Create a new account
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       )}
     </header>

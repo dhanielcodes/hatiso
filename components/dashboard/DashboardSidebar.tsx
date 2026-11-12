@@ -18,7 +18,6 @@ import {
   LogOut,
   X,
 } from 'lucide-react';
-import XnettLogo from '@/components/auth/XnettLogo';
 import { useAuthStore } from '@/lib/store/authStore';
 import XnettLogoDashboard from '../auth/XnettLogoDashboard';
 
@@ -126,12 +125,13 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   return (
     <Link
       href={item.href}
-      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${active
-        ? 'bg-[#1E3D4E] text-white'
-        : 'text-slate-400 hover:bg-[#1A3848] hover:text-slate-200'
+      aria-current={active ? 'page' : undefined}
+      className={`group relative flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm transition-all duration-150 ${active
+        ? 'bg-[#1A2329] font-semibold text-white'
+        : 'font-medium text-[#9AA8B0] hover:bg-[#10181D] hover:text-white'
         }`}
     >
-      <span className={active ? 'text-[#FF6500]' : 'text-slate-500 group-hover:text-slate-300'}>
+      <span className={active ? 'text-[#EE6E2D]' : 'text-[#5D6F78] group-hover:text-[#DCE3E7]'}>
         {item.icon}
       </span>
       {item.label}
@@ -184,7 +184,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
       {/* ── Sidebar shell ── */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-[#122B38] transition-transform duration-300 ease-out
+          fixed inset-y-0 left-0 z-40 flex w-64 flex-col overflow-hidden border-r border-[#1E2A31] bg-[#0A1014] transition-transform duration-300 ease-out
           lg:static lg:z-auto lg:translate-x-0
           ${open === undefined || open ? 'translate-x-0' : '-translate-x-full'}
         `}
@@ -197,7 +197,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
             <button
               type="button"
               onClick={onClose}
-              className="ml-auto rounded-lg p-1.5 text-slate-400 hover:bg-[#1E3D4E] hover:text-white lg:hidden"
+              className="ml-auto rounded-full p-1.5 text-[#9AA8B0] hover:bg-[#1A2329] hover:text-white lg:hidden"
               aria-label="Close menu"
             >
               <X className="h-4 w-4" />
@@ -207,18 +207,18 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
 
         {/* ── Search ── */}
         <div className="px-4 pb-5">
-          <div className="flex items-center gap-2 rounded-xl border border-[#1E3D4E] bg-[#0D2330] px-3.5 py-2.5 transition focus-within:border-[#E95312]/40">
-            <Search className="h-3.5 w-3.5 flex-shrink-0 text-slate-500" />
+          <div className="flex items-center gap-2 rounded-full border border-[#2A3740] bg-[#10181D] px-4 py-2.5 transition focus-within:border-[#EE6E2D]/60">
+            <Search className="h-3.5 w-3.5 flex-shrink-0 text-[#5D6F78]" />
             <input
               ref={searchRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search"
-              className="w-full bg-transparent text-[13px] text-slate-300 placeholder-slate-600 focus:outline-none"
+              className="w-full bg-transparent text-[13px] text-[#DCE3E7] placeholder-[#5D6F78] focus:outline-none"
               aria-label="Search dashboard"
             />
-            <kbd className="hidden rounded bg-[#1A3040] px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 sm:block">
+            <kbd className="hidden rounded-md bg-[#1A2329] px-1.5 py-0.5 text-[10px] font-semibold text-[#5D6F78] sm:block">
               ⌘K
             </kbd>
           </div>
@@ -228,7 +228,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
         <nav className="flex-1 overflow-y-auto px-4 no-scrollbar space-y-5">
           {NAV.map((group) => (
             <div key={group.section}>
-              <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-600">
+              <p className="mb-2 px-3.5 text-[10px] font-bold uppercase tracking-widest text-[#5D6F78]">
                 {group.section}
               </p>
               <ul className="space-y-0.5">
@@ -244,14 +244,15 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
 
         {/* ── Help card ── */}
         {!helpDismissed && (
-          <div className="m-4 mt-3 rounded-2xl bg-[#0D2330] p-4 border border-[#1E3D4E]">
+          <div className="relative m-4 mt-3 overflow-hidden rounded-[22px] border border-[#2A3740] bg-[#10202A] p-4">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-[#EE6E2D] opacity-20 blur-2xl" />
             {/* Headset icon */}
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF6500] text-white shadow-md shadow-[#E95312]/30">
+            <div className="relative mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#EE6E2D] text-[#14252E]">
               <Headphones className="h-5 w-5" strokeWidth={2.2} />
             </div>
 
             <p className="text-[13px] font-bold text-white">Need a little help?</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+            <p className="mt-1 text-[11px] leading-relaxed text-[#9AA8B0]">
               Our support team is always here for you
             </p>
 
@@ -259,13 +260,13 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
               <button
                 type="button"
                 onClick={() => setHelpDismissed(true)}
-                className="text-[12px] font-medium text-slate-500 transition-colors hover:text-slate-300"
+                className="text-[12px] font-medium text-[#9AA8B0] transition-colors hover:text-white"
               >
                 Dismiss
               </button>
               <Link
                 href="/dashboard/support"
-                className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#FF6500] transition-colors hover:text-[#FF8A4C]"
+                className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#F49A66] transition-colors hover:text-white"
               >
                 Reach out to us
                 <span aria-hidden>→</span>
@@ -278,7 +279,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
           <button
             type="button"
             onClick={() => setIsLogoutConfirmOpen(true)}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-300 active:scale-[0.98]"
+            className="flex w-full items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-medium text-[#9AA8B0] transition hover:bg-rose-500/10 hover:text-rose-300 active:scale-[0.98]"
           >
             <LogOut className="h-[18px] w-[18px]" strokeWidth={2.2} />
             Log out
@@ -289,16 +290,16 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
       </aside>
 
       {isLogoutConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102A36]/70 p-4 backdrop-blur-sm">
-          <div role="dialog" aria-modal="true" aria-labelledby="logout-title" className="w-full max-w-sm rounded-2xl bg-white p-6 text-[#18202A] shadow-2xl">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FFF1E8] text-[#E95312]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A1014]/70 p-4 backdrop-blur-sm">
+          <div role="dialog" aria-modal="true" aria-labelledby="logout-title" className="w-full max-w-sm rounded-[28px] bg-white p-6 text-[#10202A] shadow-2xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FFF3E8] text-[#EE6E2D]">
               <LogOut className="h-5 w-5" />
             </div>
             <h2 id="logout-title" className="mt-4 text-xl font-semibold tracking-[-0.03em]">Log out?</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">Are you sure you want to log out of your account?</p>
             <div className="mt-6 flex justify-end gap-3">
-              <button type="button" onClick={() => setIsLogoutConfirmOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Cancel</button>
-              <button type="button" onClick={handleLogout} className="rounded-xl bg-[#FF6500] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E95312] active:scale-[0.98]">Yes, log out</button>
+              <button type="button" onClick={() => setIsLogoutConfirmOpen(false)} className="rounded-full border border-[#DDE3E6] px-5 py-2.5 text-sm font-semibold text-[#233C49] transition hover:bg-[#F3F4F5]">Cancel</button>
+              <button type="button" onClick={handleLogout} className="rounded-full bg-[#EE6E2D] px-5 py-2.5 text-sm font-bold text-[#14252E] transition hover:bg-[#F48245] active:scale-[0.98]">Yes, log out</button>
             </div>
           </div>
         </div>

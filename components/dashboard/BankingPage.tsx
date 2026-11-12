@@ -254,16 +254,16 @@ export default function BankingPage() {
   };
 
   return (
-    <div className="min-h-full bg-[#FFFAF7] space-y-6">
+    <div className="min-h-full bg-[#F3F4F5] space-y-6">
       {/* Top Header */}
-      <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">
+      <section className="border-b border-[#E3E8EB] px-5 py-7 sm:px-8">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[#C2531C]">
           Banking
         </p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">
-          Your bank is <span className="text-[#FF6500]">one tap away.</span>
+        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#10202A] sm:text-3xl">
+          Your bank is <span className="text-[#C2531C]">one tap away.</span>
         </h2>
-        <p className="mt-2 text-sm text-[#777486] sm:text-base">
+        <p className="mt-2 text-sm text-[#4A5B64] sm:text-base">
           Visit your bank&apos;s secure digital banking service. Hatiso never
           sees or stores your login details.
         </p>
@@ -271,7 +271,7 @@ export default function BankingPage() {
 
       {/* Security Handoff Cyan Banner */}
       <section className="px-5 sm:px-8 space-y-6">
-        <div className="flex items-center gap-3 rounded-xl border border-[#CFE8EC] bg-[#EAF6F8] px-4 py-3 text-xs sm:text-sm text-[#1B3C4A]">
+        <div className="flex items-center gap-3 rounded-2xl border border-[#CFE8EC] bg-[#EAF6F8] px-4 py-3 text-xs sm:text-sm text-[#10202A]">
           <Landmark className="h-5 w-5 shrink-0 text-[#147D8F]" />
           <span>
             A secure handoff, every time. You&apos;ll always see where
@@ -288,7 +288,7 @@ export default function BankingPage() {
               placeholder="Search services or provider"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-[#E8E3DF] bg-white py-2.5 pl-10 pr-4 text-sm text-[#1B3C4A] placeholder:text-[#A09D9B] focus:border-[#E95312] focus:outline-none"
+              className="w-full rounded-3xl border border-[#E3E8EB] bg-white py-2.5 pl-10 pr-4 text-sm text-[#10202A] placeholder:text-[#A09D9B] focus:border-[#EE6E2D] focus:outline-none"
             />
           </div>
 
@@ -305,8 +305,8 @@ export default function BankingPage() {
                   onClick={() => setActiveTab(tab)}
                   className={`rounded-full px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
                     isActive
-                      ? "bg-[#1B3C4A] text-white"
-                      : "border border-[#E8E3DF] bg-white text-[#524E4E] hover:bg-[#F9F7F5]"
+                      ? "bg-[#10202A] text-white"
+                      : "border border-[#E3E8EB] bg-white text-[#524E4E] hover:bg-[#F9F7F5]"
                   }`}
                 >
                   {tab}
@@ -328,8 +328,8 @@ export default function BankingPage() {
         {/* Bank Cards Grid */}
         {filteredBanks.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#DDD7D2] bg-white p-12 text-center">
-            <Building2 className="mx-auto h-10 w-10 text-[#C4C0BE]" />
-            <h3 className="mt-3 text-base font-semibold text-[#1B3C4A]">
+            <Building2 className="mx-auto h-10 w-10 text-[#B9C6CD]" />
+            <h3 className="mt-3 text-base font-semibold text-[#10202A]">
               No banks found
             </h3>
             <p className="mt-1 text-xs text-[#8A8583]">
@@ -343,11 +343,11 @@ export default function BankingPage() {
               <div
                 key={bank.id}
                 onClick={() => handleBankClick(bank)}
-                className="group flex cursor-pointer items-center justify-between rounded-2xl border border-[#EDE8E4] bg-white p-4 sm:p-5 transition-all hover:border-[#E95312]/50 hover:shadow-sm"
+                className="group flex cursor-pointer items-center justify-between rounded-3xl border border-[#E3E8EB] bg-white p-4 sm:p-5 transition-all hover:border-[#EE6E2D]/50 hover:shadow-sm"
               >
                 <div className="flex min-w-0 items-center gap-3.5">
                   {/* Bank Logo */}
-                  <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white p-1">
+                  <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white p-1">
                     <Image
                       src={bank.logo}
                       alt={bank.name}
@@ -361,7 +361,7 @@ export default function BankingPage() {
                   {/* Info */}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="truncate text-sm font-semibold text-[#1B3C4A] sm:text-base">
+                      <h3 className="truncate text-sm font-semibold text-[#10202A] sm:text-base">
                         {bank.name}
                       </h3>
                       {renderBadge(bank.badge)}
@@ -373,7 +373,7 @@ export default function BankingPage() {
                 </div>
 
                 {/* Right Chevron */}
-                <ChevronRight className="h-4 w-4 shrink-0 text-[#C4C0BE] transition-transform group-hover:translate-x-0.5 group-hover:text-[#E95312]" />
+                <ChevronRight className="h-4 w-4 shrink-0 text-[#B9C6CD] transition-transform group-hover:translate-x-0.5 group-hover:text-[#C2531C]" />
               </div>
             ))}
           </div>
@@ -426,7 +426,7 @@ export default function BankingPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl sm:p-7">
             {/* Bank Logo */}
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-[#EDE8E4] bg-white p-1.5">
+            <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-[#E3E8EB] bg-white p-1.5">
               <Image
                 src={selectedBank.logo}
                 alt={selectedBank.name}
@@ -453,7 +453,7 @@ export default function BankingPage() {
                 }}
               >
                 <Form className="mt-4" noValidate>
-                  <h2 className="text-xl font-bold text-[#1B3C4A]">
+                  <h2 className="text-xl font-bold text-[#10202A]">
                     Continue to {selectedBank.name}
                   </h2>
                   <p className="mt-2 text-xs leading-relaxed text-[#736F6D] sm:text-sm">
@@ -491,7 +491,7 @@ export default function BankingPage() {
             {/* STEP 2: OTP Verification */}
             {modalStep === "otp" && (
               <div className="mt-4">
-                <h2 className="text-xl font-bold text-[#1B3C4A]">
+                <h2 className="text-xl font-bold text-[#10202A]">
                   Continue to {selectedBank.name}
                 </h2>
                 <p className="mt-2 text-xs leading-relaxed text-[#736F6D] sm:text-sm">

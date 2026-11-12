@@ -49,7 +49,7 @@ function FloatingIcon({ children, className }: { children: React.ReactNode; clas
   return (
     <div
       aria-hidden="true"
-      className={`absolute z-10 flex h-12 w-12 items-center justify-center rounded-full bg-[#D9DDE0]/90 text-[#C8561B] shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-sm xl:h-[52px] xl:w-[52px] ${className}`}
+      className={`absolute z-10 flex h-12 w-12 items-center justify-center rounded-full border border-[#2A3740] bg-[#10202A]/90 text-[#EE6E2D] shadow-[0_8px_24px_rgba(0,0,0,0.35)] backdrop-blur-sm xl:h-[52px] xl:w-[52px] ${className}`}
     >
       {children}
     </div>
@@ -78,24 +78,31 @@ export default function AuthBrandPanel() {
   }, [active, hidden]);
 
   return (
-    <aside className="relative hidden flex-col overflow-hidden bg-[#1B3C4A] px-10 pb-6 pt-8 text-white lg:sticky lg:top-0 lg:flex lg:h-screen xl:px-14">
-      <XnettLogo />
+    <aside className="relative hidden flex-col overflow-hidden bg-[#0A1014] px-10 pb-6 pt-8 font-jakarta text-white lg:sticky lg:top-0 lg:flex lg:h-screen xl:px-14">
+      {/* Soft orange glow, as on the landing CTA */}
+      <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-1/3 h-[420px] w-[420px] rounded-full bg-[#EE6E2D] opacity-[0.12] blur-[90px]" />
 
-      <div className="mt-[clamp(1.5rem,5vh,3.5rem)] max-w-[540px]">
-        <h2 className="text-[clamp(2rem,3.1vw,2.9rem)] font-semibold leading-[1.15] tracking-tight text-[#E8ECEF]">
-          Start managing your financial life <span className="text-[#E8692B]">in one place.</span>
+      <XnettLogo className="relative [&_svg]:h-10 [&_svg]:w-auto" />
+
+      <div className="relative mt-[clamp(1.25rem,4vh,3rem)] max-w-[540px]">
+        <div className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-[#2A3740] bg-[#10181D] py-2 pl-3 pr-4 text-[13px] font-semibold text-[#DCE3E7]">
+          <span className="lp-ping h-[7px] w-[7px] rounded-full bg-[#3FAE70]" />
+          Services, banking and business
+        </div>
+        <h2 className="text-[clamp(2rem,3.1vw,2.9rem)] font-semibold leading-[1.15] tracking-[-1.2px]">
+          Start managing your financial life <span className="text-[#EE6E2D]">in one place.</span>
         </h2>
-        <p className="mt-4 max-w-[470px] text-[15px] leading-relaxed text-white/75">
+        <p className="mt-4 max-w-[470px] text-[15px] leading-[1.65] text-[#9AA8B0]">
           Join Hatiso to explore trusted services and businesses, connect with your bank and enjoy an experience built
           around you. Unified in a single app.
         </p>
       </div>
 
       {/* Photo frame grows with the space left, so the whole panel fits the viewport */}
-      <div className="flex min-h-0 flex-1 items-center justify-center py-[clamp(1.25rem,4vh,3rem)]">
+      <div className="relative flex min-h-0 flex-1 items-center justify-center py-[clamp(1.25rem,4vh,3rem)]">
         <div className="relative aspect-[19/20] h-full max-h-[440px] max-w-full">
           <div
-            className="relative h-full w-full touch-pan-y select-none overflow-hidden bg-[#2A4B59]"
+            className="relative h-full w-full touch-pan-y select-none overflow-hidden bg-[#10202A]"
             style={{ clipPath: SQUIRCLE }}
             onPointerDown={(e) => {
               swipeStart.current = e.clientX;
@@ -143,7 +150,7 @@ export default function AuthBrandPanel() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-1.5" role="group" aria-label="Choose slide">
+      <div className="relative flex items-center justify-center gap-1.5" role="group" aria-label="Choose slide">
         {SLIDES.map((slide, i) => (
           <button
             key={slide.src}
@@ -155,7 +162,7 @@ export default function AuthBrandPanel() {
           >
             <span
               className={`block h-1 rounded-full transition-all duration-300 ${
-                i === active ? 'w-6 bg-white' : 'w-3 bg-[#5E7F8D] hover:bg-[#7E9DAA]'
+                i === active ? 'w-6 bg-[#EE6E2D]' : 'w-3 bg-[#2A3740] hover:bg-[#5D6F78]'
               }`}
             />
           </button>

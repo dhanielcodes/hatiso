@@ -1,27 +1,37 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import {
-  Zap,
-  ShieldCheck,
-  CheckCircle2,
-  CreditCard,
-  Smartphone,
-} from 'lucide-react';
+import { CheckCircle2, CreditCard, Smartphone } from 'lucide-react';
 import Navbar from '@/components/marketplace/Navbar';
 import Footer from '@/components/marketplace/Footer';
+import CtaBanner from '@/components/marketplace/CtaBanner';
+import {
+  BentoTiles,
+  DarkHero,
+  FeatureRow,
+  HeroBadge,
+  HeroHeadline,
+  HeroLead,
+  HeroPillInput,
+  LandingPage,
+  LpIcon,
+  type LpIconName,
+  ProviderRow,
+} from '@/components/landing/LandingKit';
+import { matchBiller, takeServicePrefill, type ServicePrefill } from '@/lib/marketing/servicePrefill';
+import { serviceLanding } from './serviceLanding';
 import CustomerInvitePopup, { shouldInviteGuest } from '@/components/marketplace/CustomerInvitePopup';
 import { useAuthStore } from '@/lib/store/authStore';
-import ServiceTabsSelector from './ServiceTabsSelector';
 import ServicePaymentForm, { PendingPayment } from './ServicePaymentForm';
 import {
   useCreateDigitalServiceOrder,
   useCreatePayment,
   useCreatePaymentQuote,
   useDigitalServiceCatalogues,
+  useDigitalServiceCategories,
   useVerifyPayment,
 } from '@/lib/queries/useDigitalServices';
 import type { DigitalServiceCategory, DigitalServiceOrder, GuestPaymentQuote } from '@/lib/api/digitalServices';
@@ -53,7 +63,7 @@ function PaymentReview({ payment, isProcessing, error, onReset, onContinue }: {
   const dateLabel = new Intl.DateTimeFormat('en-NG', { dateStyle: 'long', timeStyle: 'short' }).format(new Date());
 
   return (
-    <article className="w-full max-w-xl overflow-hidden rounded-[24px] bg-white text-slate-900 shadow-2xl">
+    <article className="w-full overflow-hidden bg-white text-slate-900">
       <header className="flex items-center justify-center gap-3 border-b border-slate-200 px-6 py-8 sm:py-10">
         <Smartphone className="h-6 w-6 text-[#E95312]" />
         <h2 className="text-xl font-semibold sm:text-2xl">{payment.slug?.toUpperCase()} Payment Review</h2>
@@ -95,6 +105,21 @@ const categoryBySlug: Record<string, DigitalServiceCategory> = {
   insurance: 'INSURANCE',
   'other-services': 'OTHER_SERVICES',
 };
+
+/** Service pills in the landing card, built from the categories the API actually offers. */
+const tabByCategory: Partial<Record<DigitalServiceCategory, { slug: string; label: string; icon: LpIconName }>> = {
+  TELCO: { slug: 'airtime', label: 'Airtime', icon: 'phone' },
+  INTERNET_SERVICES: { slug: 'data', label: 'Data', icon: 'data' },
+  DISCO: { slug: 'electricity', label: 'Electricity', icon: 'bolt' },
+  CABLE: { slug: 'tv', label: 'TV', icon: 'tv' },
+  EDUCATION: { slug: 'education', label: 'Education', icon: 'edu' },
+  INSURANCE: { slug: 'insurance', label: 'Insurance', icon: 'shield' },
+  OTHER_SERVICES: { slug: 'other-services', label: 'Other services', icon: 'bag' },
+};
+
+function focusServiceCard() {
+  document.getElementById('svc-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitle = 'Airtime & Data' }: ServiceDetailPageProps) {
 
@@ -146,56 +171,32 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
     return () => window.removeEventListener('popstate', handlePopState);
   }, [activeSlug]);
 
-  const heroContent = {
-    airtime: {
-      headlineOrange: 'Airtime, ',
-      headlineWhite: 'instantly',
-      body: "Recharge any Nigerian network in seconds, whether it's your own line or a loved one's. Enter the number, pick an amount from ₦100 upwards, and the credit lands straight away. You also earn cashback on every top-up, so staying in touch gives something back.",
-      image: '/images/airtime_hero_2x.png',
-      cardTitle: 'Top up in seconds',
-      cardSubtitle: 'Enter a number, pick an amount and you’re done. No account needed.',
-    },
-    data: {
-      headlineOrange: 'Stay connected ',
-      headlineWhite: 'for less',
-      body: 'Choose from daily, weekly and monthly data bundles for MTN, Airtel, Glo and 9mobile, all at clear, upfront prices. Pick the plan that fits how you browse, stream or work, and it activates within moments. No hidden charges, and no need to dial codes.',
-      image: '/images/data_hero.png',
-      cardTitle: 'One home for every service',
-      cardSubtitle: 'Airtime, data, bills and more. Everything you pay for, all in one place.',
-    },
-    electricity: {
-      headlineWhite: 'Keep the ',
-      headlineOrange: 'lights on',
-      body: 'Buy prepaid tokens or pay postpaid bills for your distribution company without queuing or travelling. Enter your meter number, confirm the name on the account, and get your token instantly on screen and by email. It works at any hour, even when power is out',
-      image: '/images/bills_hero.png',
-      cardTitle: 'Pay any bill, anytime',
-      cardSubtitle: 'Electricity, TV, betting and more, settled instantly without queues or extra apps.',
-    },
-    tv: {
-      headlineOrange: 'Never miss ',
-      headlineWhite: 'your show',
-      body: 'Renew or change your DStv, GOtv or StarTimes package in a few taps. Just enter your smartcard or IUC number, choose a plan, and your subscription is refreshed right away. That means no blank screens on match day or finale night.',
-      image: '/images/bills_hero.png',
-      cardTitle: 'Pay any bill, anytime',
-      cardSubtitle: 'Electricity, TV, betting and more, settled instantly without queues or extra apps.',
-    },
-    betting: {
-      headlineOrange: 'Fund ',
-      headlineWhite: 'your wallet fast',
-      body: 'Add money to your Bet9ja, SportyBet or 1xBet account in seconds, with no bank trips or delays. Your payment is encrypted and credited straight to your betting wallet. Please bet responsibly and only stake what you can afford to lose.',
-      image: '/images/bills_hero.png',
-      cardTitle: 'Pay any bill, anytime',
-      cardSubtitle: 'Electricity, TV, betting and more, settled instantly without queues or extra apps.',
-    },
-  }[activeSlug] || {
-    headlineOrange: `${activeSlug.replace('-', ' ').toUpperCase()}, `,
-    headlineWhite: 'instantly',
-    body: 'Fulfill digital transactions instantly and securely across top providers in Nigeria.',
-    image: '/images/airtime_hero_2x.png',
-    cardTitle: 'Pay instantly',
-    cardSubtitle: 'Safe and encrypted digital payments on Hatiso.',
+  const landing = serviceLanding(activeSlug);
+
+  // Details carried over from a landing widget (home "Pay a bill" card) or this page's hero input
+  const [handoff, setHandoff] = useState<ServicePrefill | null>(null);
+  const [handoffVersion, setHandoffVersion] = useState(0);
+  const [heroValue, setHeroValue] = useState('');
+  useEffect(() => {
+    const carried = takeServicePrefill(activeSlug);
+    if (!carried) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sessionStorage is only readable after mount
+    setHandoff(carried);
+    setHeroValue(carried.recipient ?? '');
+    setHandoffVersion((v) => v + 1);
+  }, [activeSlug]);
+
+  const continueFromHero = () => {
+    const recipient = heroValue.replace(/\s+/g, '');
+    if (recipient) {
+      setHandoff((prev) => ({ ...(prev?.slug === activeSlug ? prev : {}), slug: activeSlug, recipient }));
+      setHandoffVersion((v) => v + 1);
+    }
+    focusServiceCard();
   };
 
+  const { data: apiCategories, isLoading: isLoadingCategories } = useDigitalServiceCategories();
+  const serviceTabs = (apiCategories ?? []).flatMap((c) => (tabByCategory[c] ? [tabByCategory[c]!] : []));
 
   const category = categoryBySlug[activeSlug] ?? 'OTHER_SERVICES';
   const {
@@ -203,6 +204,16 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
     isError: hasCategoryRequestError,
     isLoading,
   } = useDigitalServiceCatalogues(category, 0);
+
+  const activeHandoff = handoff?.slug === activeSlug ? handoff : null;
+  const preferredBiller = matchBiller(serviceCatalogues ?? [], activeHandoff?.provider)?.billerCode;
+  const prefill = useMemo(
+    () =>
+      activeHandoff
+        ? { recipient: activeHandoff.recipient, amountMinor: activeHandoff.amountMinor }
+        : undefined,
+    [activeHandoff],
+  );
 
 
   const handleServiceClick = (slug: string, title: string) => {
@@ -312,34 +323,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
 
 
   return (
-    <div className="relative min-h-screen bg-[#1B3C4A] text-white selection:bg-[#E95312] selection:text-white">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-25">
-        <svg
-          className="absolute -top-40 -left-40 h-[1200px] w-[1400px]"
-          viewBox="0 0 1000 800"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M -100 200 C 150 150, 250 400, 500 320 C 750 240, 850 480, 1100 420"
-            stroke="#1E4757"
-            strokeWidth="1.6"
-            strokeDasharray="6 8"
-          />
-          <path
-            d="M -100 350 C 180 300, 320 550, 600 480 C 880 410, 920 620, 1150 580"
-            stroke="#1E4757"
-            strokeWidth="1.6"
-          />
-          <path
-            d="M -50 500 C 220 460, 380 680, 700 620 C 1020 560, 980 750, 1200 700"
-            stroke="#1E4757"
-            strokeWidth="1.4"
-          />
-        </svg>
-      </div>
-
-      <Navbar />
+    <LandingPage>
       <PaystackCheckout
         request={paystackRequest}
         publicKey={paystackPublicKey}
@@ -378,102 +362,119 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
         }}
       />
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 xl:px-0 pt-4 pb-24">
-        <section
-          className={`mt-4 mb-12 sm:mb-16 grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-14 w-full transition-all duration-300 ease-out ${isFading ? 'opacity-30 scale-[0.99] blur-[0.4px]' : 'opacity-100 scale-100 blur-0'
-            }`}
-        >
-          <div className="flex flex-col lg:col-span-6 xl:col-span-7 min-h-[220px] sm:min-h-[250px] justify-center">
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl transition-all duration-300">
-              <span className="text-[#FF6500]">{heroContent.headlineOrange}</span>
-              <span className="text-white">{heroContent.headlineWhite}</span>
-            </h1>
-
-            <p className="mt-4 text-sm leading-relaxed text-slate-300 sm:text-base min-h-[72px]">
-              {heroContent.body}
-            </p>
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="inline-flex items-center gap-2.5 rounded-xl border border-slate-700/60 bg-[#1E3A46]/70 px-4 py-2.5 shadow-sm backdrop-blur-sm">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E95312]/20 text-[#E95312]">
-                  <Zap className="h-3.5 w-3.5 fill-current" />
-                </div>
-                <span className="text-xs font-medium text-slate-200 sm:text-sm">
-                  Instant delivery, usually under few seconds
-                </span>
-              </div>
-
-              <div className="inline-flex items-center gap-2.5 rounded-xl border border-slate-700/60 bg-[#1E3A46]/70 px-4 py-2.5 shadow-sm backdrop-blur-sm">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E95312]/20 text-[#E95312]">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                </div>
-                <span className="text-xs font-medium text-slate-200 sm:text-sm">
-                  Bank-grade encryption on every payment
-                </span>
-              </div>
+      <main className="flex-1">
+        <DarkHero>
+          <Navbar />
+          <section
+            className={`relative mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-12 lg:items-start px-4 pb-16 pt-6 transition-opacity duration-300 sm:px-6 sm:pt-10 ${isFading ? 'opacity-60' : 'opacity-100'}`}
+          >
+            {/* The live form is taller than the hero copy, so pin the copy near the top on wide screens */}
+            <div className="min-w-0 flex-[1_1_520px] lg:sticky lg:top-6 lg:pt-14">
+              <HeroBadge>{landing.badge}</HeroBadge>
+              <HeroHeadline key={activeSlug} lines={landing.lines} />
+              <HeroLead>{landing.body}</HeroLead>
+              <HeroPillInput
+                icon={landing.input.icon}
+                label={landing.input.label}
+                action="Continue"
+                onAction={continueFromHero}
+                inputProps={{
+                  id: 'service-hero-input',
+                  type: landing.input.type,
+                  inputMode: landing.input.type === 'tel' ? 'tel' : 'numeric',
+                  autoComplete: landing.input.type === 'tel' ? 'tel-national' : 'off',
+                  placeholder: landing.input.placeholder,
+                  value: heroValue,
+                  onChange: (e) => setHeroValue(e.target.value),
+                }}
+              />
+              {landing.providers.length > 0 && <ProviderRow label={landing.providerLabel} items={landing.providers} />}
             </div>
-          </div>
 
-          <div className="flex justify-center lg:col-span-6 xl:col-span-5">
-            <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-700/60 bg-[#25414C] p-3.5 shadow-2xl transition-all duration-300 hover:border-slate-600 sm:p-4">
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-slate-900 shadow-inner">
-                <Image
-                  src={heroContent.image}
-                  alt={heroContent.cardTitle}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 500px"
-                  priority
-                  className="object-cover object-center transition-opacity duration-300"
-                />
-              </div>
-
-              <div className="mt-3.5 flex items-center justify-between px-1.5 py-1">
-                <div>
-                  <h3 className="text-sm font-bold text-white sm:text-base">
-                    {heroContent.cardTitle}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-slate-300">{heroContent.cardSubtitle}</p>
+            <div className="relative flex min-w-0 flex-[1_1_460px] justify-center">
+              <section
+                id="svc-card"
+                aria-labelledby="svc"
+                className="lp-phone relative z-[1] w-full max-w-[540px] scroll-mt-6 overflow-hidden rounded-[32px] border-8 border-[#1A2329] bg-white text-[#233C49]"
+              >
+                <div className="px-6 pt-6 sm:px-7">
+                  <div className="text-sm font-bold text-[#C2531C]">Choose your digital service</div>
+                  <h2 id="svc" className="m-0 mt-1.5 text-[22px] font-extrabold sm:text-2xl">
+                    Select a service below to continue.
+                  </h2>
+                </div>
+                <div className="no-scrollbar mt-[18px] flex gap-2 overflow-x-auto px-6 pb-1 sm:px-7">
+                  {isLoadingCategories
+                    ? Array.from({ length: 4 }, (_, i) => (
+                        <span key={i} className="h-[46px] w-28 shrink-0 animate-pulse rounded-full bg-[#EEF1F3]" />
+                      ))
+                    : serviceTabs.map((tab) => {
+                        const on = tab.slug === activeSlug;
+                        return (
+                          <button
+                            key={tab.slug}
+                            type="button"
+                            aria-current={on ? 'page' : undefined}
+                            onClick={() => handleServiceClick(tab.slug, tab.label)}
+                            className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-[11px] text-[15px] font-semibold transition-colors ${on ? 'border-[#233C49] bg-[#233C49] text-white' : 'border-[#C9D0D4] bg-white text-[#233C49] hover:border-[#8A989F]'}`}
+                          >
+                            <LpIcon name={tab.icon} size={18} />
+                            {tab.label}
+                          </button>
+                        );
+                      })}
                 </div>
 
-                <div className="flex items-end gap-1 pl-3">
-                  <span className="h-5 w-1.5 rounded-full bg-[#E95312]" />
-                  <span className="h-3.5 w-1.5 rounded-full bg-[#64748B]" />
-                  <span className="h-2 w-1.5 rounded-full bg-[#475569]" />
+                <div className="px-6 pb-7 pt-6 sm:px-7">
+                  {isConfirmModalOpen && pendingPayment ? (
+                    <div className="-mx-6 -mb-7 -mt-6 sm:-mx-7">
+                      <PaymentReview
+                        payment={pendingPayment}
+                        isProcessing={isProcessing}
+                        error={paymentError}
+                        onReset={() => {
+                          setIsConfirmModalOpen(false);
+                          setPendingPayment(null);
+                          setPaymentError('');
+                        }}
+                        onContinue={handleConfirmPayment}
+                      />
+                    </div>
+                  ) : (
+                    <ServicePaymentForm
+                      key={`${activeSlug}-${handoffVersion}-${preferredBiller ?? ''}`}
+                      variant="landing"
+                      activeSlug={activeSlug}
+                      activeTitle={activeTitle}
+                      billers={serviceCatalogues ?? []}
+                      isLoading={isLoading}
+                      isError={hasCategoryRequestError}
+                      isFading={isFading}
+                      submissionError={paymentError}
+                      onValidated={handleValidated}
+                      formResetKey={formResetKey}
+                      initialBillerCode={preferredBiller}
+                      prefill={prefill}
+                    />
+                  )}
                 </div>
-              </div>
+              </section>
             </div>
-          </div>
-        </section>
+          </section>
+          <FeatureRow items={landing.features} />
+        </DarkHero>
 
-        <ServiceTabsSelector activeSlug={activeSlug} onSelectService={handleServiceClick} />
-
-        <section className="my-10 flex justify-center">
-          {isConfirmModalOpen && pendingPayment ? (
-            <PaymentReview
-              payment={pendingPayment}
-              isProcessing={isProcessing}
-              error={paymentError}
-              onReset={() => {
-                setIsConfirmModalOpen(false);
-                setPendingPayment(null);
-                setPaymentError('');
-              }}
-              onContinue={handleConfirmPayment}
-            />
-          ) : (
-            <ServicePaymentForm
-              activeSlug={activeSlug}
-              activeTitle={activeTitle}
-              billers={serviceCatalogues ?? []}
-              isLoading={isLoading}
-              isError={hasCategoryRequestError}
-              isFading={isFading}
-              submissionError={paymentError}
-              onValidated={handleValidated}
-              formResetKey={formResetKey}
-            />
-          )}
-        </section>
+        <BentoTiles
+          label={landing.bento.hero.title}
+          content={{
+            ...landing.bento,
+            hero: {
+              ...landing.bento.hero,
+              action: { label: landing.bento.hero.actionLabel, onClick: focusServiceCard },
+            },
+          }}
+        />
+        <CtaBanner />
       </main>
 
       {isSuccessModalOpen && pendingPayment && (
@@ -516,6 +517,6 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
       {inviteOpen && <CustomerInvitePopup onClose={closeInvite} />}
 
       <Footer />
-    </div>
+    </LandingPage>
   );
 }

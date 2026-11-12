@@ -42,7 +42,7 @@ type StepState = 'done' | 'failed' | 'pending' | 'upcoming';
 type IconType = ComponentType<{ className?: string }>;
 
 /* ─── Constants ────────────────────────────────────────────────── */
-const CARD = 'rounded-xl border border-[#EBE6E1] bg-white';
+const CARD = 'rounded-3xl border border-[#E3E8EB] bg-white';
 const SUPPORT_HREF = '/dashboard/support'; // adjust to your support route
 
 const CATEGORY_META: Record<string, { label: string; icon: IconType }> = {
@@ -104,7 +104,7 @@ const STEP_CIRCLE: Record<StepState, string> = {
     done: 'bg-[#4CAF50] text-white',
     failed: 'bg-[#E22E41] text-white',
     pending: 'bg-[#F5B53F] text-white',
-    upcoming: 'border border-[#DED8D4] bg-white text-[#A29B9C]',
+    upcoming: 'border border-[#DDE3E6] bg-white text-[#5D6F78]',
 };
 
 const DATE_TIME_FORMAT = new Intl.DateTimeFormat('en-GB', {
@@ -158,7 +158,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
             type="button"
             onClick={copy}
             aria-label={copied ? `${label} copied` : `Copy ${label}`}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#E6E3E0] bg-white text-[#52617A] transition hover:bg-slate-50"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#E3E8EB] bg-white text-[#4A5B64] transition hover:bg-slate-50"
         >
             {copied ? <Check className="h-3.5 w-3.5 text-[#2E9A4F]" /> : <Copy className="h-3.5 w-3.5" />}
         </button>
@@ -168,27 +168,27 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 function CardHeader({ title, subtitle }: { title: string; subtitle?: string }) {
     return (
         <div>
-            <h2 className="text-base font-semibold text-[#20232A]">{title}</h2>
-            {subtitle && <p className="mt-1.5 text-sm text-[#7A7F8A]">{subtitle}</p>}
+            <h2 className="text-base font-semibold text-[#10202A]">{title}</h2>
+            {subtitle && <p className="mt-1.5 text-sm text-[#5D6F78]">{subtitle}</p>}
         </div>
     );
 }
 
 function DetailRow({ label, children }: { label: string; children: ReactNode }) {
     return (
-        <div className="flex items-start justify-between gap-6 border-t border-[#EEEAE6] py-4 first:border-t-0">
-            <dt className="shrink-0 text-sm text-[#7A7F8A]">{label}</dt>
-            <dd className="min-w-0 break-words text-right text-sm font-medium text-[#20232A]">{children}</dd>
+        <div className="flex items-start justify-between gap-6 border-t border-[#E3E8EB] py-4 first:border-t-0">
+            <dt className="shrink-0 text-sm text-[#5D6F78]">{label}</dt>
+            <dd className="min-w-0 break-words text-right text-sm font-medium text-[#10202A]">{children}</dd>
         </div>
     );
 }
 
 function ReferenceItem({ label, value }: { label: string; value: string }) {
     return (
-        <li className="border-t border-[#EEEAE6] py-4 first:border-t-0 first:pt-0 last:pb-0">
-            <p className="text-xs text-[#7A7F8A]">{label}</p>
+        <li className="border-t border-[#E3E8EB] py-4 first:border-t-0 first:pt-0 last:pb-0">
+            <p className="text-xs text-[#5D6F78]">{label}</p>
             <div className="mt-2 flex items-start justify-between gap-3">
-                <p className="min-w-0 break-all font-mono text-[13px] leading-relaxed text-[#20232A]">{value}</p>
+                <p className="min-w-0 break-all font-mono text-[13px] leading-relaxed text-[#10202A]">{value}</p>
                 <CopyButton value={value} label={label} />
             </div>
         </li>
@@ -200,9 +200,9 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
     const status = STATUS_META[transaction.fulfilmentStatus.toUpperCase()] ?? {
         label: titleCase(transaction.fulfilmentStatus),
         icon: Clock,
-        pill: 'bg-[#EEF0F2] text-[#52617A]',
-        panel: 'border-[#E6E3E0] bg-[#F9F9FA]',
-        iconColor: 'text-[#52617A]',
+        pill: 'bg-[#EEF0F2] text-[#4A5B64]',
+        panel: 'border-[#E3E8EB] bg-[#F9F9FA]',
+        iconColor: 'text-[#4A5B64]',
         message: 'We are checking the latest status of this transaction.',
     };
     const StatusIcon = status.icon;
@@ -241,43 +241,43 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
                     <section className={`${CARD} p-5 sm:p-6`} aria-labelledby="summary-title">
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div className="flex items-center gap-4">
-                                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#FFF3EC] text-[#E95312]">
+                                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#FFF3EC] text-[#C2531C]">
                                     <CategoryIcon className="h-6 w-6" />
                                 </span>
                                 <div>
-                                    <h2 id="summary-title" className="text-lg font-semibold text-[#20232A]">
+                                    <h2 id="summary-title" className="text-lg font-semibold text-[#10202A]">
                                         {productName}
                                     </h2>
-                                    <p className="mt-1 text-sm text-[#7A7F8A]">
+                                    <p className="mt-1 text-sm text-[#5D6F78]">
                                         {categoryLabel} · To {transaction.recipient}
                                     </p>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-xs text-[#7A7F8A]">Amount</p>
-                                <p className="mt-1 text-[28px] font-semibold tracking-[-0.03em] text-[#364259]">
+                                <p className="text-xs text-[#5D6F78]">Amount</p>
+                                <p className="mt-1 text-[28px] font-semibold tracking-[-0.03em] text-[#233C49]">
                                     {formatMoney(transaction.amountMinor, transaction.currency)}
                                 </p>
                             </div>
                         </div>
 
-                        <div className={`mt-6 flex items-start gap-3 rounded-lg border px-4 py-4 ${status.panel}`}>
+                        <div className={`mt-6 flex items-start gap-3 rounded-2xl border px-4 py-4 ${status.panel}`}>
                             <StatusIcon className={`mt-0.5 h-5 w-5 shrink-0 ${status.iconColor}`} />
                             <div className="min-w-0">
                                 <span className={`inline-block rounded px-2.5 py-1 text-xs font-medium ${status.pill}`}>{status.label}</span>
-                                <p className="mt-2 text-sm leading-relaxed text-[#52617A]">{status.message}</p>
+                                <p className="mt-2 text-sm leading-relaxed text-[#4A5B64]">{status.message}</p>
                             </div>
                         </div>
                     </section>
 
                     {/* Delivery code (only when the provider returned one, e.g. electricity tokens) */}
                     {transaction.deliveryCode && (
-                        <section className="rounded-xl border border-[#F6D9C8] bg-[#FFF6F0] p-5 sm:p-6" aria-labelledby="code-title">
-                            <h2 id="code-title" className="text-base font-semibold text-[#20232A]">
+                        <section className="rounded-2xl border border-[#F6D9C8] bg-[#FFF6F0] p-5 sm:p-6" aria-labelledby="code-title">
+                            <h2 id="code-title" className="text-base font-semibold text-[#10202A]">
                                 Delivery code
                             </h2>
-                            <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-[#F6D9C8] bg-white px-4 py-3">
-                                <p className="min-w-0 break-all font-mono text-lg font-semibold tracking-wider text-[#E95312]">
+                            <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-[#F6D9C8] bg-white px-4 py-3">
+                                <p className="min-w-0 break-all font-mono text-lg font-semibold tracking-wider text-[#C2531C]">
                                     {transaction.deliveryCode}
                                 </p>
                                 <CopyButton value={transaction.deliveryCode} label="delivery code" />
@@ -324,7 +324,7 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
                             {steps.map((step, index) => (
                                 <li key={step.label} className="relative flex gap-4 pb-6 last:pb-0">
                                     {index < steps.length - 1 && (
-                                        <span className="absolute bottom-0 left-4 top-9 w-px -translate-x-1/2 bg-[#E6E3E0]" aria-hidden="true" />
+                                        <span className="absolute bottom-0 left-4 top-9 w-px -translate-x-1/2 bg-[#E3E8EB]" aria-hidden="true" />
                                     )}
                                     <span className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${STEP_CIRCLE[step.state]}`}>
                                         {step.state === 'done' && <Check className="h-4 w-4" strokeWidth={3} />}
@@ -332,8 +332,8 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
                                         {step.state === 'pending' && <Clock className="h-4 w-4" />}
                                     </span>
                                     <div className="min-w-0 pt-0.5">
-                                        <p className="text-sm font-medium text-[#20232A]">{step.label}</p>
-                                        <p className="mt-1 text-xs text-[#7A7F8A]">{step.description}</p>
+                                        <p className="text-sm font-medium text-[#10202A]">{step.label}</p>
+                                        <p className="mt-1 text-xs text-[#5D6F78]">{step.description}</p>
                                     </div>
                                 </li>
                             ))}
@@ -359,13 +359,13 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
                     {/* Help */}
                     <div className="rounded-lg bg-[#FFEFE5] px-5 py-5">
                         <div className="flex items-start gap-3">
-                            <LifeBuoy className="mt-0.5 h-5 w-5 shrink-0 text-[#E95312]" />
+                            <LifeBuoy className="mt-0.5 h-5 w-5 shrink-0 text-[#C2531C]" />
                             <div className="min-w-0">
-                                <p className="text-sm font-semibold text-[#20232A]">Need help with this transaction?</p>
-                                <p className="mt-1 text-xs text-[#52617A]">Our support team is available 24 hours a day.</p>
+                                <p className="text-sm font-semibold text-[#10202A]">Need help with this transaction?</p>
+                                <p className="mt-1 text-xs text-[#4A5B64]">Our support team is available 24 hours a day.</p>
                                 <Link
                                     href={SUPPORT_HREF}
-                                    className="mt-4 inline-block rounded-md border border-[#E6E3E0] bg-white px-3.5 py-2 text-xs font-medium text-[#20232A] transition hover:bg-slate-50"
+                                    className="mt-4 inline-block rounded-md border border-[#E3E8EB] bg-white px-3.5 py-2 text-xs font-medium text-[#10202A] transition hover:bg-slate-50"
                                 >
                                     Contact support
                                 </Link>
@@ -387,24 +387,24 @@ export default function TransactionDetailsPage() {
 
 
     return (
-        <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
+        <div className="min-h-full bg-[#F3F4F5] text-[#10202A]">
             {/* ── Page header ── */}
-            <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
+            <section className="border-b border-[#E3E8EB] px-5 py-7 sm:px-8">
                 <button
                     type="button"
                     onClick={() => {
                         localStorage.removeItem('transactionDetails')
                         router.back()
                     }}
-                    className="mb-4 flex items-center gap-1 text-sm text-[#52617A] transition hover:text-[#20232A]"
+                    className="mb-4 flex items-center gap-1 text-sm text-[#4A5B64] transition hover:text-[#10202A]"
                 >
                     <ChevronLeft className="h-4 w-4" /> Back
                 </button>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Transaction</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">
-                    Every detail, <span className="text-[#FF6500]">in one place.</span>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#C2531C]">Transaction</p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#10202A] sm:text-3xl">
+                    Every detail, <span className="text-[#C2531C]">in one place.</span>
                 </h2>
-                <p className="mt-2 break-all text-sm text-[#777486] sm:text-base">Reference: {transaction.reference}</p>
+                <p className="mt-2 break-all text-sm text-[#4A5B64] sm:text-base">Reference: {transaction.reference}</p>
             </section>
 
             <TransactionDetails transaction={transaction} />

@@ -227,8 +227,8 @@ export default function DashboardPage() {
   }));
 
   return (
-    <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
-      <section className="border-b border-[#F2EAE5] px-5 py-5 sm:px-8 sm:py-6">
+    <div className="min-h-full bg-[#F3F4F5] text-[#10202A]">
+      <section className="border-b border-[#F3F4F5] px-5 py-5 sm:px-8 sm:py-6">
         <p className="text-sm font-medium text-[#FA5B0B]">
           {moment(today).format("DD MMMM YYYY")}
         </p>
@@ -242,7 +242,7 @@ export default function DashboardPage() {
 
       <main className="mx-auto space-y-5 px-5 py-6 sm:px-8 lg:py-7">
         <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
-          <div className="relative min-h-[247px] overflow-hidden rounded-xl bg-[#204657] px-7 py-8 text-white sm:px-9">
+          <div className="relative min-h-[247px] overflow-hidden rounded-[28px] bg-[#10202A] px-7 py-8 text-white sm:px-9">
             <div className="absolute inset-y-0 right-0 w-[49%] opacity-95">
               <Image
                 src="/images/bills_hero.png"
@@ -252,7 +252,7 @@ export default function DashboardPage() {
                 className="object-cover object-center mix-blend-luminosity"
                 priority
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#204657] via-[#204657]/55 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#10202A] via-[#10202A]/55 to-transparent" />
             </div>
             <div className="relative z-10 max-w-[430px]">
               <span className="inline-flex rounded-full bg-white/20 px-3 py-1.5 text-[10px] font-semibold tracking-wide">
@@ -260,19 +260,19 @@ export default function DashboardPage() {
               </span>
               <h2 className="mt-7 text-[29px] font-semibold leading-[1.17] tracking-[-0.04em] sm:text-[34px]">
                 Let&apos;s get your{" "}
-                <span className="text-[#FF6500]">bills out of the way.</span>
+                <span className="text-[#C2531C]">bills out of the way.</span>
               </h2>
               <p className="mt-4 max-w-[390px] text-[13px] leading-5 text-[#E2E8EC]">
                 Skip the stress and the back and forth. Pay electricity,
                 airtime, TV and more in one safe place, anytime you like.
               </p>
             </div>
-            <div className="absolute bottom-8 right-8 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#F65A08] shadow-lg">
+            <div className="absolute bottom-8 right-8 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#C2531C] shadow-lg">
               <Gift className="h-5 w-5" />
             </div>
           </div>
-          <article className="relative min-h-[247px] overflow-hidden rounded-xl bg-[#FFE5D5] p-6 sm:p-7">
-            <span className="inline-flex rounded-full bg-[#FFD0B2] px-3 py-1.5 text-[10px] font-semibold text-[#F65A08]">
+          <article className="relative min-h-[247px] overflow-hidden rounded-2xl bg-[#FFE5D5] p-6 sm:p-7">
+            <span className="inline-flex rounded-full bg-[#FFD0B2] px-3 py-1.5 text-[10px] font-semibold text-[#C2531C]">
               THIS WEEK
             </span>
             <h2 className="mt-5 max-w-[250px] text-[23px] font-semibold leading-[1.24] tracking-[-0.03em]">
@@ -285,7 +285,7 @@ export default function DashboardPage() {
             </p>
             <Link
               href="/dashboard/services"
-              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#F65A08]"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#C2531C]"
             >
               Buy Data <ArrowRight className="h-4 w-4" />
             </Link>
@@ -314,7 +314,7 @@ export default function DashboardPage() {
                       setCustomRange(null);
                     }
                   }}
-                  className="appearance-none rounded-xl border border-[#DED8D4] bg-white py-2.5 pl-3 pr-9 text-xs text-[#343238] outline-none"
+                  className="appearance-none rounded-2xl border border-[#DDE3E6] bg-white py-2.5 pl-3 pr-9 text-xs text-[#10202A] outline-none"
                 >
                   <option>Last 7 days</option>
                   <option>Last 30 days</option>
@@ -327,14 +327,14 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={openRangePicker}
-                  className="flex items-center gap-2 rounded-xl border border-[#DED8D4] bg-white px-3 py-2.5 text-xs text-[#343238] transition hover:border-[#E95312]/50 active:scale-[0.98]"
+                  className="flex items-center gap-2 rounded-2xl border border-[#DDE3E6] bg-white px-3 py-2.5 text-xs text-[#10202A] transition hover:border-[#EE6E2D]/50 active:scale-[0.98]"
                 >
-                  <CalendarDays className="h-4 w-4 text-[#807A7B]" />
+                  <CalendarDays className="h-4 w-4 text-[#5D6F78]" />
                   {from && to ? formatRange(from, to) : "Choose range"}
                 </button>
                 {isRangePickerOpen && (
-                  <div className="absolute right-0 z-20 mt-2 w-[min(22rem,calc(100vw-2.5rem))] rounded-xl border border-[#E6E3E0] bg-white p-4 shadow-xl shadow-slate-900/10">
-                    <p className="text-sm font-semibold text-[#34425D]">
+                  <div className="absolute right-0 z-20 mt-2 w-[min(22rem,calc(100vw-2.5rem))] rounded-3xl border border-[#E3E8EB] bg-white p-4 shadow-xl shadow-slate-900/10">
+                    <p className="text-sm font-semibold text-[#233C49]">
                       Custom date range
                     </p>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -347,7 +347,7 @@ export default function DashboardPage() {
                           onChange={(event) =>
                             setPendingFrom(event.target.value)
                           }
-                          className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-[#E95312]"
+                          className="mt-1.5 h-10 w-full rounded-2xl border border-slate-200 px-2 text-sm outline-none focus:border-[#EE6E2D]"
                         />
                       </label>
                       <label className="text-xs font-medium text-slate-600">
@@ -358,7 +358,7 @@ export default function DashboardPage() {
                           min={pendingFrom || undefined}
                           max={today || undefined}
                           onChange={(event) => setPendingTo(event.target.value)}
-                          className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-[#E95312]"
+                          className="mt-1.5 h-10 w-full rounded-2xl border border-slate-200 px-2 text-sm outline-none focus:border-[#EE6E2D]"
                         />
                       </label>
                     </div>
@@ -381,7 +381,7 @@ export default function DashboardPage() {
                         disabled={
                           !pendingFrom || !pendingTo || pendingFrom > pendingTo
                         }
-                        className="rounded-lg bg-[#E95312] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#E95312] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="rounded-lg bg-[#EE6E2D] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#EE6E2D] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Apply range
                       </button>
@@ -399,10 +399,10 @@ export default function DashboardPage() {
               : metrics.map((metric) => (
                   <article
                     key={metric.label}
-                    className="rounded-xl border border-[#E6E3E0] bg-white px-5 py-6"
+                    className="rounded-3xl border border-[#E3E8EB] bg-white px-5 py-6"
                   >
-                    <p className="text-[15px] text-[#52617A]">{metric.label}</p>
-                    <p className="mt-3 text-[27px] font-medium tracking-[-0.04em] text-[#364259]">
+                    <p className="text-[15px] text-[#4A5B64]">{metric.label}</p>
+                    <p className="mt-3 text-[27px] font-medium tracking-[-0.04em] text-[#233C49]">
                       {metric.value}
                     </p>
                     <p className="mt-2 text-sm">
@@ -411,7 +411,7 @@ export default function DashboardPage() {
                       >
                         {metric.change}
                       </span>
-                      <span className="text-[#A29B9C]"> {metric.detail}</span>
+                      <span className="text-[#5D6F78]"> {metric.detail}</span>
                     </p>
                   </article>
                 ))}
@@ -424,7 +424,7 @@ export default function DashboardPage() {
         </section>
 
         <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
-          <article className="rounded-xl border border-[#E6E3E0] bg-white p-5 sm:p-6">
+          <article className="rounded-3xl border border-[#E3E8EB] bg-white p-5 sm:p-6">
             <div>
               <h2 className="text-xl font-medium text-[#53637C]">
                 Spending overview
@@ -436,7 +436,7 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <>
-                  <p className="mt-2 text-[26px] font-semibold tracking-[-0.04em] text-[#20232A]">
+                  <p className="mt-2 text-[26px] font-semibold tracking-[-0.04em] text-[#10202A]">
                     {data
                       ? formatNaira(data.summary.spending.amountMinor)
                       : "—"}
@@ -461,7 +461,7 @@ export default function DashboardPage() {
               )}
             </div>
           </article>
-          <article className="rounded-xl border border-[#E6E3E0] bg-white p-5 sm:p-6">
+          <article className="rounded-3xl border border-[#E3E8EB] bg-white p-5 sm:p-6">
             <h2 className="text-xl font-medium">Digital Services usage</h2>
             <div className="relative mx-auto mt-4 h-[240px] max-w-[310px]">
               {isLoading ? (
@@ -495,12 +495,12 @@ export default function DashboardPage() {
         </section>
 
         <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
-          <article className="rounded-xl border border-[#E6E3E0] bg-white p-5 sm:p-6">
+          <article className="rounded-3xl border border-[#E3E8EB] bg-white p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-xl font-semibold">Recent transactions</h2>
               <Link
                 href="/dashboard/transactions"
-                className="inline-flex items-center gap-2 text-sm font-medium text-[#F65A08]"
+                className="inline-flex items-center gap-2 text-sm font-medium text-[#C2531C]"
               >
                 View all transactions <ChevronRight className="h-4 w-4" />
               </Link>
@@ -514,7 +514,7 @@ export default function DashboardPage() {
                     key={transaction.txnRef}
                     className="flex items-center gap-3 py-4 first:pt-2"
                   >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#EAF7FC] text-xs font-bold text-[#204657]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#EAF7FC] text-xs font-bold text-[#10202A]">
                       {transaction.productName.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -529,7 +529,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4">
-                      <span className="font-semibold text-[#39475E]">
+                      <span className="font-semibold text-[#233C49]">
                         {formatNaira(transaction.totalMinor)}
                       </span>
                       <StatusBadge status={transaction.fulfilmentStatus} />
@@ -543,11 +543,11 @@ export default function DashboardPage() {
               )}
             </div>
           </article>
-          {/*  <aside className="overflow-hidden rounded-xl border border-[#E6E3E0] bg-white">
+          {/*  <aside className="overflow-hidden rounded-3xl border border-[#E3E8EB] bg-white">
             <div className="relative bg-[#F5F5F5] p-5">
               <h2 className="text-xl font-semibold">Reward points</h2>
               <p className="mt-7 text-sm text-[#60708B]">Your reward points</p>
-              <p className="mt-1 text-[31px] font-medium leading-none tracking-[-0.04em] text-[#364259]">
+              <p className="mt-1 text-[31px] font-medium leading-none tracking-[-0.04em] text-[#233C49]">
                 {data?.rewards.available && data.rewards.points !== null
                   ? data.rewards.points.toLocaleString()
                   : "—"}{" "}
@@ -564,7 +564,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="p-5">
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF1E8] px-3 py-1.5 text-sm text-[#F65A08]">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF1E8] px-3 py-1.5 text-sm text-[#C2531C]">
                 <Gift className="h-3.5 w-3.5" /> Reward program
               </span>
               <p className="mt-5 text-sm leading-6 text-[#7F7A78]">

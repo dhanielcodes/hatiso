@@ -9,7 +9,7 @@ import { CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useRegister, useResendVerification, useVerifyUser } from '@/lib/queries/useAuth';
 import { TextField, PasswordField, PhoneField, CheckboxField, SubmitButton } from '@/components/forms';
-import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
+import AuthShell from '@/components/auth/AuthShell';
 import StepIndicator from '@/components/auth/StepIndicator';
 import OtpInput from '@/components/auth/OtpInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
@@ -60,7 +60,7 @@ const step2Schema = Yup.object({
 
 /* ─── Shared button style ───────────────────────────────────────── */
 const BTN =
-  'w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
+  'w-full rounded-full bg-[#EE6E2D] py-4 text-[15px] font-bold text-[#14252E] transition hover:bg-[#F48245] active:scale-[0.99] disabled:opacity-50';
 
 /* ─── Email / Phone tab switch ──────────────────────────────────── */
 function MethodTabs({
@@ -79,7 +79,7 @@ function MethodTabs({
     <div
       role="tablist"
       aria-label="Sign up method"
-      className="grid grid-cols-2 gap-1 rounded-xl bg-[#ECE7E0] p-1"
+      className="grid grid-cols-2 gap-1 rounded-full bg-[#F1F3F4] p-1"
     >
       {tabs.map((tab) => {
         const active = value === tab.id;
@@ -90,9 +90,9 @@ function MethodTabs({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(tab.id)}
-            className={`rounded-lg py-2.5 text-[13px] font-semibold transition ${active
-              ? 'bg-white text-[#E95312] shadow-sm'
-              : 'text-slate-500 hover:text-slate-800'
+            className={`rounded-full py-2.5 text-[13px] font-bold transition ${active
+              ? 'bg-[#10202A] text-white'
+              : 'text-[#4A5B64] hover:text-[#10202A]'
               }`}
           >
             {tab.label}
@@ -247,13 +247,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="grid min-h-screen bg-[#F7F4EF] lg:grid-cols-2">
-      <AuthBrandPanel />
-
-      {/* ── Right panel ── */}
-      <main className="flex min-h-screen flex-col bg-[#F7F4EF] px-5 py-6 sm:px-10 lg:px-16 xl:px-20">
-        <div className="flex flex-1 flex-col items-center justify-center py-4">
-          <div className="w-full max-w-[460px]">
+    <AuthShell>
             {/* Step indicator */}
             <StepIndicator currentStep={step} />
 
@@ -261,10 +255,10 @@ export default function RegisterPage() {
             {step === 1 && (
               <>
                 <div className="mb-6 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#E95312]">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#C2531C]">
                     STEP 1
                   </p>
-                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
+                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#10202A]">
                     Create your account
                   </h1>
                   <p className="mt-1.5 text-[13px] text-slate-500">
@@ -363,7 +357,7 @@ export default function RegisterPage() {
                   Already have an account?{' '}
                   <Link
                     href="/auth/login"
-                    className="font-semibold text-[#E95312] hover:text-[#E84D15]"
+                    className="font-semibold text-[#C2531C] hover:text-[#10202A]"
                   >
                     Sign In
                   </Link>
@@ -375,10 +369,10 @@ export default function RegisterPage() {
             {step === 2 && (
               <>
                 <div className="mb-6 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#E95312]">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#C2531C]">
                     STEP 2
                   </p>
-                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
+                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#10202A]">
                     Create Password
                   </h1>
                   <p className="mt-1.5 text-[13px] text-slate-500">
@@ -460,7 +454,7 @@ export default function RegisterPage() {
                         className={`${BTN} mt-2`}
                         loadingLabel={
                           <span className="inline-flex items-center justify-center gap-2">
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#14252E] border-t-transparent" />
                             Creating account...
                           </span>
                         }
@@ -490,10 +484,10 @@ export default function RegisterPage() {
             {step === 3 && (
               <>
                 <div className="mb-8 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#E95312]">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#C2531C]">
                     STEP 3
                   </p>
-                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
+                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#10202A]">
                     Account Verification
                   </h1>
                   <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500">
@@ -534,7 +528,7 @@ export default function RegisterPage() {
                 >
                   {isVerifying ? (
                     <span className="inline-flex items-center justify-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#14252E] border-t-transparent" />
                       Verifying...
                     </span>
                   ) : (
@@ -561,7 +555,7 @@ export default function RegisterPage() {
                         type="button"
                         disabled={isResending}
                         onClick={handleResendOtp}
-                        className="font-semibold text-[#E95312] hover:text-[#E84D15] disabled:opacity-50"
+                        className="font-semibold text-[#C2531C] hover:text-[#10202A] disabled:opacity-50"
                       >
                         {isResending ? 'Sending...' : 'Click to resend code'}
                       </button>
@@ -584,9 +578,6 @@ export default function RegisterPage() {
                 </div>
               </>
             )}
-          </div>
-        </div>
-      </main>
 
       {/* ══ SUCCESS MODAL ═══════════════════════════════════════════ */}
       {showSuccess && (
@@ -597,7 +588,7 @@ export default function RegisterPage() {
               <CheckCircle2 className="h-9 w-9 text-emerald-500" strokeWidth={2.2} />
             </div>
 
-            <h2 className="text-xl font-bold text-[#111111]">
+            <h2 className="text-xl font-bold text-[#10202A]">
               Welcome aboard, {createdName}.
             </h2>
             <p className="mx-auto mt-2 max-w-[260px] text-[13px] leading-relaxed text-slate-500">
@@ -608,13 +599,13 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => router.push('/dashboard')}
-              className="mt-7 w-full rounded-xl bg-[#E95312] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#E84D15] active:scale-[0.99]"
+              className="mt-7 w-full rounded-full bg-[#EE6E2D] py-4 text-[15px] font-bold text-[#14252E] transition hover:bg-[#F48245] active:scale-[0.99]"
             >
               Continue to Dashboard
             </button>
           </div>
         </div>
       )}
-    </div>
+    </AuthShell>
   );
 }

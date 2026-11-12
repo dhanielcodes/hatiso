@@ -34,9 +34,9 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
               {/* Circle */}
               <div
                 className={`flex h-11 w-11 items-center justify-center rounded-full border-2 transition-all duration-300 ${isCompleted
-                    ? 'border-[#F5A56B] bg-[#FEF0E6] text-[#E95312]'
+                    ? 'border-[#F49A66] bg-[#FFF3E8] text-[#EE6E2D]'
                     : isActive
-                      ? 'border-[#E95312] bg-[#FEF0E6] text-[#E95312]'
+                      ? 'border-[#EE6E2D] bg-[#FFF3E8] text-[#EE6E2D]'
                       : 'border-slate-300 bg-transparent text-slate-400'
                   }`}
               >
@@ -46,14 +46,14 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
               {/* Step number + label */}
               <div className="text-center">
                 <p
-                  className={`text-[11px] font-bold ${isCompleted || isActive ? 'text-[#E95312]' : 'text-slate-400'
+                  className={`text-[11px] font-bold ${isCompleted || isActive ? 'text-[#EE6E2D]' : 'text-slate-400'
                     }`}
                 >
                   {num}
                 </p>
                 <p
                   className={`mt-0.5 text-[11px] leading-tight ${isCompleted || isActive
-                      ? 'font-medium text-[#E95312]'
+                      ? 'font-medium text-[#EE6E2D]'
                       : 'text-slate-400'
                     }`}
                 >
@@ -67,7 +67,7 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
               <div className="relative mx-1 mt-5 flex-1 min-w-[40px] max-w-[80px]">
                 <div className="h-0 border-t-2 border-dashed border-slate-300" />
                 <div
-                  className={`absolute inset-0 h-0 border-t-2 border-dashed transition-all duration-500 ${isCompleted ? 'border-[#F5A56B] w-full' : 'border-transparent w-0'
+                  className={`absolute inset-0 h-0 border-t-2 border-dashed transition-all duration-500 ${isCompleted ? 'border-[#F49A66] w-full' : 'border-transparent w-0'
                     }`}
                 />
               </div>

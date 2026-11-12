@@ -2,85 +2,72 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/store/authStore';
 
-interface CtaBannerProps {
-  secondaryButtonText?: string;
-  secondaryButtonHref?: string;
-}
+const CARDS = [
+  { label: 'Data', right: '23%', bottom: '-70px', width: 210, r: '-6deg', d: '0.2s', f: '7s', bg: 'linear-gradient(150deg, #2F6A93 0%, #233C49 55%, #10202A 100%)', fg: '#FFFFFF', border: '1px solid #36505E' },
+  { label: 'Bills', right: '9%', bottom: '-30px', width: 210, r: '2deg', d: '0.35s', f: '8s', bg: 'linear-gradient(150deg, #FFB27A 0%, #EE6E2D 50%, #B84A16 100%)', fg: '#14252E', border: 'none' },
+  { label: 'Banks', right: '-2%', bottom: '-100px', width: 190, r: '8deg', d: '0.5s', f: '6.5s', bg: 'linear-gradient(150deg, #FFF3E8 0%, #F6C9A6 60%, #EE9A62 100%)', fg: '#14252E', border: 'none' },
+];
 
-export default function CtaBanner({
-  secondaryButtonText = 'Contact Us',
-  secondaryButtonHref = '/auth/register?role=business',
-}: CtaBannerProps) {
+/** "Ready to get started?" card shown above the footer on every landing page. */
+export default function CtaBanner() {
+  const signedIn = useAuthStore((s) => s.isAuthenticated && !!s.user);
+
   return (
-    <section className="relative bg-[#1B3C4A] px-4 py-20 sm:px-8 lg:px-14">
-      <div className="mx-auto max-w-7xl">
-        <div className="relative overflow-hidden rounded-[32px] bg-[#344E5A] px-6 py-16 sm:px-12 sm:py-20 lg:py-24 text-center shadow-2xl border border-white/5">
-          {/* Decorative Topographic / Wave Contours */}
-          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-            {/* Left wavy contours */}
-            <svg
-              className="absolute -left-10 top-0 h-full w-72 text-white/[0.06]"
-              viewBox="0 0 200 400"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="24"
-              preserveAspectRatio="none"
-            >
-              <path d="M 40 -20 C 120 80, -20 180, 60 280 C 120 350, 40 420, 20 450" />
-            </svg>
-            <svg
-              className="absolute -left-2 top-0 h-full w-80 text-white/[0.04]"
-              viewBox="0 0 200 400"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="16"
-              preserveAspectRatio="none"
-            >
-              <path d="M 80 -40 C 160 70, 20 190, 90 300 C 140 370, 70 430, 40 460" />
-            </svg>
-
-            {/* Right wavy contour */}
-            <svg
-              className="absolute -right-12 top-0 h-full w-80 text-white/[0.06]"
-              viewBox="0 0 250 400"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="22"
-              preserveAspectRatio="none"
-            >
-              <path d="M 180 -20 C 80 100, 20 220, 160 300 C 240 360, 200 440, 230 460" />
-            </svg>
-          </div>
-
-          {/* Content */}
-          <div className="relative z-10 max-w-2xl mx-auto space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
-              Ready to get started?
-            </h2>
-            <p className="text-sm sm:text-base text-slate-200/90 leading-relaxed font-normal max-w-xl mx-auto">
-              Create an account instantly to get started or contact us
-              <br className="hidden sm:inline" /> to design a custom package for your business
-            </p>
-
-            <div className="pt-6 sm:pt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-              <Link
-                href="/auth/register"
-                className="inline-flex items-center justify-center rounded-xl bg-[#E15F09] px-7 py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#E95312]/20 transition-all duration-150 hover:bg-[#E84D15] active:scale-[0.98]"
-              >
-                Create a free account
+    <section className="bg-white px-4 pb-24 pt-6 font-jakarta sm:px-6">
+      <div className="lp-reveal relative mx-auto min-h-[380px] max-w-[1280px] overflow-hidden rounded-[32px] bg-[#0A1014] px-7 py-14 text-white sm:rounded-[40px] sm:px-14 sm:py-[72px]">
+        <div
+          aria-hidden="true"
+          className="absolute right-[8%] top-10 h-[360px] w-[420px] rounded-full bg-[#EE6E2D] opacity-[0.16] blur-[90px]"
+        />
+        <div className="relative max-w-[620px]">
+          <h2 className="m-0 text-[34px] font-semibold leading-[1.1] tracking-[-1.4px] sm:text-[48px]">
+            Ready to get <span className="text-[#EE6E2D]">started?</span>
+          </h2>
+          <p className="mt-5 max-w-[460px] text-[17px] leading-[1.6] text-[#B9C6CD]">
+            Create an account instantly to get started or contact us to design a custom package for your business
+          </p>
+          <div className="mt-[34px] flex flex-wrap gap-3">
+            {signedIn ? (
+              <Link href="/dashboard" className="rounded-full bg-[#EE6E2D] px-[30px] py-[17px] text-base font-bold text-[#14252E] transition hover:bg-[#F48245]">
+                Go to your dashboard
               </Link>
-              <Link
-                href={secondaryButtonHref}
-                className="inline-flex items-center justify-center rounded-xl bg-white px-7 py-3.5 text-xs sm:text-sm font-bold text-[#102A36] shadow-md transition-all duration-150 hover:bg-slate-100 active:scale-[0.98]"
-              >
-                {secondaryButtonText}
-              </Link>
-            </div>
+            ) : (
+              <>
+                <Link href="/auth/register" className="rounded-full bg-[#EE6E2D] px-[30px] py-[17px] text-base font-bold text-[#14252E] transition hover:bg-[#F48245]">
+                  Create a free account
+                </Link>
+                <Link href="/auth/login" className="rounded-full border-[1.5px] border-white px-[30px] py-4 text-base font-semibold text-white transition hover:bg-white hover:text-[#0A1014]">
+                  Sign in
+                </Link>
+              </>
+            )}
           </div>
         </div>
+        {CARDS.map((card) => (
+          <div
+            key={card.label}
+            aria-hidden="true"
+            className="lp-card absolute hidden aspect-[0.66] rounded-[26px] p-[22px] min-[961px]:block"
+            style={
+              {
+                right: card.right,
+                bottom: card.bottom,
+                width: card.width,
+                background: card.bg,
+                color: card.fg,
+                border: card.border,
+                '--r': card.r,
+                '--d': card.d,
+                '--f': card.f,
+              } as React.CSSProperties
+            }
+          >
+            <span className="text-lg font-bold">{card.label}</span>
+          </div>
+        ))}
       </div>
     </section>
   );
 }
-

@@ -227,8 +227,8 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
                 onClick={(event) => event.stopPropagation()}
                 className="w-full max-w-[523px] rounded-2xl bg-white shadow-xl"
             >
-                <div className="flex items-center justify-between border-b border-[#EEEAE6] px-6 py-5">
-                    <h2 id="contact-title" className="text-xl font-semibold text-[#20232A]">
+                <div className="flex items-center justify-between border-b border-[#E3E8EB] px-6 py-5">
+                    <h2 id="contact-title" className="text-xl font-semibold text-[#10202A]">
                         Contact Us
                     </h2>
                     <button
@@ -236,7 +236,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
                         type="button"
                         onClick={onClose}
                         aria-label="Close"
-                        className="rounded-md p-1 text-[#243B4A] transition hover:bg-slate-100"
+                        className="rounded-md p-1 text-[#10202A] transition hover:bg-slate-100"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -246,13 +246,13 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
                         const Icon = item.icon;
                         const external = item.href.startsWith('http');
                         return (
-                            <li key={item.id} className={index > 0 ? 'border-t border-[#F0EDEA]' : ''}>
+                            <li key={item.id} className={index > 0 ? 'border-t border-[#F3F4F5]' : ''}>
                                 <a
                                     href={item.href}
                                     {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-                                    className="flex items-center gap-3 py-4 text-sm text-[#3B4150] transition hover:text-[#E95312]"
+                                    className="flex items-center gap-3 py-4 text-sm text-[#233C49] transition hover:text-[#C2531C]"
                                 >
-                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EEF0F2] text-[#243B4A]">
+                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EEF0F2] text-[#10202A]">
                                         <Icon className="h-4 w-4" />
                                     </span>
                                     {item.label}
@@ -307,15 +307,15 @@ function HelpCenter() {
     return (
         <div>
             {/* Service banner */}
-            <div className="flex items-center gap-3 rounded-lg bg-[#EEF4F6] px-4 py-4 text-sm text-[#243B4A]">
+            <div className="flex items-center gap-3 rounded-lg bg-[#EEF4F6] px-4 py-4 text-sm text-[#10202A]">
                 <Headphones className="h-5 w-5 shrink-0 text-[#2A7F86]" />
                 <p>
                     <span className="font-semibold">Customer Service Center.</span>{' '}
-                    <span className="text-[#52617A]">24 hours service for you.</span>
+                    <span className="text-[#4A5B64]">24 hours service for you.</span>
                 </p>
             </div>
 
-            <p className="mt-8 text-sm text-[#7A7F8A] sm:text-base">Hi there! 👋 Need a hand with anything today?</p>
+            <p className="mt-8 text-sm text-[#5D6F78] sm:text-base">Hi there! 👋 Need a hand with anything today?</p>
 
             {/* Enquiry form */}
             <Formik<EnquiryValues> initialValues={EMPTY_ENQUIRY} validationSchema={enquirySchema} onSubmit={handleSubmit}>
@@ -356,32 +356,32 @@ function HelpCenter() {
             </Formik>
 
             {/* Recent Support History */}
-            <section className="mt-8 rounded-xl border border-[#EBE6E1] bg-white px-5 py-6 sm:px-6" aria-labelledby="history-title">
-                <h3 id="history-title" className="text-base font-semibold text-[#20232A]">
+            <section className="mt-8 rounded-3xl border border-[#E3E8EB] bg-white px-5 py-6 sm:px-6" aria-labelledby="history-title">
+                <h3 id="history-title" className="text-base font-semibold text-[#10202A]">
                     Recent Support History
                 </h3>
-                <p className="mt-2 text-xs text-[#52617A]">Here is the most recent history</p>
+                <p className="mt-2 text-xs text-[#4A5B64]">Here is the most recent history</p>
 
                 <ul className="mt-6">
                     {rows.map((row, index) => (
                         <li
                             key={row.id}
-                            className={`grid grid-cols-2 gap-x-4 gap-y-4 py-4 md:grid-cols-[1.4fr_1fr_1fr_1fr] ${index > 0 ? 'border-t border-[#EEEAE6]' : ''}`}
+                            className={`grid grid-cols-2 gap-x-4 gap-y-4 py-4 md:grid-cols-[1.4fr_1fr_1fr_1fr] ${index > 0 ? 'border-t border-[#E3E8EB]' : ''}`}
                         >
                             <div>
-                                <p className="text-xs text-[#7A7F8A]">Comment</p>
-                                <p className="mt-2 text-sm font-medium text-[#20232A] sm:text-base">{row.comment}</p>
+                                <p className="text-xs text-[#5D6F78]">Comment</p>
+                                <p className="mt-2 text-sm font-medium text-[#10202A] sm:text-base">{row.comment}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-[#7A7F8A]">Enquiry Type</p>
-                                <p className="mt-2 text-sm font-medium text-[#20232A] sm:text-base">{row.type}</p>
+                                <p className="text-xs text-[#5D6F78]">Enquiry Type</p>
+                                <p className="mt-2 text-sm font-medium text-[#10202A] sm:text-base">{row.type}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-[#7A7F8A]">Date</p>
-                                <p className="mt-2 text-sm font-medium text-[#20232A] sm:text-base">{row.date}</p>
+                                <p className="text-xs text-[#5D6F78]">Date</p>
+                                <p className="mt-2 text-sm font-medium text-[#10202A] sm:text-base">{row.date}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-[#7A7F8A]">Enquiries Status</p>
+                                <p className="text-xs text-[#5D6F78]">Enquiries Status</p>
                                 <p className={`mt-2 text-sm font-medium sm:text-base ${STATUS_STYLES[row.status]}`}>{row.status}</p>
                             </div>
                         </li>
@@ -389,7 +389,7 @@ function HelpCenter() {
                 </ul>
 
                 {/* Pagination */}
-                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 text-sm text-[#7A7F8A]">
+                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 text-sm text-[#5D6F78]">
                     <p>
                         Showing {total === 0 ? 0 : start + 1}-{Math.min(start + pageSize, total)} of {total} entries
                     </p>
@@ -403,7 +403,7 @@ function HelpCenter() {
                                     setPageSize(Number(event.target.value));
                                     setPage(1);
                                 }}
-                                className="h-8 appearance-none rounded-md border border-[#E6E3E0] bg-white pl-3 pr-7 text-sm text-[#52617A] outline-none focus:border-[#E95312]"
+                                className="h-8 appearance-none rounded-md border border-[#E3E8EB] bg-white pl-3 pr-7 text-sm text-[#4A5B64] outline-none focus:border-[#EE6E2D]"
                             >
                                 {PAGE_SIZES.map((size) => (
                                     <option key={size} value={size}>
@@ -419,11 +419,11 @@ function HelpCenter() {
                             onClick={() => setPage((p) => Math.max(1, p - 1))}
                             disabled={page === 1}
                             aria-label="Previous page"
-                            className="ml-1 flex h-7 w-7 items-center justify-center rounded-md border border-[#E6E3E0] bg-[#F1F3F9] text-[#52617A] transition disabled:cursor-not-allowed disabled:opacity-50"
+                            className="ml-1 flex h-7 w-7 items-center justify-center rounded-md border border-[#E3E8EB] bg-[#F1F3F9] text-[#4A5B64] transition disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </button>
-                        <span className="px-1 font-medium text-[#20232A]" aria-current="page">
+                        <span className="px-1 font-medium text-[#10202A]" aria-current="page">
                             {page}
                         </span>
                         <button
@@ -431,7 +431,7 @@ function HelpCenter() {
                             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                             disabled={page === totalPages}
                             aria-label="Next page"
-                            className="flex h-7 w-7 items-center justify-center rounded-md border border-[#E6E3E0] bg-white text-[#20232A] transition disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-7 w-7 items-center justify-center rounded-md border border-[#E3E8EB] bg-white text-[#10202A] transition disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <ChevronRight className="h-4 w-4" />
                         </button>
@@ -442,13 +442,13 @@ function HelpCenter() {
             {/* Contact strip */}
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-[#FFEFE5] px-5 py-4">
                 <div>
-                    <p className="text-sm font-semibold text-[#20232A]">Do you still need our help?</p>
-                    <p className="mt-1 text-xs text-[#52617A]">Reach us via phone, email &amp; social accounts</p>
+                    <p className="text-sm font-semibold text-[#10202A]">Do you still need our help?</p>
+                    <p className="mt-1 text-xs text-[#4A5B64]">Reach us via phone, email &amp; social accounts</p>
                 </div>
                 <button
                     type="button"
                     onClick={() => setContactOpen(true)}
-                    className="rounded-md border border-[#E6E3E0] bg-white px-3.5 py-2 text-xs font-medium text-[#20232A] transition hover:bg-slate-50"
+                    className="rounded-md border border-[#E3E8EB] bg-white px-3.5 py-2 text-xs font-medium text-[#10202A] transition hover:bg-slate-50"
                 >
                     Contact Us
                 </button>
@@ -472,8 +472,8 @@ function Faqs() {
 
     return (
         <div className="grid gap-8 lg:grid-cols-[270px_1fr]">
-            <aside className="h-fit self-start rounded-xl border border-[#EBE6E1] bg-white px-3.5 pb-6 pt-6" aria-label="FAQ categories">
-                <p className="px-3 text-xs font-medium uppercase text-[#52617A]">Select FAQs type</p>
+            <aside className="h-fit self-start rounded-3xl border border-[#E3E8EB] bg-white px-3.5 pb-6 pt-6" aria-label="FAQ categories">
+                <p className="px-3 text-xs font-medium uppercase text-[#4A5B64]">Select FAQs type</p>
                 <ul className="mt-3 space-y-1">
                     {FAQ_GROUPS.map((item) => {
                         const active = item.id === groupId;
@@ -483,12 +483,12 @@ function Faqs() {
                                     type="button"
                                     onClick={() => selectGroup(item.id)}
                                     aria-current={active ? 'true' : undefined}
-                                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${active ? 'bg-[#EEF0F2] font-medium text-[#20232A]' : 'text-[#52617A] hover:bg-slate-50'
+                                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${active ? 'bg-[#EEF0F2] font-medium text-[#10202A]' : 'text-[#4A5B64] hover:bg-slate-50'
                                         }`}
                                 >
                                     <span className="flex-1">{item.label}</span>
                                     {active && (
-                                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#243B4A]">
+                                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#10202A]">
                                             <ChevronRight className="h-3 w-3 text-white" strokeWidth={3} />
                                         </span>
                                     )}
@@ -500,7 +500,7 @@ function Faqs() {
             </aside>
 
             <section className="min-w-0 max-w-[592px] lg:pt-3" aria-labelledby="faq-title">
-                <h3 id="faq-title" className="text-lg font-semibold text-[#20232A]">
+                <h3 id="faq-title" className="text-lg font-semibold text-[#10202A]">
                     {group.label}
                 </h3>
                 <ul className="mt-4">
@@ -508,23 +508,23 @@ function Faqs() {
                         const open = openIndex === index;
                         const panelId = `faq-panel-${group.id}-${index}`;
                         return (
-                            <li key={item.q} className="border-b border-[#E6E3E0]">
+                            <li key={item.q} className="border-b border-[#E3E8EB]">
                                 <button
                                     type="button"
                                     onClick={() => setOpenIndex(open ? null : index)}
                                     aria-expanded={open}
                                     aria-controls={panelId}
-                                    className="flex w-full items-center gap-4 py-4 text-left text-base text-[#20232A]"
+                                    className="flex w-full items-center gap-4 py-4 text-left text-base text-[#10202A]"
                                 >
                                     {open ? (
-                                        <Minus className="h-4 w-4 shrink-0 text-[#E95312]" />
+                                        <Minus className="h-4 w-4 shrink-0 text-[#C2531C]" />
                                     ) : (
-                                        <Plus className="h-4 w-4 shrink-0 text-[#E95312]" />
+                                        <Plus className="h-4 w-4 shrink-0 text-[#C2531C]" />
                                     )}
                                     {item.q}
                                 </button>
                                 {open && (
-                                    <p id={panelId} className="pb-5 pl-8 text-sm leading-relaxed text-[#52617A]">
+                                    <p id={panelId} className="pb-5 pl-8 text-sm leading-relaxed text-[#4A5B64]">
                                         {item.a}
                                     </p>
                                 )}
@@ -546,8 +546,8 @@ function RatingField({ name }: { name: string }) {
 
     return (
         <div>
-            <p id={`${name}-label`} className="mt-7 text-base font-medium text-[#20232A]">
-                Rating <span className="text-[#E95312]">*</span>
+            <p id={`${name}-label`} className="mt-7 text-base font-medium text-[#10202A]">
+                Rating <span className="text-[#C2531C]">*</span>
             </p>
             <div role="radiogroup" aria-labelledby={`${name}-label`} className="mt-5 flex gap-4" onMouseLeave={() => setHover(0)}>
                 {[1, 2, 3, 4, 5].map((value) => (
@@ -591,7 +591,7 @@ function Feedback() {
     return (
         <Formik<FeedbackValues> initialValues={EMPTY_FEEDBACK} validationSchema={feedbackSchema} onSubmit={handleSubmit}>
             <Form noValidate>
-                <p className="text-sm text-[#7A7F8A] sm:text-base">How would you rate your experience with QApp today?</p>
+                <p className="text-sm text-[#5D6F78] sm:text-base">How would you rate your experience with QApp today?</p>
 
                 <RatingField name="rating" />
 
@@ -623,14 +623,14 @@ export default function SupportPage() {
     const [tab, setTab] = useState<SupportTab>('help');
 
     return (
-        <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
+        <div className="min-h-full bg-[#F3F4F5] text-[#10202A]">
             {/* ── Page header ── */}
-            <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Support</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">
-                    Real help, right <span className="text-[#EE7230]">when you need it.</span>
+            <section className="border-b border-[#E3E8EB] px-5 py-7 sm:px-8">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#C2531C]">Support</p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#10202A] sm:text-3xl">
+                    Real help, right <span className="text-[#C2531C]">when you need it.</span>
                 </h2>
-                <p className="mt-2 text-sm text-[#777486] sm:text-base">Keep your information current and choose how Hatiso protects you.</p>
+                <p className="mt-2 text-sm text-[#4A5B64] sm:text-base">Keep your information current and choose how Hatiso protects you.</p>
             </section>
 
             <main className="px-5 py-6 sm:px-8 lg:py-8">
@@ -648,8 +648,8 @@ export default function SupportPage() {
                                 aria-controls={`support-panel-${item.id}`}
                                 onClick={() => setTab(item.id)}
                                 className={`rounded-full border px-5 py-2.5 text-sm transition ${active
-                                    ? 'border-[#243B4A] bg-[#243B4A] font-medium text-white'
-                                    : 'border-[#EBE6E1] bg-white text-[#20232A] hover:bg-slate-50'
+                                    ? 'border-[#10202A] bg-[#10202A] font-medium text-white'
+                                    : 'border-[#E3E8EB] bg-white text-[#10202A] hover:bg-slate-50'
                                     }`}
                             >
                                 {item.label}

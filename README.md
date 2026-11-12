@@ -19,6 +19,7 @@ This README is for frontend developers joining the project. It covers how to run
 - [State management](#state-management)
 - [Errors and notifications](#errors-and-notifications)
 - [Styling](#styling)
+- [Landing pages](#landing-pages)
 - [Conventions checklist](#conventions-checklist)
 
 ---
@@ -105,6 +106,7 @@ Only run one `next dev` per checkout. A second one in the same folder won't star
 │   ├── ui/Skeleton.tsx         # ⭐ Shared loading skeletons (see "Loading states")
 │   ├── dashboard/              # Dashboard page bodies (ProfilePage, SupportPage, …) + sidebar, charts
 │   ├── services/               # Service checkout pieces (payment form, selectors, Paystack)
+│   ├── landing/LandingKit.tsx  # ⭐ Shared landing-page blocks (hero, features row, bento tiles…; see "Landing pages")
 │   ├── marketplace/            # Public site sections (Navbar, Hero, Footer, …)
 │   └── auth/                   # Auth UI pieces (brand panel, OTP input, step indicator, …)
 │
@@ -120,6 +122,7 @@ Only run one `next dev` per checkout. A second one in the same folder won't star
 │   ├── store/                  # Zustand stores (authStore, uiStore, marketplaceStore)
 │   ├── auth/session.ts         # Token/cookie persistence helpers
 │   ├── validation/             # Reusable Yup schemas (email, phone, password, amount, …)
+│   ├── marketing/              # Landing data: banks list, service prefill hand-off
 │   └── constants/              # Static data (categories)
 │
 ├── types/index.ts              # Shared types: ApiResponse<T>, ApiError, User, AuthState, …
@@ -520,7 +523,12 @@ The React Query defaults in `app/providers.tsx` are: retry once, no refetch on w
 - **Charts** are Chart.js wrappers in `components/dashboard/DashboardCharts.tsx`:
   - `SpendingChart`: line/area chart.
   - `ServiceUsageChart`: a pie by default; pass `donut` for the ring with rounded segments used on Analytics.
-- **Auth brand panel** (`components/auth/AuthBrandPanel.tsx`) is the left side of login, register and forgot-password on desktop:
+- **Auth layout** (`components/auth/AuthShell.tsx`) wraps login, register and forgot-password in the landing look:
+  - The ink brand panel sits on the left on desktop.
+  - On the right, the form sits in a white card on light grey, with a "Back to home" pill and the logo (dark wordmark) on mobile.
+  - Buttons are orange pills, and the `auth` field variant in `components/forms/styles.ts` uses the landing greys with an orange focus.
+  - New auth screens should use `<AuthShell>` rather than building their own layout.
+- **Auth brand panel** (`components/auth/AuthBrandPanel.tsx`) is the left side of the auth layout on desktop:
   - It stays in the viewport while the form scrolls, and the photo frame shrinks to fit shorter screens.
   - Photos live in the `SLIDES` array (`src`, `alt`, plus `position` and `zoom` to set the crop). They cross-fade inside a squircle frame every 6s.
   - Picking a slide with the dots or a swipe restarts the countdown, and it pauses while the tab is in the background.
@@ -530,7 +538,73 @@ The React Query defaults in `app/providers.tsx` are: retry once, no refetch on w
   - Its buttons link to `/auth/login` and `/auth/register`. Closing it (✕, Escape or the backdrop) carries on where the guest was going.
   - `shouldInviteGuest(isAuthenticated)` skips logged-in users, and guests who already saw it this browser session (`sessionStorage` key `hasito_invite_shown`).
 - **Icons** come from `lucide-react`.
+- **Landing pages** follow the "Hatiso Web Redesign" file. See "Landing pages" below.
+- **Dashboard shell** (`app/dashboard/layout.tsx` + `components/dashboard/DashboardSidebar.tsx`) uses the landing palette:
+  - Ink sidebar (`#0A1014`) with pill nav items; the active item gets `#1A2329` and an orange icon.
+  - White header with pill buttons, including "Visit Hatiso".
+  - Page background `#F3F4F5`, with `#E3E8EB` dividers.
+  - The dashboard keeps the Be Vietnam Pro font.
+- **Dashboard pages** use the same palette. When adding a page, stick to these tokens rather than the old beige/navy ones:
+  - Text: `#10202A` (headings), `#4A5B64` (body), `#5D6F78` (muted).
+  - Orange: `#EE6E2D` for fills, `#C2531C` for orange text and links, `#F48245` on hover.
+  - Borders: `#E3E8EB` (cards, dividers), `#DDE3E6` (inputs, outline buttons).
+  - Dark banners and selected tabs: `#10202A`, with `rounded-[28px]` on banners; white cards are `rounded-3xl`.
+  - Shared `Button`/`SubmitButton` (`components/forms/styles.ts`) are pills: orange primary with dark text, outline secondary.
 - **Remote images** must come from a host listed under `images.remotePatterns` in `next.config.ts`.
+
+---
+
+## Landing pages
+
+The public pages (home `/`, services `/services/[slug]` and `/categories/[slug]`, `/banks`, `/contact`) share one look.
+
+**Look and building blocks**
+- **Font:** Plus Jakarta Sans, loaded in `app/layout.tsx` as `--font-plus-jakarta` and used through the `font-jakarta` class. The dashboard keeps Be Vietnam Pro.
+- **Colours:**
+  - Ink `#0A1014`: hero, footer and CTA
+  - Navy `#10202A`: dark tiles
+  - Slate `#233C49`
+  - Orange `#EE6E2D` / `#E2591A`
+  - Light greys `#F3F4F5` / `#EEF1F3`
+- **`components/landing/LandingKit.tsx`** holds the shared pieces:
+  - `LandingPage`, `DarkHero`
+  - `HeroBadge`, `HeroHeadline`, `HeroLead`, `HeroPillInput`, `ProviderRow`
+  - `FeatureRow`, `BentoTiles` (big dark tile with `FannedCards`, an `Orbit` tile and two stat tiles), `SectionPill`, `OrangePill`
+  - `LpIcon`: the design's own outline icons
+- **Animations:** the `lp-*` classes in `app/globals.css` (rise, card bob, ping, orbit, marquee, scroll reveal). They all turn off when reduced motion is preferred.
+- **Shared on every page:**
+  - `Navbar`: links Personal, Business (`/#business`), Banks and Contact us. Signed-in users get a profile menu instead of the Sign in / Create account pills.
+  - `CtaBanner`: "Ready to get started?". Signed-in users see "Go to your dashboard".
+  - `Footer`
+
+**Home**
+- `components/marketplace/HomeLanding.tsx` puts the sections together.
+- The "Pay a bill" card's state (`usePayBill` in `HeroSection.tsx`) lives there, so the "Pay here" category cards can open the right tab.
+- The hero phone input and the card's phone field share one value.
+- Paying on the card does not charge anything. It opens `/services/<slug>` with the network, number and amount already filled in, and the guest pays there as usual.
+
+**Service pages**
+- `ServiceDetailPage` renders the hero, features and bento from `components/services/serviceLanding.ts` (copy per slug, with a fallback for unknown slugs).
+- The white service card holds:
+  - Service pills built from the API categories
+  - `ServicePaymentForm` with `variant="landing"`, which adds amount chips and the "You pay" footer
+    - Products with a set price (`fixedAmountMinor`, or a read-only amount field, e.g. data bundles) show no amount input or chips. Their price shows in "You pay".
+  - Paystack, the receipt and the guest invite, which work as before
+- The hero input ("Continue") carries the number into the form.
+
+**Prefill hand-off**
+- `lib/marketing/servicePrefill.ts` moves details from a landing widget to the checkout.
+- `saveServicePrefill` writes them, `takeServicePrefill(slug)` reads them once, and `matchBiller` picks the biller.
+- The details sit in `sessionStorage` (`hatiso_service_prefill`), so phone and meter numbers never go in the URL.
+
+**Banks**
+- `lib/marketing/banks.ts` (`BANKS_DATA`) is the single list for the home banks block and `/banks`.
+- The status counts, "Show N banks", the filters (service supported, status) and the stat tiles are all worked out from it.
+- To add a bank, add an entry there. `mono` overrides the avatar initials.
+
+**Contact**
+- The hero email ("Get in touch") pre-fills the contact form and jumps to it.
+- The form still uses the shared Formik fields and `contactSchema`.
 
 ---
 

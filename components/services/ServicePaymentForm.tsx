@@ -54,9 +54,25 @@ interface ServicePaymentFormProps {
   formResetKey?: number;
   initialBillerCode?: string;
   hideBillerSelector?: boolean;
-  variant?: 'marketplace' | 'dashboard';
+  variant?: FormVariant;
   initialEmail?: string;
+  /** Values carried over from a landing widget, keyed by field path (e.g. recipient, amountMinor). */
+  prefill?: Record<string, unknown>;
 }
+
+/** marketplace: standalone card · dashboard: bare, inside the app · landing: inside the landing page's white service card */
+type FormVariant = 'marketplace' | 'dashboard' | 'landing';
+
+/** Heading for the landing variant, per service. */
+const LANDING_COPY: Record<string, [string, string]> = {
+  airtime: ['Airtime', 'Enter the number to top up.'],
+  data: ['Data', 'Pick a bundle and the number to top up.'],
+  electricity: ['Electricity', 'Enter your meter number and amount.'],
+  tv: ['TV', 'Enter your smartcard or IUC number.'],
+  education: ['Education', 'Choose a provider and product to continue.'],
+};
+
+const AMOUNT_PRESETS_NAIRA = [100, 500, 1000, 2000, 5000, 10000];
 
 const providerImages: Record<string, string> = {
   mtn: '/images/network_mtn.png',
@@ -119,9 +135,18 @@ function availableProducts(biller: DigitalServiceBiller | undefined) {
   return biller?.products.filter((product) => product.active && product.profile.purchasable) ?? [];
 }
 
-function buildInitialValues(biller: DigitalServiceBiller, product: DigitalServiceProduct, initialEmail = ''): DynamicServiceFormValues {
+function buildInitialValues(
+  biller: DigitalServiceBiller,
+  product: DigitalServiceProduct,
+  initialEmail = '',
+  prefill?: Record<string, unknown>,
+): DynamicServiceFormValues {
   const values: Record<string, unknown> = { billerCode: biller.billerCode, productCode: product.code, email: initialEmail };
-  for (const field of product.formFields) setAtPath(values, field.path, field.value ?? '');
+  for (const field of product.formFields) {
+    const carried = prefill?.[field.path];
+    const usable = carried !== undefined && carried !== '' && !field.readOnly && field.type !== 'hidden';
+    setAtPath(values, field.path, usable ? carried : field.value ?? '');
+  }
   if (initialEmail && product.formFields.some((field) => field.path === 'email')) setAtPath(values, 'email', initialEmail);
   setAtPath(values, 'productCode', product.code);
   return values as DynamicServiceFormValues;
@@ -254,6 +279,71 @@ function DynamicFormField({ field }: { field: DigitalServiceFormField }) {
   );
 }
 
+/** True when the product has a set price (e.g. a data bundle): its amount comes from the catalogue, not the user. */
+function hasFixedAmount(product: DigitalServiceProduct) {
+  const amountField = product.formFields.find((field) => field.path === 'amountMinor');
+  return product.fixedAmountMinor != null || !!amountField?.readOnly;
+}
+
+/** Quick amount chips for the landing card; they set amountMinor (kobo) within the product's limits. */
+function AmountPresets({ field }: { field: DigitalServiceFormField }) {
+  const { values, setFieldValue } = useFormikContext<DynamicServiceFormValues>();
+  const current = Number(valueAtPath(values, field.path));
+  const presets = AMOUNT_PRESETS_NAIRA.filter((naira) => {
+    const minor = naira * 100;
+    return (field.minimum === null || minor >= field.minimum) && (field.maximum === null || minor <= field.maximum);
+  });
+  if (!presets.length) return null;
+  return (
+    <fieldset>
+      <legend className="mb-2.5 text-sm font-semibold text-[#233C49]">Amount</legend>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {presets.map((naira) => {
+          const on = current === naira * 100;
+          return (
+            <button
+              key={naira}
+              type="button"
+              aria-pressed={on}
+              onClick={() => setFieldValue(field.path, naira * 100, true)}
+              className={`rounded-xl border px-2 py-[13px] text-[15px] font-semibold transition-colors ${on ? 'border-[#EE6E2D] bg-[#EE6E2D] text-[#14252E]' : 'border-[#C9D0D4] bg-white text-[#233C49] hover:border-[#8A989F]'}`}
+            >
+              Pay {nairaLabel(naira * 100)}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+/** "You pay ₦…" summary and the Continue button at the foot of the landing card. */
+function LandingFooter({ biller, product }: { biller: DigitalServiceBiller; product: DigitalServiceProduct }) {
+  const { values } = useFormikContext<DynamicServiceFormValues>();
+  const amountField = product.formFields.find((field) => field.path === 'amountMinor');
+  const amountMinor = Number(amountField ? valueAtPath(values, 'amountMinor') : product.fixedAmountMinor) || 0;
+  const minimum = amountField?.minimum ?? null;
+  const recipient = String(valueAtPath(values, 'recipient') ?? '').trim();
+  const belowMinimum = minimum !== null && amountMinor < minimum;
+  const summary = belowMinimum
+    ? `Minimum top-up is ${nairaLabel(minimum)}`
+    : `${biller.billerName}${recipient ? ` to ${recipient}` : ''}`;
+  const total = belowMinimum || amountMinor <= 0 ? '₦0.00' : `₦${(amountMinor / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#DDE3E6] pt-5">
+      <div className="min-w-0">
+        <div className="text-[13px] text-[#5D6F78]">You pay</div>
+        <div className="text-2xl font-extrabold text-[#233C49]">{total}</div>
+        <div className="mt-0.5 truncate text-[13px] text-[#5D6F78]">{summary}</div>
+      </div>
+      <SubmitButton className="rounded-full bg-[#EE6E2D] px-11 py-[17px] text-base font-bold text-[#14252E] transition hover:bg-[#F48245] active:scale-[0.99] disabled:bg-[#E4EAED] disabled:text-[#5D6F78]">
+        Continue
+      </SubmitButton>
+    </div>
+  );
+}
+
 function DynamicFields({
   activeSlug,
   activeTitle,
@@ -269,7 +359,7 @@ function DynamicFields({
   onBillerChange: (billerCode: string) => void;
   onProductChange: (productCode: string) => void;
   hideBillerSelector?: boolean;
-  variant?: 'marketplace' | 'dashboard';
+  variant?: FormVariant;
 }) {
   const { values, errors, submitCount } = useFormikContext<DynamicServiceFormValues>();
   const selectedBiller = billers.find((biller) => biller.billerCode === values.billerCode) ?? billers[0];
@@ -290,7 +380,13 @@ function DynamicFields({
 
   const topLevelError = submitCount > 0 ? Object.values(errors).find((error) => typeof error === 'string') : undefined;
   return (
-    <Form className={variant === 'dashboard' ? 'space-y-5' : 'mt-6 space-y-5'} noValidate>
+    <Form className={variant === 'dashboard' ? 'space-y-5' : variant === 'landing' ? 'flex flex-col gap-6' : 'mt-6 space-y-5'} noValidate>
+      {variant === 'landing' && (
+        <div>
+          <div className="text-lg font-bold text-[#233C49]">{LANDING_COPY[activeSlug]?.[0] ?? categoryTabConfig[activeSlug]?.name ?? activeTitle}</div>
+          <div className="mt-0.5 text-sm text-[#5D6F78]">{LANDING_COPY[activeSlug]?.[1] ?? 'Choose a provider and product to continue.'}</div>
+        </div>
+      )}
       {variant === 'marketplace' && <div className="text-center">
         <h2 className="text-xl font-bold capitalize text-slate-900 sm:text-2xl">{categoryTabConfig?.[activeSlug]?.name}</h2>
         <p className="mt-1 text-xs text-slate-500 sm:text-sm">Choose a provider and product to continue.</p>
@@ -298,27 +394,40 @@ function DynamicFields({
       {typeof topLevelError === 'string' ? <div className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-600"><AlertCircle className="h-4 w-4 shrink-0" /><span>{topLevelError}</span></div> : null}
       {!hideBillerSelector && <ProviderSelector label="Select biller" providers={toProviderItems(billers, providerSelectorType)} selectedId={selectedBiller.billerCode} onSelect={onBillerChange} type={providerSelectorType} />}
       <SelectField name="productCode" label="Select product" required placeholder="Select a product" options={products.map((product) => ({ value: product.code, label: product.name }))} onValueChange={onProductChange} />
-      {selectedProduct.formFields.filter((field) => field.type !== 'hidden' && field.path !== 'productCode').map((field) => <DynamicFormField key={field.path} field={field} />)}
+      {selectedProduct.formFields
+        .filter((field) => field.type !== 'hidden' && field.path !== 'productCode')
+        // Landing card: a set-price product shows its price in the "You pay" footer, so skip the amount input and chips
+        .filter((field) => !(variant === 'landing' && field.path === 'amountMinor' && hasFixedAmount(selectedProduct)))
+        .map((field) => (
+        <React.Fragment key={field.path}>
+          {variant === 'landing' && field.path === 'amountMinor' ? <AmountPresets field={field} /> : null}
+          <DynamicFormField field={field} />
+        </React.Fragment>
+      ))}
       {!selectedProduct.formFields.some((field) => field.path === 'email') && <TextField name="email" type="email" label="Email for receipt (optional)" placeholder="Enter your email address" startIcon={<Mail className="h-4 w-4" />} />}
-      <SubmitButton className="w-full rounded-xl bg-[#FF6500] py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#E95312] hover:shadow-lg active:scale-[0.99]">Continue</SubmitButton>
+      {variant === 'landing' ? (
+        <LandingFooter biller={selectedBiller} product={selectedProduct} />
+      ) : (
+        <SubmitButton className="w-full rounded-xl bg-[#FF6500] py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#E95312] hover:shadow-lg active:scale-[0.99]">Continue</SubmitButton>
+      )}
     </Form>
   );
 }
 
-export default function ServicePaymentForm({ activeSlug, activeTitle, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0, initialBillerCode, hideBillerSelector = false, variant = 'marketplace', initialEmail = '' }: ServicePaymentFormProps) {
+export default function ServicePaymentForm({ activeSlug, activeTitle, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0, initialBillerCode, hideBillerSelector = false, variant = 'marketplace', initialEmail = '', prefill }: ServicePaymentFormProps) {
   const [selectedBillerCode, setSelectedBillerCode] = useState<string | undefined>(initialBillerCode);
   const [selectedProductCode, setSelectedProductCode] = useState<string>();
   const selectedBiller = billers.find((biller) => biller.billerCode === selectedBillerCode) ?? billers[0];
   const availableBillerProducts = availableProducts(selectedBiller);
   const selectedProduct = availableBillerProducts.find((product) => product.code === selectedProductCode) ?? availableBillerProducts[0];
-  const initialValues = useMemo(() => (selectedBiller && selectedProduct ? buildInitialValues(selectedBiller, selectedProduct, initialEmail) : null), [initialEmail, selectedBiller, selectedProduct]);
+  const initialValues = useMemo(() => (selectedBiller && selectedProduct ? buildInitialValues(selectedBiller, selectedProduct, initialEmail, prefill) : null), [initialEmail, prefill, selectedBiller, selectedProduct]);
   const validationSchema = useMemo(
     () => (selectedProduct ? buildValidationSchema(selectedProduct) : undefined),
     [selectedProduct]
   );
 
   return (
-    <div className={variant === 'dashboard' ? 'w-full py-6' : `w-full max-w-xl rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl transition-all duration-300 ease-out sm:p-8 ${isFading ? 'scale-[0.99] opacity-30 blur-[0.4px]' : 'scale-100 opacity-100 blur-0'}`}>
+    <div className={variant === 'dashboard' ? 'w-full py-6' : variant === 'landing' ? `w-full transition-opacity duration-300 ${isFading ? 'opacity-30' : 'opacity-100'}` : `w-full max-w-xl rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl transition-all duration-300 ease-out sm:p-8 ${isFading ? 'scale-[0.99] opacity-30 blur-[0.4px]' : 'scale-100 opacity-100 blur-0'}`}>
       {isLoading ? <ServiceFormSkeleton /> : null}
       {isError ? <p className="py-14 text-center text-sm text-red-600">We could not load services right now. Please try again.</p> : null}
       {!isLoading && !isError && !initialValues ? <p className="py-14 text-center text-sm text-slate-500">No purchasable products are available for this service.</p> : null}

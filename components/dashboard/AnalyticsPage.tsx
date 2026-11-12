@@ -71,9 +71,9 @@ const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
 const DAY_KEYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 const TIME_SLOTS = ['Morn.', 'Noon', 'Evening', 'Night'];
 const SLOT_KEYS = ['morning', 'noon', 'evening', 'night'] as const;
-const HEAT_COLORS = ['#F7E1D5', '#F5B692', '#E1966C', '#D9622B'];
+const HEAT_COLORS = ['#F7E1D5', '#F5B692', '#E1966C', '#F48245'];
 const HEAT_LABELS = ['<2', '2-4', '5-20', '>20'];
-const CARD = 'rounded-xl border border-[#EBE6E1] bg-white';
+const CARD = 'rounded-3xl border border-[#E3E8EB] bg-white';
 
 // Display name + colour per API serviceType. Unknown types fall back to a title-cased name and a palette colour.
 const SERVICE_META: Record<string, { name: string; color: string }> = {
@@ -84,7 +84,7 @@ const SERVICE_META: Record<string, { name: string; color: string }> = {
     INSURANCE: { name: 'Insurance', color: '#8B5CF6' },
     BETTING: { name: 'Betting', color: '#1F1F1F' },
     EDUCATION: { name: 'Education', color: '#0EA5A4' },
-    INTERNET: { name: 'Internet', color: '#E2733F' },
+    INTERNET: { name: 'Internet', color: '#EE6E2D' },
 };
 const FALLBACK_COLORS = ['#6B7280', '#EC4899', '#14B8A6', '#A16207'];
 
@@ -235,14 +235,14 @@ function heatLevel(count: number) {
 function CardHeader({ title, subtitle }: { title: string; subtitle?: string }) {
     return (
         <div>
-            <h2 className="text-base font-semibold text-[#20232A]">{title}</h2>
-            {subtitle && <p className="mt-1.5 text-sm text-[#7A7F8A]">{subtitle}</p>}
+            <h2 className="text-base font-semibold text-[#10202A]">{title}</h2>
+            {subtitle && <p className="mt-1.5 text-sm text-[#5D6F78]">{subtitle}</p>}
         </div>
     );
 }
 
 function EmptyState({ message }: { message: string }) {
-    return <div className="flex h-full min-h-[120px] w-full items-center justify-center text-sm text-[#7A7F8A]">{message}</div>;
+    return <div className="flex h-full min-h-[120px] w-full items-center justify-center text-sm text-[#5D6F78]">{message}</div>;
 }
 
 /* ─── Cumulative "this month vs last month" line chart (inline SVG) ─ */
@@ -276,8 +276,8 @@ function CumulativeChart({
         <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Cumulative spend, this month versus last month">
             {yTicks.map((tick) => (
                 <g key={tick}>
-                    <line x1={L} x2={W - R} y1={y(tick)} y2={y(tick)} stroke="#EEEAE6" strokeWidth="1" />
-                    <text x={L - 8} y={y(tick) + 3} textAnchor="end" fontSize="10" fill="#8A8F99">
+                    <line x1={L} x2={W - R} y1={y(tick)} y2={y(tick)} stroke="#E3E8EB" strokeWidth="1" />
+                    <text x={L - 8} y={y(tick) + 3} textAnchor="end" fontSize="10" fill="#5D6F78">
                         {compactNaira(tick)}
                     </text>
                 </g>
@@ -285,17 +285,17 @@ function CumulativeChart({
             {xTicks.map((i) => (
                 <g key={i}>
                     <line x1={x(i)} x2={x(i)} y1={T} y2={H - B} stroke="#F3F0EC" strokeWidth="1" />
-                    <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="10" fill="#8A8F99">
+                    <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="10" fill="#5D6F78">
                         {i + 1}
                     </text>
                 </g>
             ))}
-            <path d={path(lastMonth)} fill="none" stroke="#E8502D" strokeWidth="2" strokeDasharray="2 4" strokeLinecap="round" />
+            <path d={path(lastMonth)} fill="none" stroke="#EE6E2D" strokeWidth="2" strokeDasharray="2 4" strokeLinecap="round" />
             <path d={path(thisMonth)} fill="none" stroke="#4CAF50" strokeWidth="2" strokeDasharray="2 4" strokeLinecap="round" />
             {lastIndex >= 0 && (
                 <g>
-                    <line x1={x(lastIndex)} x2={x(lastIndex)} y1={T} y2={H - B} stroke="#E8502D" strokeWidth="1.5" />
-                    <circle cx={x(lastIndex)} cy={y(lastValue)} r="4" fill="#E8502D" />
+                    <line x1={x(lastIndex)} x2={x(lastIndex)} y1={T} y2={H - B} stroke="#EE6E2D" strokeWidth="1.5" />
+                    <circle cx={x(lastIndex)} cy={y(lastValue)} r="4" fill="#EE6E2D" />
                 </g>
             )}
         </svg>
@@ -405,22 +405,22 @@ export default function AnalyticsPage() {
         : 'Cumulative spend by day.';
 
     return (
-        <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
+        <div className="min-h-full bg-[#F3F4F5] text-[#10202A]">
             {/* ── Page header ── */}
-            <section className="border-b border-[#F2EAE5] px-5 py-5 sm:px-8 sm:py-6">
+            <section className="border-b border-[#F3F4F5] px-5 py-5 sm:px-8 sm:py-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Insights</p>
-                        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">Understand where your<span className="text-[#FF6500]"> money goes.</span></h2>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[#C2531C]">Insights</p>
+                        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#10202A] sm:text-3xl">Understand where your<span className="text-[#C2531C]"> money goes.</span></h2>
 
-                        <p className="mt-2 text-sm text-[#777486] sm:text-base">Practical patterns and gentle guidance, built from your payment history.</p>
+                        <p className="mt-2 text-sm text-[#4A5B64] sm:text-base">Practical patterns and gentle guidance, built from your payment history.</p>
 
                     </div>
 
 
 
                     <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex items-stretch overflow-visible rounded-lg border border-[#DED8D4] bg-white">
+                        <div className="flex items-stretch overflow-visible rounded-2xl border border-[#DDE3E6] bg-white">
                             <label className="relative flex items-center">
                                 <span className="sr-only">Select period</span>
                                 <select
@@ -431,7 +431,7 @@ export default function AnalyticsPage() {
                                             setCustomRange(null);
                                         }
                                     }}
-                                    className="appearance-none rounded-l-lg bg-transparent py-2.5 pl-3 pr-8 text-xs text-[#343238] outline-none"
+                                    className="appearance-none rounded-l-lg bg-transparent py-2.5 pl-3 pr-8 text-xs text-[#10202A] outline-none"
                                 >
                                     <option>Last 7 days</option>
                                     <option>Last 30 days</option>
@@ -442,19 +442,19 @@ export default function AnalyticsPage() {
                                 <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-slate-500" />
                             </label>
 
-                            <div className="relative border-l border-[#E6E3E0]">
+                            <div className="relative border-l border-[#E3E8EB]">
                                 <button
                                     type="button"
                                     onClick={openRangePicker}
-                                    className="flex h-full items-center gap-2 rounded-r-lg px-3 py-2.5 text-xs text-[#343238] transition hover:bg-slate-50"
+                                    className="flex h-full items-center gap-2 rounded-r-lg px-3 py-2.5 text-xs text-[#10202A] transition hover:bg-slate-50"
                                 >
-                                    <CalendarDays className="h-4 w-4 text-[#807A7B]" />
+                                    <CalendarDays className="h-4 w-4 text-[#5D6F78]" />
                                     {displayFrom && displayTo ? formatRange(displayFrom, displayTo) : 'Choose range'}
                                 </button>
 
                                 {isRangePickerOpen && (
-                                    <div className="absolute right-0 z-20 mt-2 w-[min(22rem,calc(100vw-2.5rem))] rounded-xl border border-[#E6E3E0] bg-white p-4 shadow-xl shadow-slate-900/10">
-                                        <p className="text-sm font-semibold text-[#34425D]">Custom date range</p>
+                                    <div className="absolute right-0 z-20 mt-2 w-[min(22rem,calc(100vw-2.5rem))] rounded-3xl border border-[#E3E8EB] bg-white p-4 shadow-xl shadow-slate-900/10">
+                                        <p className="text-sm font-semibold text-[#233C49]">Custom date range</p>
                                         <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                             <label className="text-xs font-medium text-slate-600">
                                                 From
@@ -463,7 +463,7 @@ export default function AnalyticsPage() {
                                                     value={pendingFrom}
                                                     max={pendingTo || today || undefined}
                                                     onChange={(event) => setPendingFrom(event.target.value)}
-                                                    className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-[#E95312]"
+                                                    className="mt-1.5 h-10 w-full rounded-2xl border border-slate-200 px-2 text-sm outline-none focus:border-[#EE6E2D]"
                                                 />
                                             </label>
                                             <label className="text-xs font-medium text-slate-600">
@@ -474,7 +474,7 @@ export default function AnalyticsPage() {
                                                     min={pendingFrom || undefined}
                                                     max={today || undefined}
                                                     onChange={(event) => setPendingTo(event.target.value)}
-                                                    className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-[#E95312]"
+                                                    className="mt-1.5 h-10 w-full rounded-2xl border border-slate-200 px-2 text-sm outline-none focus:border-[#EE6E2D]"
                                                 />
                                             </label>
                                         </div>
@@ -493,7 +493,7 @@ export default function AnalyticsPage() {
                                                 type="button"
                                                 onClick={applyCustomRange}
                                                 disabled={!pendingFrom || !pendingTo || pendingFrom > pendingTo}
-                                                className="rounded-lg bg-[#E95312] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#D44A10] disabled:cursor-not-allowed disabled:opacity-50"
+                                                className="rounded-lg bg-[#EE6E2D] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#D44A10] disabled:cursor-not-allowed disabled:opacity-50"
                                             >
                                                 Apply range
                                             </button>
@@ -508,9 +508,9 @@ export default function AnalyticsPage() {
                             onClick={() => {
                                 mutate({ from, to, bucket, recentLimit: 10 })
                             }}
-                            className="flex items-center gap-2 rounded-lg border border-[#DED8D4] bg-white px-3 py-2.5 text-xs text-[#343238] transition hover:bg-slate-50"
+                            className="flex items-center gap-2 rounded-2xl border border-[#DDE3E6] bg-white px-3 py-2.5 text-xs text-[#10202A] transition hover:bg-slate-50"
                         >
-                            Export <Upload className="h-3.5 w-3.5 text-[#807A7B]" />
+                            Export <Upload className="h-3.5 w-3.5 text-[#5D6F78]" />
                         </button>
                     </div>
                 </div>
@@ -532,12 +532,12 @@ export default function AnalyticsPage() {
                         {isLoading && Array.from({ length: 4 }, (_, index) => <MetricCardSkeleton key={index} className={`${CARD} px-5 py-6`} />)}
                         {!isLoading && metrics.map((metric) => (
                             <article key={metric.label} className={`${CARD} px-5 py-6`}>
-                                <p className="text-sm text-[#52617A]">{metric.label}</p>
-                                <p className="mt-3 text-[26px] font-semibold tracking-[-0.03em] text-[#364259]">{metric.value}</p>
+                                <p className="text-sm text-[#4A5B64]">{metric.label}</p>
+                                <p className="mt-3 text-[26px] font-semibold tracking-[-0.03em] text-[#233C49]">{metric.value}</p>
                                 {metric.change && (
                                     <p className="mt-2 text-[13px]">
                                         <span className={metric.positive ? 'text-[#2E9A4F]' : 'text-[#E22E41]'}>{metric.change}</span>
-                                        <span className="text-[#A29B9C]"> from previous period</span>
+                                        <span className="text-[#5D6F78]"> from previous period</span>
                                     </p>
                                 )}
                             </article>
@@ -577,25 +577,25 @@ export default function AnalyticsPage() {
                                 <div className="relative h-[220px] w-[220px] shrink-0">
                                     <ServiceUsageChart data={usageRows} donut />
                                     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                        <span className="text-[28px] font-medium tracking-[-0.02em] text-[#18202A]">100%</span>
+                                        <span className="text-[28px] font-medium tracking-[-0.02em] text-[#10202A]">100%</span>
                                     </div>
                                 </div>
 
                                 <div className="w-full min-w-0 flex-1">
-                                    <div className="grid grid-cols-[1.3fr_1fr_.6fr] border-b border-[#EEEAE6] pb-2 text-sm text-[#7A7F8A]">
+                                    <div className="grid grid-cols-[1.3fr_1fr_.6fr] border-b border-[#E3E8EB] pb-2 text-sm text-[#5D6F78]">
                                         <span>Category</span>
                                         <span>Spent</span>
                                         <span className="text-right">Share</span>
                                     </div>
-                                    <div className="divide-y divide-[#F1EDE9]">
+                                    <div className="divide-y divide-[#F3F4F5]">
                                         {usageRows.map((row) => (
                                             <div key={row.name} className="grid grid-cols-[1.3fr_1fr_.6fr] items-center py-2.5 text-sm">
-                                                <span className="flex min-w-0 items-center gap-2 text-[#3B4150]">
+                                                <span className="flex min-w-0 items-center gap-2 text-[#233C49]">
                                                     <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: row.color }} />
                                                     <span className="truncate">{row.name}</span>
                                                 </span>
-                                                <span className="font-medium text-[#3B4150]">{formatNaira(row.spentMinor)}</span>
-                                                <span className="text-right font-medium text-[#3B4150]">{Number(row.value.toFixed(1))}%</span>
+                                                <span className="font-medium text-[#233C49]">{formatNaira(row.spentMinor)}</span>
+                                                <span className="text-right font-medium text-[#233C49]">{Number(row.value.toFixed(1))}%</span>
                                             </div>
                                         ))}
                                     </div>
@@ -616,12 +616,12 @@ export default function AnalyticsPage() {
                             <>
                                 <div className="mt-6 flex flex-wrap items-start justify-between gap-3">
                                     <div>
-                                        <p className="text-sm font-semibold text-[#3B4150]">This Month</p>
-                                        <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[#18202A]">
+                                        <p className="text-sm font-semibold text-[#233C49]">This Month</p>
+                                        <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[#10202A]">
                                             {formatNaira(comparison.currentAmountMinor)}
                                         </p>
                                         {comparison.changePercent != null && (
-                                            <p className="mt-1.5 text-[11px] text-[#7A7F8A]">
+                                            <p className="mt-1.5 text-[11px] text-[#5D6F78]">
                                                 <span
                                                     className={`rounded px-1.5 py-0.5 font-medium ${comparison.changePercent >= 0 ? 'bg-[#E7F5EE] text-[#2E9A4F]' : 'bg-[#FDECEC] text-[#E22E41]'}`}
                                                 >
@@ -632,12 +632,12 @@ export default function AnalyticsPage() {
                                             </p>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-4 text-xs text-[#7A7F8A]">
+                                    <div className="flex items-center gap-4 text-xs text-[#5D6F78]">
                                         <span className="flex items-center gap-1.5">
                                             <span className="h-2 w-2 rounded-full bg-[#4CAF50]" /> This Month
                                         </span>
                                         <span className="flex items-center gap-1.5">
-                                            <span className="h-2 w-2 rounded-full bg-[#E8502D]" /> Last Month
+                                            <span className="h-2 w-2 rounded-full bg-[#EE6E2D]" /> Last Month
                                         </span>
                                     </div>
                                 </div>
@@ -654,7 +654,7 @@ export default function AnalyticsPage() {
                     <article className={`${CARD} p-5 sm:p-6`}>
                         <CardHeader title="When you pay" subtitle="Payments by day and time. Darker means more" />
 
-                        <div className="mt-5 flex justify-center gap-1.5 text-[9px] text-[#8A8F99]">
+                        <div className="mt-5 flex justify-center gap-1.5 text-[9px] text-[#5D6F78]">
                             {HEAT_LABELS.map((label, i) => (
                                 <div key={label} className="w-12 text-center">
                                     <div className="mx-auto h-1.5 w-full rounded-full" style={{ backgroundColor: HEAT_COLORS[i] }} />
@@ -670,11 +670,11 @@ export default function AnalyticsPage() {
                                 <div className="mx-auto grid min-w-[300px] max-w-[360px] grid-cols-[44px_repeat(4,1fr)] gap-2">
                                     <span />
                                     {TIME_SLOTS.map((slot) => (
-                                        <span key={slot} className="pb-1 text-center text-xs text-[#7A7F8A]">{slot}</span>
+                                        <span key={slot} className="pb-1 text-center text-xs text-[#5D6F78]">{slot}</span>
                                     ))}
                                     {WEEK_DAYS.map((day, dayIndex) => (
                                         <div key={day} className="contents">
-                                            <span className="flex items-center text-xs text-[#7A7F8A]">{day}</span>
+                                            <span className="flex items-center text-xs text-[#5D6F78]">{day}</span>
                                             {heatCounts[dayIndex].map((count, slotIndex) => (
                                                 <div
                                                     key={`${day}-${slotIndex}`}
@@ -703,12 +703,12 @@ export default function AnalyticsPage() {
                                 {providers.map((provider) => (
                                     <div key={provider.providerCode}>
                                         <div className="flex items-center justify-between gap-3 text-sm">
-                                            <span className="truncate font-medium text-[#52617A]">{provider.providerName}</span>
-                                            <span className="shrink-0 font-semibold text-[#20232A]">{formatNaira(provider.amountMinor)}</span>
+                                            <span className="truncate font-medium text-[#4A5B64]">{provider.providerName}</span>
+                                            <span className="shrink-0 font-semibold text-[#10202A]">{formatNaira(provider.amountMinor)}</span>
                                         </div>
                                         <div className="mt-2 h-1.5 w-full rounded-full bg-[#D9D9D9]">
                                             <div
-                                                className="h-full rounded-full bg-[#E2733F]"
+                                                className="h-full rounded-full bg-[#EE6E2D]"
                                                 style={{ width: `${Math.max(4, (provider.amountMinor / providerMax) * 100)}%` }}
                                             />
                                         </div>

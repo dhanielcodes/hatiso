@@ -8,8 +8,7 @@ import * as Yup from 'yup';
 import { toast } from 'sonner';
 import { Check, ArrowLeft } from 'lucide-react';
 import { PasswordField, SubmitButton, TextField } from '@/components/forms';
-import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
-import XnettLogo from '@/components/auth/XnettLogo';
+import AuthShell from '@/components/auth/AuthShell';
 import OtpInput from '@/components/auth/OtpInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { useForgotPassword, useRecoverPassword } from '@/lib/queries/useAuth';
@@ -48,7 +47,7 @@ const looksLikeCodeError = (message: string) => /code|otp|expired|invalid/i.test
 
 /* ─── Button Style ──────────────────────────────────────────────── */
 const ORANGE_BTN =
-  'w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(255,101,0,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
+  'w-full rounded-full bg-[#EE6E2D] py-4 text-[15px] font-bold text-[#14252E] transition hover:bg-[#F48245] active:scale-[0.99] disabled:opacity-50';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -113,23 +112,12 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="grid min-h-screen bg-[#F7F4EF] lg:grid-cols-2">
-      {/* ── Left Brand Panel ── */}
-      <AuthBrandPanel />
-
-      {/* ── Right Content Panel ── */}
-      <main className="flex min-h-screen flex-col bg-[#F7F4EF] px-5 py-6 sm:px-10 lg:px-16 xl:px-24">
-        <div className="mb-8 lg:hidden">
-          <XnettLogo />
-        </div>
-
-        <div className="flex flex-1 flex-col items-center justify-center py-6">
-          <div className="w-full max-w-[420px]">
+    <AuthShell>
             {/* ══ STEP 1: ENTER EMAIL ════════════════════════════ */}
             {step === 1 && (
               <>
                 <div className="mb-7 text-center">
-                  <h1 className="text-[1.75rem] font-bold tracking-tight text-[#111111] sm:text-[2rem]">
+                  <h1 className="text-[1.75rem] font-bold tracking-tight text-[#10202A] sm:text-[2rem]">
                     Reset your password
                   </h1>
                   <p className="mx-auto mt-2 max-w-[340px] text-[13px] leading-relaxed text-slate-500">
@@ -173,7 +161,7 @@ export default function ForgotPasswordPage() {
                       className={ORANGE_BTN}
                       loadingLabel={
                         <span className="inline-flex items-center justify-center gap-2">
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#14252E] border-t-transparent" />
                           Sending...
                         </span>
                       }
@@ -187,7 +175,7 @@ export default function ForgotPasswordPage() {
                   Already have an account?{' '}
                   <Link
                     href="/auth/login"
-                    className="font-semibold text-[#E95312] transition-colors hover:text-[#E84D15]"
+                    className="font-semibold text-[#C2531C] transition-colors hover:text-[#10202A]"
                   >
                     Sign In
                   </Link>
@@ -199,7 +187,7 @@ export default function ForgotPasswordPage() {
             {step === 2 && (
               <>
                 <div className="mb-8 text-center">
-                  <h1 className="text-[1.75rem] font-bold tracking-tight text-[#111111] sm:text-[2rem]">
+                  <h1 className="text-[1.75rem] font-bold tracking-tight text-[#10202A] sm:text-[2rem]">
                     Check your email
                   </h1>
                   <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-relaxed text-slate-500">
@@ -242,7 +230,7 @@ export default function ForgotPasswordPage() {
                     type="button"
                     disabled={resendCount > 0 || isResending}
                     onClick={handleResend}
-                    className="font-semibold text-[#E95312] hover:text-[#E84D15] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="font-semibold text-[#C2531C] hover:text-[#10202A] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isResending ? 'Sending...' : 'Click to resend code'}
                   </button>
@@ -269,7 +257,7 @@ export default function ForgotPasswordPage() {
             {step === 3 && (
               <>
                 <div className="mb-6 text-center">
-                  <h1 className="text-[1.75rem] font-bold tracking-tight text-[#111111] sm:text-[2rem]">
+                  <h1 className="text-[1.75rem] font-bold tracking-tight text-[#10202A] sm:text-[2rem]">
                     Create New Password
                   </h1>
                   <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-relaxed text-slate-500">
@@ -330,7 +318,7 @@ export default function ForgotPasswordPage() {
                         className={`${ORANGE_BTN} mt-4`}
                         loadingLabel={
                           <span className="inline-flex items-center justify-center gap-2">
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#14252E] border-t-transparent" />
                             Updating password...
                           </span>
                         }
@@ -342,15 +330,12 @@ export default function ForgotPasswordPage() {
                 </Formik>
               </>
             )}
-          </div>
-        </div>
-      </main>
 
       {/* ══ SUCCESS MODAL ═══════════════════════════════════════════ */}
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-white p-8 text-center shadow-2xl">
-            <h2 className="flex items-center justify-center gap-2 text-xl font-bold text-[#111111]">
+            <h2 className="flex items-center justify-center gap-2 text-xl font-bold text-[#10202A]">
               Password Reset Successful
               <Check className="h-5 w-5 text-emerald-500 stroke-[3]" />
             </h2>
@@ -368,6 +353,6 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
       )}
-    </div>
+    </AuthShell>
   );
 }
