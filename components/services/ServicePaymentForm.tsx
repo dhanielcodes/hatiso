@@ -334,7 +334,7 @@ function LandingFooter({ biller, product }: { biller: DigitalServiceBiller; prod
   const total = belowMinimum || amountMinor <= 0 ? '₦0.00' : `₦${(amountMinor / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#DDE3E6] pt-5">
+    <div className="sticky bottom-0 z-[1] -mx-6 flex flex-wrap items-center justify-between gap-4 border-t border-[#DDE3E6] bg-white px-6 pb-7 pt-5 shadow-[0_-14px_24px_-18px_rgba(16,32,42,0.35)] sm:-mx-7 sm:px-7">
       <div className="min-w-0">
         <div className="text-[13px] text-[#5D6F78]">You pay</div>
         <div className="text-2xl font-extrabold text-[#233C49]">{total}</div>
@@ -433,7 +433,7 @@ export default function ServicePaymentForm({ activeSlug, activeTitle, billers, i
   );
 
   return (
-    <div className={variant === 'dashboard' ? 'w-full py-6' : variant === 'landing' ? `w-full transition-opacity duration-300 ${isFading ? 'opacity-30' : 'opacity-100'}` : `w-full max-w-xl rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl transition-all duration-300 ease-out sm:p-8 ${isFading ? 'scale-[0.99] opacity-30 blur-[0.4px]' : 'scale-100 opacity-100 blur-0'}`}>
+    <div className={variant === 'dashboard' ? 'w-full py-6' : variant === 'landing' ? `w-full transition-opacity duration-300 ${isFading ? 'opacity-30' : 'opacity-100'} ${initialValues && !isLoading && !isError ? '' : 'pb-7'}` : `w-full max-w-xl rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl transition-all duration-300 ease-out sm:p-8 ${isFading ? 'scale-[0.99] opacity-30 blur-[0.4px]' : 'scale-100 opacity-100 blur-0'}`}>
       {isLoading ? <ServiceFormSkeleton /> : null}
       {isError ? <p className="py-14 text-center text-sm text-red-600">We could not load services right now. Please try again.</p> : null}
       {!isLoading && !isError && !initialValues ? <p className="py-14 text-center text-sm text-slate-500">No purchasable products are available for this service.</p> : null}

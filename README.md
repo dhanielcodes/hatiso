@@ -581,10 +581,12 @@ The public pages (home `/`, services `/services/[slug]` and `/categories/[slug]`
 - `components/marketplace/HomeLanding.tsx` puts the sections together.
 - The "Pay a bill" card's state (`usePayBill` in `HeroSection.tsx`) lives there, so the "Pay here" category cards can open the right tab.
 - The hero phone input and the card's phone field share one value.
+- Hero layout: a centred headline and quick top-up input, then three cards. The orange middle card holds the "Pay a bill" form. The left card shows a live summary of what the form will pay (amount, provider, number). The right card is a decorative spending chart. On screens narrower than 1280px the form card comes first and the other two sit below it.
 - Paying on the card does not charge anything. It opens `/services/<slug>` with the network, number and amount already filled in, and the guest pays there as usual.
 
 **Service pages**
 - `ServiceDetailPage` renders the hero, features and bento from `components/services/serviceLanding.ts` (copy per slug, with a fallback for unknown slugs).
+- The service card is capped at 720px (or the screen height, if smaller). Its fields scroll inside it, while the header and service tabs stay at the top. The "You pay / Continue" row and the payment review's Reset / Continue buttons are `sticky` at the bottom, so they never scroll out of view.
 - The white service card holds:
   - Service pills built from the API categories
   - `ServicePaymentForm` with `variant="landing"`, which adds amount chips and the "You pay" footer
