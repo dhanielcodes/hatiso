@@ -568,7 +568,7 @@ The public pages (home `/`, services `/services/[slug]` and `/categories/[slug]`
   - Light greys `#F3F4F5` / `#EEF1F3`
 - **`components/landing/LandingKit.tsx`** holds the shared pieces:
   - `LandingPage`, `DarkHero`
-  - `HeroBadge`, `HeroHeadline`, `HeroLead`, `HeroPillInput`, `ProviderRow`
+  - `HeroHeadline`, `HeroLead`, `HeroPillInput`, `ProviderRow`
   - `FeatureRow`, `BentoTiles` (big dark tile with `FannedCards`, an `Orbit` tile and two stat tiles), `SectionPill`, `OrangePill`
   - `LpIcon`: the design's own outline icons
 - **Animations:** the `lp-*` classes in `app/globals.css` (rise, card bob, ping, orbit, marquee, scroll reveal). They all turn off when reduced motion is preferred.
@@ -596,6 +596,20 @@ The public pages (home `/`, services `/services/[slug]` and `/categories/[slug]`
 - `lib/marketing/servicePrefill.ts` moves details from a landing widget to the checkout.
 - `saveServicePrefill` writes them, `takeServicePrefill(slug)` reads them once, and `matchBiller` picks the biller.
 - The details sit in `sessionStorage` (`hatiso_service_prefill`), so phone and meter numbers never go in the URL.
+
+**404 page**
+- `app/not-found.tsx` is the "Page not found" page, in the landing look (navbar, dark hero, footer). It shows for any URL with no matching route and when a page calls `notFound()`, and returns a 404 status.
+- It offers "Back to home" and "Contact us", plus quick links to airtime, data, electricity and banks (`SUGGESTIONS` in the file).
+
+**Popular categories and service pages**
+- Home page cards come from `GET /digital-services/categories` (`useDigitalServiceCategories`).
+- `lib/marketing/serviceCategories.ts` turns each API category into one or more services (slug, label, icon, and the home payment card tab when there is one):
+  - `TELCO` gives two services: **Airtime** (`/services/airtime`) and **Data** (`/services/data`). Both fetch the TELCO catalogue; `billersForService` keeps the products named "VTU" or "Airtime" for airtime and everything else for data, and drops billers left empty.
+  - Airtime is in `SINGLE_PRODUCT_SERVICES`, so its form hides "Select product" and uses the network's airtime product.
+  - `INTERNET_SERVICES` (Smile, Spectranet) is its own service, **Internet services** (`/services/internet-services`).
+  - `DISCO`, `CABLE`, `EDUCATION`, `INSURANCE` and `OTHER_SERVICES` map to one service each.
+- Airtime, Data, Electricity and TV open the home payment card; the rest link to `/categories/<slug>`.
+- The service page tabs and the slug → category lookup use the same map, so add new services there. Categories it doesn't know yet still show, labelled from the API name.
 
 **Banks**
 - `lib/marketing/banks.ts` (`BANKS_DATA`) is the single list for the home banks block and `/banks`.

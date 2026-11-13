@@ -28,6 +28,7 @@ export const LP_ICONS = {
   call: 'M5 3.5h4l1.5 4.5-2.5 1.5a11 11 0 0 0 6.5 6.5l1.5-2.5 4.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5A17 17 0 0 1 3.5 5 1.5 1.5 0 0 1 5 3.5z',
   location: 'M12 21.5s-7-6.2-7-11.5a7 7 0 0 1 14 0c0 5.3-7 11.5-7 11.5zM12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
   arrow: 'M7 17 17 7M9 7h8v8',
+  wifi: 'M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.8 16a5 5 0 0 1 6.4 0M12 19.5h.01',
 } as const;
 
 export type LpIconName = keyof typeof LP_ICONS;
@@ -83,19 +84,6 @@ export const lpHeroTitle =
 
 export const lpSectionTitle =
   'm-0 text-[30px] font-semibold leading-[1.15] tracking-[-1px] sm:text-[38px] sm:tracking-[-1.2px]';
-
-/** Hero badge: dark pill with a pulsing green dot. */
-export function HeroBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="lp-rise mb-7 inline-flex items-center gap-2.5 rounded-full border border-[#2A3740] bg-[#10181D] py-[9px] pl-3 pr-4 text-sm font-semibold text-[#DCE3E7]"
-      style={{ '--d': '0.05s' } as React.CSSProperties}
-    >
-      <span className="lp-ping h-[7px] w-[7px] rounded-full bg-[#3FAE70]" />
-      {children}
-    </div>
-  );
-}
 
 /** Light pill used above section titles. */
 export function SectionPill({

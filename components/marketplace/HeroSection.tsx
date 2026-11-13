@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { HeroBadge, HeroHeadline, HeroLead, HeroPillInput, ProviderRow } from '@/components/landing/LandingKit';
+import { HeroHeadline, HeroLead, HeroPillInput, ProviderRow } from '@/components/landing/LandingKit';
 import { saveServicePrefill } from '@/lib/marketing/servicePrefill';
 
 export type PayBillService = 'airtime' | 'data' | 'electricity' | 'tv';
@@ -209,7 +209,6 @@ export default function HeroSection({ bill }: { bill: PayBillState }) {
   return (
     <section className="relative mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-10 px-4 pb-10 pt-8 sm:px-6 sm:pt-12">
       <div className="min-w-0 flex-[1_1_560px]">
-        <HeroBadge>No account required to start</HeroBadge>
         <HeroHeadline lines={[{ text: 'One platform.' }, { text: 'Every service' }, { text: 'you need.', accent: true }]} />
         <HeroLead>
           Discover digital services from trusted providers, manage your banking, and get things done. All from one place.

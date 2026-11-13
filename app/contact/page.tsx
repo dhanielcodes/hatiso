@@ -11,7 +11,6 @@ import {
   BentoTiles,
   DarkHero,
   FeatureRow,
-  HeroBadge,
   HeroHeadline,
   HeroLead,
   HeroPillInput,
@@ -67,7 +66,6 @@ export default function ContactPage() {
           <Navbar />
           <section className="relative mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-14 px-4 pb-16 pt-6 sm:px-6 sm:pt-10">
             <div className="min-w-0 flex-[1_1_560px]">
-              <HeroBadge>Reach out</HeroBadge>
               <HeroHeadline lines={[{ text: "Let's build" }, { text: 'with you', accent: true }]} />
               <HeroLead>Questions, support, or partnership enquiries. Our team replies within one business day.</HeroLead>
               <HeroPillInput

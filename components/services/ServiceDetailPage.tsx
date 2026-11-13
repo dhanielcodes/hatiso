@@ -12,7 +12,6 @@ import {
   BentoTiles,
   DarkHero,
   FeatureRow,
-  HeroBadge,
   HeroHeadline,
   HeroLead,
   HeroPillInput,
@@ -22,6 +21,7 @@ import {
   ProviderRow,
 } from '@/components/landing/LandingKit';
 import { matchBiller, takeServicePrefill, type ServicePrefill } from '@/lib/marketing/servicePrefill';
+import { CATEGORY_BY_SLUG, SINGLE_PRODUCT_SERVICES, billersForService, servicesForCategory } from '@/lib/marketing/serviceCategories';
 import { serviceLanding } from './serviceLanding';
 import CustomerInvitePopup, { shouldInviteGuest } from '@/components/marketplace/CustomerInvitePopup';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -95,27 +95,6 @@ function PaymentReview({ payment, isProcessing, error, onReset, onContinue }: {
     </article>
   );
 }
-
-const categoryBySlug: Record<string, DigitalServiceCategory> = {
-  airtime: 'TELCO',
-  data: 'INTERNET_SERVICES',
-  electricity: 'DISCO',
-  tv: 'CABLE',
-  education: 'EDUCATION',
-  insurance: 'INSURANCE',
-  'other-services': 'OTHER_SERVICES',
-};
-
-/** Service pills in the landing card, built from the categories the API actually offers. */
-const tabByCategory: Partial<Record<DigitalServiceCategory, { slug: string; label: string; icon: LpIconName }>> = {
-  TELCO: { slug: 'airtime', label: 'Airtime', icon: 'phone' },
-  INTERNET_SERVICES: { slug: 'data', label: 'Data', icon: 'data' },
-  DISCO: { slug: 'electricity', label: 'Electricity', icon: 'bolt' },
-  CABLE: { slug: 'tv', label: 'TV', icon: 'tv' },
-  EDUCATION: { slug: 'education', label: 'Education', icon: 'edu' },
-  INSURANCE: { slug: 'insurance', label: 'Insurance', icon: 'shield' },
-  OTHER_SERVICES: { slug: 'other-services', label: 'Other services', icon: 'bag' },
-};
 
 function focusServiceCard() {
   document.getElementById('svc-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -196,14 +175,19 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
   };
 
   const { data: apiCategories, isLoading: isLoadingCategories } = useDigitalServiceCategories();
-  const serviceTabs = (apiCategories ?? []).flatMap((c) => (tabByCategory[c] ? [tabByCategory[c]!] : []));
+  const serviceTabs = (apiCategories ?? []).flatMap(servicesForCategory);
 
-  const category = categoryBySlug[activeSlug] ?? 'OTHER_SERVICES';
+  const category = CATEGORY_BY_SLUG[activeSlug] ?? 'OTHER_SERVICES';
   const {
-    data: serviceCatalogues,
+    data: categoryCatalogues,
     isError: hasCategoryRequestError,
     isLoading,
   } = useDigitalServiceCatalogues(category, 0);
+  // Airtime and Data share the TELCO catalogue; keep only this service's products
+  const serviceCatalogues = useMemo(
+    () => (categoryCatalogues ? billersForService(activeSlug, categoryCatalogues) : undefined),
+    [activeSlug, categoryCatalogues],
+  );
 
   const activeHandoff = handoff?.slug === activeSlug ? handoff : null;
   const preferredBiller = matchBiller(serviceCatalogues ?? [], activeHandoff?.provider)?.billerCode;
@@ -370,7 +354,6 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
           >
             {/* The live form is taller than the hero copy, so pin the copy near the top on wide screens */}
             <div className="min-w-0 flex-[1_1_520px] lg:sticky lg:top-6 lg:pt-14">
-              <HeroBadge>{landing.badge}</HeroBadge>
               <HeroHeadline key={activeSlug} lines={landing.lines} />
               <HeroLead>{landing.body}</HeroLead>
               <HeroPillInput
@@ -444,6 +427,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
                     <ServicePaymentForm
                       key={`${activeSlug}-${handoffVersion}-${preferredBiller ?? ''}`}
                       variant="landing"
+                      hideProductSelector={SINGLE_PRODUCT_SERVICES.has(activeSlug)}
                       activeSlug={activeSlug}
                       activeTitle={activeTitle}
                       billers={serviceCatalogues ?? []}

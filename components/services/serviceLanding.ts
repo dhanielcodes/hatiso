@@ -2,7 +2,6 @@ import type { BentoContent, Feature, LpIconName } from '@/components/landing/Lan
 
 /** Landing copy for each service page (/services/[slug] and /categories/[slug]). */
 export type ServiceLanding = {
-  badge: string;
   lines: { text: string; accent?: boolean }[];
   body: string;
   input: { icon: LpIconName; placeholder: string; label: string; type: 'tel' | 'text' };
@@ -17,7 +16,6 @@ const NO_ACCOUNT: Feature = { icon: 'pin', title: 'No account needed', body: "En
 
 const LANDING: Record<string, ServiceLanding> = {
   airtime: {
-    badge: 'Airtime for any Nigerian network',
     lines: [{ text: 'Airtime,', accent: true }, { text: 'instantly' }],
     body: "Recharge any Nigerian network in seconds, whether it's your own line or a loved one's. Enter the number, pick an amount from ₦100 upwards, and the credit lands straight away. You also earn cashback on every top-up, so staying in touch gives something back.",
     input: { icon: 'phone', placeholder: 'Enter the number to top up', label: 'Phone number to top up', type: 'tel' },
@@ -39,7 +37,6 @@ const LANDING: Record<string, ServiceLanding> = {
     },
   },
   data: {
-    badge: 'Data bundles for every network',
     lines: [{ text: 'Stay connected', accent: true }, { text: 'for less' }],
     body: 'Choose from daily, weekly and monthly data bundles for MTN, Airtel, Glo and 9mobile, all at clear, upfront prices. Pick the plan that fits how you browse, stream or work, and it activates within moments.',
     input: { icon: 'phone', placeholder: 'Enter the number to top up', label: 'Phone number for the bundle', type: 'tel' },
@@ -60,8 +57,28 @@ const LANDING: Record<string, ServiceLanding> = {
       ],
     },
   },
+  'internet-services': {
+    lines: [{ text: 'Home internet,', accent: true }, { text: 'renewed' }],
+    body: 'Renew your Smile, Spectranet and other internet plans without logging into another app. Enter your account number, pick a plan, and you stay online.',
+    input: { icon: 'wifi', placeholder: 'Enter your account number', label: 'Internet account number', type: 'text' },
+    providerLabel: 'Renew',
+    providers: ['Smile', 'Spectranet'],
+    features: [
+      { icon: 'bolt', title: 'Instant renewal', body: 'Your plan is renewed right after payment' },
+      SAFETY,
+      { icon: 'wifi', title: 'Every plan', body: 'Pick from the plans your provider offers' },
+      NO_ACCOUNT,
+    ],
+    bento: {
+      hero: { title: 'Stay online without the hassle', body: 'Renew your home or office internet in a few taps.', actionLabel: 'Renew internet', cards: ['Smile', 'Spectranet', 'Plans'] },
+      orbit: { title: 'Your internet provider', body: 'Pick a plan and pay securely.', labels: ['Smile', 'Spectranet', 'Monthly', 'Unlimited'] },
+      stats: [
+        { tag: 'Renewal', value: 'Now', caption: 'right after payment' },
+        { tag: 'Secure', value: '100%', caption: 'encrypted payments' },
+      ],
+    },
+  },
   electricity: {
-    badge: 'Prepaid and postpaid electricity',
     lines: [{ text: 'Keep the' }, { text: 'lights on', accent: true }],
     body: 'Buy prepaid tokens or pay postpaid bills for your distribution company without queuing or travelling. Enter your meter number, confirm the name on the account, and get your token instantly on screen and by email.',
     input: { icon: 'bolt', placeholder: 'Enter your meter number', label: 'Meter number', type: 'text' },
@@ -83,7 +100,6 @@ const LANDING: Record<string, ServiceLanding> = {
     },
   },
   tv: {
-    badge: 'DStv, GOtv and StarTimes',
     lines: [{ text: 'Never miss', accent: true }, { text: 'your show' }],
     body: 'Renew or change your DStv, GOtv or StarTimes package in a few taps. Enter your smartcard or IUC number, choose a plan, and your subscription is refreshed right away. No blank screens on match day or finale night.',
     input: { icon: 'tv', placeholder: 'Enter your smartcard or IUC number', label: 'Smartcard or IUC number', type: 'text' },
@@ -105,7 +121,6 @@ const LANDING: Record<string, ServiceLanding> = {
     },
   },
   betting: {
-    badge: 'Fund your betting wallet',
     lines: [{ text: 'Fund', accent: true }, { text: 'your wallet fast' }],
     body: 'Add money to your betting account in seconds, with no bank trips or delays. Your payment is encrypted and credited straight to your wallet. Please bet responsibly and only stake what you can afford to lose.',
     input: { icon: 'dice', placeholder: 'Enter your customer ID', label: 'Betting customer ID', type: 'text' },
@@ -137,7 +152,6 @@ export function serviceLanding(slug: string): ServiceLanding {
   if (known) return known;
   const name = titleCase(slug);
   return {
-    badge: 'Pay securely with Hatiso',
     lines: [{ text: `${name},`, accent: true }, { text: 'instantly' }],
     body: 'Fulfil digital transactions instantly and securely across top providers in Nigeria.',
     input: { icon: 'card', placeholder: 'Enter your customer or account number', label: 'Customer number', type: 'text' },

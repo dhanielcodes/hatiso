@@ -58,6 +58,8 @@ interface ServicePaymentFormProps {
   initialEmail?: string;
   /** Values carried over from a landing widget, keyed by field path (e.g. recipient, amountMinor). */
   prefill?: Record<string, unknown>;
+  /** Hide "Select product" and use the biller's first product (e.g. airtime, one VTU product per network). */
+  hideProductSelector?: boolean;
 }
 
 /** marketplace: standalone card · dashboard: bare, inside the app · landing: inside the landing page's white service card */
@@ -67,6 +69,7 @@ type FormVariant = 'marketplace' | 'dashboard' | 'landing';
 const LANDING_COPY: Record<string, [string, string]> = {
   airtime: ['Airtime', 'Enter the number to top up.'],
   data: ['Data', 'Pick a bundle and the number to top up.'],
+  'internet-services': ['Internet services', 'Pick your provider and plan.'],
   electricity: ['Electricity', 'Enter your meter number and amount.'],
   tv: ['TV', 'Enter your smartcard or IUC number.'],
   education: ['Education', 'Choose a provider and product to continue.'],
@@ -351,6 +354,7 @@ function DynamicFields({
   onBillerChange,
   onProductChange,
   hideBillerSelector = false,
+  hideProductSelector = false,
   variant = 'marketplace',
 }: {
   activeSlug: string;
@@ -359,6 +363,7 @@ function DynamicFields({
   onBillerChange: (billerCode: string) => void;
   onProductChange: (productCode: string) => void;
   hideBillerSelector?: boolean;
+  hideProductSelector?: boolean;
   variant?: FormVariant;
 }) {
   const { values, errors, submitCount } = useFormikContext<DynamicServiceFormValues>();
@@ -367,8 +372,9 @@ function DynamicFields({
   const selectedProduct = products.find((product) => product.code === values.productCode) ?? products[0];
 
   const categoryTabConfig: Record<string, { slug: string; name: string; visualSlug: string }> = {
-    airtime: { slug: 'airtime', name: 'Airtime & Data', visualSlug: 'airtime' },
-    data: { slug: 'data', name: 'Internet Services', visualSlug: 'data' },
+    airtime: { slug: 'airtime', name: 'Airtime', visualSlug: 'airtime' },
+    data: { slug: 'data', name: 'Data', visualSlug: 'data' },
+    'internet-services': { slug: 'internet-services', name: 'Internet Services', visualSlug: 'data' },
     electricity: { slug: 'electricity', name: 'Electricity', visualSlug: 'electricity' },
     tv: { slug: 'tv', name: 'Cable TV', visualSlug: 'tv' },
     EDUCATION: { slug: 'education', name: 'Education', visualSlug: 'education' },
@@ -393,7 +399,7 @@ function DynamicFields({
       </div>}
       {typeof topLevelError === 'string' ? <div className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-600"><AlertCircle className="h-4 w-4 shrink-0" /><span>{topLevelError}</span></div> : null}
       {!hideBillerSelector && <ProviderSelector label="Select biller" providers={toProviderItems(billers, providerSelectorType)} selectedId={selectedBiller.billerCode} onSelect={onBillerChange} type={providerSelectorType} />}
-      <SelectField name="productCode" label="Select product" required placeholder="Select a product" options={products.map((product) => ({ value: product.code, label: product.name }))} onValueChange={onProductChange} />
+      {!hideProductSelector && <SelectField name="productCode" label="Select product" required placeholder="Select a product" options={products.map((product) => ({ value: product.code, label: product.name }))} onValueChange={onProductChange} />}
       {selectedProduct.formFields
         .filter((field) => field.type !== 'hidden' && field.path !== 'productCode')
         // Landing card: a set-price product shows its price in the "You pay" footer, so skip the amount input and chips
@@ -414,7 +420,7 @@ function DynamicFields({
   );
 }
 
-export default function ServicePaymentForm({ activeSlug, activeTitle, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0, initialBillerCode, hideBillerSelector = false, variant = 'marketplace', initialEmail = '', prefill }: ServicePaymentFormProps) {
+export default function ServicePaymentForm({ activeSlug, activeTitle, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0, initialBillerCode, hideBillerSelector = false, hideProductSelector = false, variant = 'marketplace', initialEmail = '', prefill }: ServicePaymentFormProps) {
   const [selectedBillerCode, setSelectedBillerCode] = useState<string | undefined>(initialBillerCode);
   const [selectedProductCode, setSelectedProductCode] = useState<string>();
   const selectedBiller = billers.find((biller) => biller.billerCode === selectedBillerCode) ?? billers[0];
@@ -456,6 +462,7 @@ export default function ServicePaymentForm({ activeSlug, activeTitle, billers, i
             activeTitle={activeTitle}
             billers={billers}
             hideBillerSelector={hideBillerSelector}
+            hideProductSelector={hideProductSelector}
             variant={variant}
             onBillerChange={(billerCode) => {
               setSelectedBillerCode(billerCode);

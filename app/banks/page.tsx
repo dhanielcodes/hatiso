@@ -8,7 +8,6 @@ import {
   BentoTiles,
   DarkHero,
   FeatureRow,
-  HeroBadge,
   HeroHeadline,
   HeroLead,
   HeroPillInput,
@@ -88,7 +87,6 @@ export default function BanksPage() {
           <Navbar />
           <section className="relative mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-14 px-4 pb-16 pt-6 sm:px-6 sm:pt-10">
             <div className="min-w-0 flex-[1_1_560px]">
-              <HeroBadge>Banks and fintechs</HeroBadge>
               <HeroHeadline
                 lines={[{ text: "Every bank.", accent: true }, { text: "One place to" }, { text: "choose from." }]}
               />

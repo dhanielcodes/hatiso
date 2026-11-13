@@ -85,10 +85,6 @@ export default function AuthBrandPanel() {
       <XnettLogo className="relative [&_svg]:h-10 [&_svg]:w-auto" />
 
       <div className="relative mt-[clamp(1.25rem,4vh,3rem)] max-w-[540px]">
-        <div className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-[#2A3740] bg-[#10181D] py-2 pl-3 pr-4 text-[13px] font-semibold text-[#DCE3E7]">
-          <span className="lp-ping h-[7px] w-[7px] rounded-full bg-[#3FAE70]" />
-          Services, banking and business
-        </div>
         <h2 className="text-[clamp(2rem,3.1vw,2.9rem)] font-semibold leading-[1.15] tracking-[-1.2px]">
           Start managing your financial life <span className="text-[#EE6E2D]">in one place.</span>
         </h2>
