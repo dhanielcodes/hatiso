@@ -610,6 +610,7 @@ The public pages (home `/`, services `/services/[slug]` and `/categories/[slug]`
   - `DISCO`, `CABLE`, `EDUCATION`, `INSURANCE` and `OTHER_SERVICES` map to one service each.
 - Airtime, Data, Electricity and TV open the home payment card; the rest link to `/categories/<slug>`.
 - The service page tabs and the slug → category lookup use the same map, so add new services there. Categories it doesn't know yet still show, labelled from the API name.
+- The dashboard Digital Services page (`/dashboard/services`) uses the same split: Airtime and Data are separate cards with only their own products, and Airtime hides "Select product". Each card's name, description, icon, colour and badge come from `serviceConfig` in `components/dashboard/DigitalServicesPage.tsx`, keyed by service slug; a service missing there gets no card.
 
 **Banks**
 - `lib/marketing/banks.ts` (`BANKS_DATA`) is the single list for the home banks block and `/banks`.
