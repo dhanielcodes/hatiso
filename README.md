@@ -12,6 +12,7 @@ This README is for frontend developers joining the project. It covers how to run
 - [Getting started](#getting-started)
 - [Folder structure](#folder-structure)
 - [Routing and authentication](#routing-and-authentication)
+- [Digital services](#digital-services)
 - [Endpoint structure](#endpoint-structure)
 - [Forms](#forms)
 - [Buttons](#buttons)
@@ -164,6 +165,20 @@ export default function DashboardAccountPage() {
 - **Logging in** (`useAuthStore().login`) calls the login endpoint and saves the session through `lib/auth/session.ts`. The token goes to `localStorage` plus a cookie, so `proxy.ts` can see it. The store then loads the current user.
 - **Every request** gets `Authorization: Bearer <token>` from the axios request interceptor.
 - **On a `401`**, the response interceptor clears the session, resets the auth store and redirects to the login page.
+- **Unknown URLs** show `app/not-found.tsx`: a "Page not found" page in the marketplace look (navbar, dark teal background, footer), returned with a 404 status. It also shows when a page calls `notFound()`. It has "Back to home", "Contact us" and quick links to airtime, data, electricity and banks (`SUGGESTIONS` in the file).
+
+---
+
+## Digital services
+
+`GET /digital-services/categories` returns API categories, not services. `lib/digitalServices/categoryServices.ts` turns each one into the services people see:
+
+- `TELCO` gives two services: **Airtime** (`/categories/airtime`) and **Data** (`/categories/data`). Both fetch the TELCO catalogue, then `billersForService` keeps the products named "VTU" or "Airtime" for airtime and everything else for data. Billers left with no products are dropped.
+- Airtime is in `SINGLE_PRODUCT_SERVICES`, so `ServicePaymentForm` gets `hideProductSelector` and uses the network's airtime product without showing "Select product".
+- `INTERNET_SERVICES` (Smile, Spectranet) is its own service, **Internet Services** (`/categories/internet-services`).
+- `DISCO`, `CABLE`, `EDUCATION`, `INSURANCE` and `OTHER_SERVICES` give one service each.
+- The home "Popular Categories" cards, the service tabs, the dashboard Digital Services cards (`/dashboard/services`), the slug → category lookup (`CATEGORY_BY_SLUG`) and the form heading (`SERVICE_LABEL_BY_SLUG`) all read from this file, so add new services there.
+- On the dashboard, the card's description, icon, colour and badge come from `serviceConfig` in `components/dashboard/DigitalServicesPage.tsx`, keyed by service slug. A service missing there doesn't get a card.
 
 ---
 

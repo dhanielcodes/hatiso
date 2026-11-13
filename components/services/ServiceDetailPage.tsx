@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -24,7 +24,8 @@ import {
   useDigitalServiceCatalogues,
   useVerifyPayment,
 } from '@/lib/queries/useDigitalServices';
-import type { DigitalServiceCategory, DigitalServiceOrder, GuestPaymentQuote } from '@/lib/api/digitalServices';
+import type { DigitalServiceOrder, GuestPaymentQuote } from '@/lib/api/digitalServices';
+import { CATEGORY_BY_SLUG, SINGLE_PRODUCT_SERVICES, billersForService } from '@/lib/digitalServices/categoryServices';
 import type { PaystackCheckoutRequest } from './PaystackCheckout';
 
 const PaystackCheckout = dynamic(() => import('./PaystackCheckout'), { ssr: false });
@@ -86,17 +87,8 @@ function PaymentReview({ payment, isProcessing, error, onReset, onContinue }: {
   );
 }
 
-const categoryBySlug: Record<string, DigitalServiceCategory> = {
-  airtime: 'TELCO',
-  data: 'INTERNET_SERVICES',
-  electricity: 'DISCO',
-  tv: 'CABLE',
-  education: 'EDUCATION',
-  insurance: 'INSURANCE',
-  'other-services': 'OTHER_SERVICES',
-};
 
-export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitle = 'Airtime & Data' }: ServiceDetailPageProps) {
+export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitle = 'Airtime' }: ServiceDetailPageProps) {
 
 
 
@@ -163,6 +155,14 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
       cardTitle: 'One home for every service',
       cardSubtitle: 'Airtime, data, bills and more. Everything you pay for, all in one place.',
     },
+    'internet-services': {
+      headlineOrange: 'Home internet, ',
+      headlineWhite: 'renewed',
+      body: 'Renew your Smile, Spectranet and other internet plans without logging into another app. Enter your account number, pick a plan, and you stay online.',
+      image: '/images/data_hero.png',
+      cardTitle: 'Stay online without the hassle',
+      cardSubtitle: 'Renew your home or office internet in a few taps.',
+    },
     electricity: {
       headlineWhite: 'Keep the ',
       headlineOrange: 'lights on',
@@ -197,12 +197,17 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
   };
 
 
-  const category = categoryBySlug[activeSlug] ?? 'OTHER_SERVICES';
+  const category = CATEGORY_BY_SLUG[activeSlug] ?? 'OTHER_SERVICES';
   const {
-    data: serviceCatalogues,
+    data: categoryCatalogues,
     isError: hasCategoryRequestError,
     isLoading,
   } = useDigitalServiceCatalogues(category, 0);
+  // Airtime and Data share the TELCO catalogue; keep only this service's products
+  const serviceCatalogues = useMemo(
+    () => (categoryCatalogues ? billersForService(activeSlug, categoryCatalogues) : undefined),
+    [activeSlug, categoryCatalogues]
+  );
 
 
   const handleServiceClick = (slug: string, title: string) => {
@@ -462,6 +467,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
             />
           ) : (
             <ServicePaymentForm
+              hideProductSelector={SINGLE_PRODUCT_SERVICES.has(activeSlug)}
               activeSlug={activeSlug}
               activeTitle={activeTitle}
               billers={serviceCatalogues ?? []}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServices';
 import { Skeleton } from '@/components/ui/Skeleton';
-import type { DigitalServiceCategory } from '@/lib/api/digitalServices';
+import { servicesForCategory } from '@/lib/digitalServices/categoryServices';
 
 export interface ServiceItem {
   slug: string;
@@ -235,18 +235,6 @@ const visualServiceBySlug = Object.fromEntries(
   ALL_DIGITAL_SERVICES.map((service) => [service.slug, service])
 ) as Record<string, ServiceItem>;
 
-const categoryTabConfig: Partial<
-  Record<DigitalServiceCategory, { slug: string; name: string; visualSlug: string }>
-> = {
-  TELCO: { slug: 'airtime', name: 'Airtime & Data', visualSlug: 'airtime' },
-  INTERNET_SERVICES: { slug: 'data', name: 'Internet Services', visualSlug: 'data' },
-  DISCO: { slug: 'electricity', name: 'Electricity', visualSlug: 'electricity' },
-  CABLE: { slug: 'tv', name: 'Cable TV', visualSlug: 'tv' },
-  EDUCATION: { slug: 'education', name: 'Education', visualSlug: 'education' },
-  INSURANCE: { slug: 'insurance', name: 'Insurance', visualSlug: 'government-services' },
-  OTHER_SERVICES: { slug: 'other-services', name: 'Other Services', visualSlug: 'shopping' },
-};
-
 interface ServiceTabsSelectorProps {
   activeSlug: string;
   onSelectService?: (slug: string, title: string) => void;
@@ -259,12 +247,10 @@ export default function ServiceTabsSelector({
   const router = useRouter();
   const carouselRef = useRef<HTMLDivElement>(null);
   const { data: categories, isLoading } = useDigitalServiceCategories();
-  const services = (categories ?? []).flatMap((category) => {
-    const config = categoryTabConfig[category];
-    const visualService = config ? visualServiceBySlug[config.visualSlug] : undefined;
-    return config && visualService
-      ? [{ ...visualService, slug: config.slug, name: config.name }]
-      : [];
+  // TELCO gives two tabs (Airtime, Data); see lib/digitalServices/categoryServices.ts
+  const services = (categories ?? []).flatMap(servicesForCategory).flatMap((service) => {
+    const visualService = visualServiceBySlug[service.visualSlug];
+    return visualService ? [{ ...visualService, slug: service.slug, name: service.label }] : [];
   });
 
   // Mouse drag-to-scroll state

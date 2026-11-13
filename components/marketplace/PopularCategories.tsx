@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServices';
 import { Skeleton } from '@/components/ui/Skeleton';
-import type { DigitalServiceCategory } from '@/lib/api/digitalServices';
+import { servicesForCategory } from '@/lib/digitalServices/categoryServices';
 
 // Custom precision SVG icons matching the exact iconography in the screenshot
 const CategoryIconMap: Record<string, React.ReactNode> = {
@@ -195,19 +195,6 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   ),
 };
 
-const categoryCardConfig: Partial<Record<
-  DigitalServiceCategory,
-  { label: string; slug: string; href: string }
->> = {
-  TELCO: { label: 'Airtime & Data', slug: 'airtime', href: '/categories/airtime' },
-  INTERNET_SERVICES: { label: 'Internet Services', slug: 'data', href: '/categories/data' },
-  DISCO: { label: 'Electricity', slug: 'electricity', href: '/categories/electricity' },
-  CABLE: { label: 'Cable TV', slug: 'tv', href: '/categories/tv' },
-  EDUCATION: { label: 'Education', slug: 'education', href: '/categories/education' },
-  INSURANCE: { label: 'Insurance', slug: 'government-services', href: '/services' },
-  OTHER_SERVICES: { label: 'Other Services', slug: 'shopping', href: '/services' },
-};
-
 export default function PopularCategories() {
   const {
     data: serviceCategories,
@@ -238,16 +225,13 @@ export default function PopularCategories() {
                 Available services are temporarily unavailable.
               </p>
             )}
-            {serviceCategories?.map((serviceCategory) => {
-              const category = categoryCardConfig[serviceCategory];
-              if (!category) return null;
-
-              const icon = CategoryIconMap[category.slug] || CategoryIconMap.airtime;
+            {serviceCategories?.flatMap(servicesForCategory).map((service) => {
+              const icon = CategoryIconMap[service.visualSlug] || CategoryIconMap.airtime;
 
               return (
                 <Link
-                  key={serviceCategory}
-                  href={category.href}
+                  key={service.slug}
+                  href={`/categories/${service.slug}`}
                   className="group flex flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 hover:-translate-y-1 hover:ring-2 hover:ring-[#FF6500]/40 active:scale-95"
                   style={{ minHeight: '190px' }}
                 >
@@ -261,7 +245,7 @@ export default function PopularCategories() {
                   {/* Bottom Portion: Pure Crisp White with Dark Slate Navy Title */}
                   <div className="flex items-center justify-center bg-white py-3 px-2 text-center">
                     <span className="text-xs sm:text-sm font-semibold text-[#102A36] transition-colors group-hover:text-[#FF6500]">
-                      {category.label}
+                      {service.label}
                     </span>
                   </div>
                 </Link>

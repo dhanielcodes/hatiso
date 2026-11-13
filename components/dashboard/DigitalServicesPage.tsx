@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Smartphone,
   Tv,
+  Signal,
   Wifi,
   X,
   Zap,
@@ -24,7 +25,8 @@ import ProviderSelector from '@/components/services/ProviderSelector';
 import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import ServicePaymentForm, { type PendingPayment } from '@/components/services/ServicePaymentForm';
 import type { PaystackCheckoutRequest } from '@/components/services/PaystackCheckout';
-import type { DigitalServiceCategory, DigitalServiceOrder, GuestPaymentQuote } from '@/lib/api/digitalServices';
+import type { DigitalServiceOrder, GuestPaymentQuote } from '@/lib/api/digitalServices';
+import { CATEGORY_BY_SLUG, SINGLE_PRODUCT_SERVICES, billersForService, servicesForCategory } from '@/lib/digitalServices/categoryServices';
 import {
   useCreateDigitalServiceOrder,
   useCreatePayment,
@@ -45,21 +47,24 @@ type PreparedPayment = PendingPayment & {
   quote: GuestPaymentQuote;
 };
 
-const serviceConfig: Partial<Record<DigitalServiceCategory, {
-  slug: string;
-  name: string;
+/**
+ * Card details per service slug. Which services exist comes from the categories endpoint via
+ * lib/digitalServices/categoryServices.ts: TELCO gives two cards (Airtime, Data), each with only its own products.
+ */
+const serviceConfig: Record<string, {
   description: string;
   Icon: typeof Smartphone;
   tone: string;
   badge?: string;
-}>> = {
-  TELCO: { slug: 'airtime', name: 'Airtime and Data', description: 'MTN, Glo, Airtel, 9mobile', Icon: Smartphone, tone: 'bg-[#FDE5D5] text-[#E95312]', badge: 'Popular' },
-  INTERNET_SERVICES: { slug: 'internet_services', name: 'Internet Services', description: 'Browse Internet plans', Icon: Wifi, tone: 'bg-[#E1F2F8] text-[#277A9F]' },
-  DISCO: { slug: 'electricity', name: 'Electricity', description: 'Prepaid and Postpaid', Icon: Zap, tone: 'bg-[#FFF2CF] text-[#C98200]', badge: '2% Cashback' },
-  CABLE: { slug: 'tv', name: 'Cable TV', description: 'DStv, GOtv, StarTimes', Icon: Tv, tone: 'bg-[#EEE7FA] text-[#7656AE]' },
-  EDUCATION: { slug: 'education', name: 'Education', description: 'Exam pins and school fees', Icon: GraduationCap, tone: 'bg-[#FBE7F7] text-[#D035A5]' },
-  INSURANCE: { slug: 'insurance', name: 'Insurance', description: 'Renew trusted policies', Icon: ShieldCheck, tone: 'bg-[#FBF9E6] text-[#B5A200]' },
-  OTHER_SERVICES: { slug: 'other-services', name: 'Other Services', description: 'Pay verified providers', Icon: Landmark, tone: 'bg-[#EEF1F3] text-[#66808D]' },
+}> = {
+  airtime: { description: 'MTN, Glo, Airtel, 9mobile', Icon: Smartphone, tone: 'bg-[#FDE5D5] text-[#E95312]', badge: 'Popular' },
+  data: { description: 'Daily, weekly and monthly bundles', Icon: Signal, tone: 'bg-[#FFEBDD] text-[#D9622B]', badge: 'Popular' },
+  'internet-services': { description: 'Smile, Spectranet and more', Icon: Wifi, tone: 'bg-[#E1F2F8] text-[#277A9F]' },
+  electricity: { description: 'Prepaid and Postpaid', Icon: Zap, tone: 'bg-[#FFF2CF] text-[#C98200]', badge: '2% Cashback' },
+  tv: { description: 'DStv, GOtv, StarTimes', Icon: Tv, tone: 'bg-[#EEE7FA] text-[#7656AE]' },
+  education: { description: 'Exam pins and school fees', Icon: GraduationCap, tone: 'bg-[#FBE7F7] text-[#D035A5]' },
+  insurance: { description: 'Renew trusted policies', Icon: ShieldCheck, tone: 'bg-[#FBF9E6] text-[#B5A200]' },
+  'other-services': { description: 'Pay verified providers', Icon: Landmark, tone: 'bg-[#EEF1F3] text-[#66808D]' },
 };
 
 function formatNaira(amountMinor: number) {
@@ -106,7 +111,7 @@ export default function DigitalServicesPage() {
   const { data: categories, isLoading: categoriesLoading } = useDigitalServiceCategories();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('All');
-  const [selectedCategory, setSelectedCategory] = useState<DigitalServiceCategory | null>(null);
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [selectedBillerCode, setSelectedBillerCode] = useState<string | undefined>();
   const [step, setStep] = useState<ModalStep>('service');
   const [payment, setPayment] = useState<PreparedPayment | null>(null);
@@ -115,17 +120,22 @@ export default function DigitalServicesPage() {
   const [paymentRequest, setPaymentRequest] = useState<PaystackCheckoutRequest | null>(null);
   const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? '';
   const receiptEmail = user?.email || getStoredUserEmail();
-  const activeCategory = selectedCategory ?? 'TELCO';
-  const { data: billers, isLoading: billersLoading, isError: billersError } = useDigitalServiceCatalogues(activeCategory);
+  const activeCategory = (selectedSlug && CATEGORY_BY_SLUG[selectedSlug]) || 'TELCO';
+  const { data: categoryBillers, isLoading: billersLoading, isError: billersError } = useDigitalServiceCatalogues(activeCategory);
+  // Airtime and Data share the TELCO catalogue; keep only the selected service's products
+  const billers = useMemo(
+    () => (categoryBillers && selectedSlug ? billersForService(selectedSlug, categoryBillers) : categoryBillers),
+    [categoryBillers, selectedSlug]
+  );
 
   const createOrderMutation = useCreateDigitalServiceOrder(true);
   const quoteMutation = useCreatePaymentQuote(true);
   const createPaymentMutation = useCreatePayment(true);
   const verifyPaymentMutation = useVerifyPayment(true);
 
-  const services = useMemo(() => (categories ?? []).flatMap((category) => {
-    const config = serviceConfig[category];
-    return config ? [{ category, ...config }] : [];
+  const services = useMemo(() => (categories ?? []).flatMap(servicesForCategory).flatMap((service) => {
+    const config = serviceConfig[service.slug];
+    return config ? [{ ...service, name: service.label, ...config }] : [];
   }), [categories]);
 
   const visibleServices = services.filter((service) => {
@@ -135,7 +145,7 @@ export default function DigitalServicesPage() {
   });
 
   const resetFlow = () => {
-    setSelectedCategory(null);
+    setSelectedSlug(null);
     setSelectedBillerCode(undefined);
     setStep('service');
     setPayment(null);
@@ -144,8 +154,8 @@ export default function DigitalServicesPage() {
     setFormResetKey((key) => key + 1);
   };
 
-  const openService = (category: DigitalServiceCategory) => {
-    setSelectedCategory(category);
+  const openService = (slug: string) => {
+    setSelectedSlug(slug);
     setSelectedBillerCode(undefined);
     setPayment(null);
     setStep('service');
@@ -202,7 +212,7 @@ export default function DigitalServicesPage() {
     }
   };
 
-  const selectedService = selectedCategory ? serviceConfig[selectedCategory] : undefined;
+  const selectedService = selectedSlug ? services.find((service) => service.slug === selectedSlug) : undefined;
   const selectedBiller = (billers ?? []).find((biller) => biller.billerCode === selectedBillerCode) ?? billers?.[0];
 
   return (
@@ -230,7 +240,7 @@ export default function DigitalServicesPage() {
           {categoriesLoading && Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-30 rounded-xl" />)}
           {visibleServices.map((service) => {
             const Icon = service.Icon;
-            return <button key={service.category} type="button" onClick={() => openService(service.category)} className="group flex min-h-30 items-center gap-4 rounded-xl border border-[#E7E3E1] bg-white p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[#E95312]/35 hover:shadow-lg hover:shadow-[#204657]/5 active:scale-[0.99]">
+            return <button key={service.slug} type="button" onClick={() => openService(service.slug)} className="group flex min-h-30 items-center gap-4 rounded-xl border border-[#E7E3E1] bg-white p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[#E95312]/35 hover:shadow-lg hover:shadow-[#204657]/5 active:scale-[0.99]">
               <span className={`flex h-17 w-17 shrink-0 items-center justify-center rounded-xl ${service.tone}`}><Icon className="h-7 w-7" /></span>
               <span className="min-w-0 flex-1"><span className="flex items-center gap-2"><span className="text-lg font-semibold text-[#34425D]">{service.name}</span>{service.badge && <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${service.badge.includes('Cashback') ? 'bg-[#E7F6EB] text-[#008A46]' : 'bg-[#ECF1F3] text-[#204657]'}`}>{service.badge}</span>}</span><span className="mt-2 block truncate text-sm text-[#777E8E]">{service.description}</span></span>
               <ChevronRight className="h-5 w-5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-1" />
@@ -244,12 +254,12 @@ export default function DigitalServicesPage() {
         </div>
       </section>
 
-      {selectedCategory && selectedService && <ModalShell onClose={resetFlow} canClose={!isProcessing} title={step === 'success' ? 'Payment complete' : `Buy ${selectedService.name}`}>
+      {selectedSlug && selectedService && <ModalShell onClose={resetFlow} canClose={!isProcessing} title={step === 'success' ? 'Payment complete' : `Buy ${selectedService.name}`}>
         {step !== 'success' && <StepIndicator step={step} />}
 
         {step === 'service' && <div className="space-y-6 px-6 py-8 sm:px-8"><div><h3 className="text-lg font-medium text-[#34425D]">Select biller</h3><p className="mt-1 text-sm text-slate-500">Choose the provider you want to pay.</p></div>{billersLoading ? <SkeletonGroup label="Loading providers" className="grid grid-cols-3 gap-3">{Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-20 rounded-xl" />)}</SkeletonGroup> : billersError || !billers?.length ? <p className="rounded-xl bg-rose-50 p-4 text-sm text-rose-600">Providers are unavailable right now. Please try again.</p> : <ProviderSelector type='image' providers={billers.map((biller) => ({ id: biller.billerCode, name: biller.billerName, imageSrc: biller.logoUrl }))} selectedId={selectedBiller?.billerCode ?? ''} onSelect={(id) => setSelectedBillerCode(id)} />}</div>}
 
-        {step === 'details' && <div className="px-6 py-2 sm:px-8"><button type="button" onClick={() => setStep('service')} className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-[#204657]"><ArrowLeft className="h-4 w-4" />Change provider</button><ServicePaymentForm key={`${selectedCategory}-${selectedBiller?.billerCode}-${receiptEmail}-${formResetKey}`} activeSlug={selectedService.slug} billers={billers ?? []} isLoading={billersLoading} isError={billersError} initialBillerCode={selectedBiller?.billerCode} initialEmail={receiptEmail} variant="dashboard" hideBillerSelector onValidated={handleDetailsSubmit} formResetKey={formResetKey} /></div>}
+        {step === 'details' && <div className="px-6 py-2 sm:px-8"><button type="button" onClick={() => setStep('service')} className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-[#204657]"><ArrowLeft className="h-4 w-4" />Change provider</button><ServicePaymentForm key={`${selectedSlug}-${selectedBiller?.billerCode}-${receiptEmail}-${formResetKey}`} activeSlug={selectedService.slug} billers={billers ?? []} isLoading={billersLoading} isError={billersError} initialBillerCode={selectedBiller?.billerCode} initialEmail={receiptEmail} variant="dashboard" hideProductSelector={SINGLE_PRODUCT_SERVICES.has(selectedService.slug)} hideBillerSelector onValidated={handleDetailsSubmit} formResetKey={formResetKey} /></div>}
 
         {step === 'review' && payment && <div className="px-6 py-8 sm:px-8"><div className="rounded-xl bg-[#EAF7FC] p-5"><p className="text-sm text-slate-500">Sending {selectedService.name.toLowerCase()} to</p><div className="mt-1 flex items-end justify-between gap-4"><p className="text-2xl font-semibold">{payment.recipientNumber}</p><p className="text-xl font-bold text-[#204657]">- {formatNaira(payment.quote.totalMinor)}</p></div><p className="mt-2 text-sm font-medium text-[#204657]">{payment.providerName}</p></div><h3 className="mt-8 text-xl font-semibold text-[#3D414A]">Transaction details</h3><dl className="mt-4 divide-y divide-slate-100 text-sm"><div className="flex justify-between gap-5 py-4"><dt className="text-slate-500">Transfer to</dt><dd className="font-semibold">{payment.recipientNumber}</dd></div><div className="flex justify-between gap-5 py-4"><dt className="text-slate-500">Transaction type</dt><dd className="font-semibold">{selectedService.name}</dd></div><div className="flex justify-between gap-5 py-4"><dt className="text-slate-500">Amount to send</dt><dd className="font-semibold">{formatNaira(payment.quote.amountMinor)}</dd></div><div className="flex justify-between gap-5 py-4"><dt className="text-slate-500">Charges fee</dt><dd className="font-semibold">{formatNaira(payment.quote.feeMinor)}</dd></div></dl></div>}
 

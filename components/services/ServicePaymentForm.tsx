@@ -18,6 +18,7 @@ import type {
   DigitalServiceFormField,
   DigitalServiceProduct,
 } from '@/lib/api/digitalServices';
+import { SERVICE_LABEL_BY_SLUG } from '@/lib/digitalServices/categoryServices';
 import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import ProviderSelector, {
   type ProviderItem,
@@ -54,6 +55,8 @@ interface ServicePaymentFormProps {
   formResetKey?: number;
   initialBillerCode?: string;
   hideBillerSelector?: boolean;
+  /** Hide "Select product" and use the biller's first product (e.g. airtime: one VTU product per network). */
+  hideProductSelector?: boolean;
   variant?: 'marketplace' | 'dashboard';
   initialEmail?: string;
 }
@@ -261,6 +264,7 @@ function DynamicFields({
   onBillerChange,
   onProductChange,
   hideBillerSelector = false,
+  hideProductSelector = false,
   variant = 'marketplace',
 }: {
   activeSlug: string;
@@ -269,6 +273,7 @@ function DynamicFields({
   onBillerChange: (billerCode: string) => void;
   onProductChange: (productCode: string) => void;
   hideBillerSelector?: boolean;
+  hideProductSelector?: boolean;
   variant?: 'marketplace' | 'dashboard';
 }) {
   const { values, errors, submitCount } = useFormikContext<DynamicServiceFormValues>();
@@ -276,15 +281,6 @@ function DynamicFields({
   const products = availableProducts(selectedBiller);
   const selectedProduct = products.find((product) => product.code === values.productCode) ?? products[0];
 
-  const categoryTabConfig: Record<string, { slug: string; name: string; visualSlug: string }> = {
-    airtime: { slug: 'airtime', name: 'Airtime & Data', visualSlug: 'airtime' },
-    data: { slug: 'data', name: 'Internet Services', visualSlug: 'data' },
-    electricity: { slug: 'electricity', name: 'Electricity', visualSlug: 'electricity' },
-    tv: { slug: 'tv', name: 'Cable TV', visualSlug: 'tv' },
-    EDUCATION: { slug: 'education', name: 'Education', visualSlug: 'education' },
-    INSURANCE: { slug: 'insurance', name: 'Insurance', visualSlug: 'government-services' },
-    OTHER_SERVICES: { slug: 'other-services', name: 'Other Services', visualSlug: 'shopping' },
-  };
 
   if (!selectedBiller || !selectedProduct) return null;
 
@@ -292,12 +288,12 @@ function DynamicFields({
   return (
     <Form className={variant === 'dashboard' ? 'space-y-5' : 'mt-6 space-y-5'} noValidate>
       {variant === 'marketplace' && <div className="text-center">
-        <h2 className="text-xl font-bold capitalize text-slate-900 sm:text-2xl">{categoryTabConfig?.[activeSlug]?.name}</h2>
+        <h2 className="text-xl font-bold capitalize text-slate-900 sm:text-2xl">{SERVICE_LABEL_BY_SLUG[activeSlug] ?? activeTitle}</h2>
         <p className="mt-1 text-xs text-slate-500 sm:text-sm">Choose a provider and product to continue.</p>
       </div>}
       {typeof topLevelError === 'string' ? <div className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-600"><AlertCircle className="h-4 w-4 shrink-0" /><span>{topLevelError}</span></div> : null}
       {!hideBillerSelector && <ProviderSelector label="Select biller" providers={toProviderItems(billers, providerSelectorType)} selectedId={selectedBiller.billerCode} onSelect={onBillerChange} type={providerSelectorType} />}
-      <SelectField name="productCode" label="Select product" required placeholder="Select a product" options={products.map((product) => ({ value: product.code, label: product.name }))} onValueChange={onProductChange} />
+      {!hideProductSelector && <SelectField name="productCode" label="Select product" required placeholder="Select a product" options={products.map((product) => ({ value: product.code, label: product.name }))} onValueChange={onProductChange} />}
       {selectedProduct.formFields.filter((field) => field.type !== 'hidden' && field.path !== 'productCode').map((field) => <DynamicFormField key={field.path} field={field} />)}
       {!selectedProduct.formFields.some((field) => field.path === 'email') && <TextField name="email" type="email" label="Email for receipt (optional)" placeholder="Enter your email address" startIcon={<Mail className="h-4 w-4" />} />}
       <SubmitButton className="w-full rounded-xl bg-[#FF6500] py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#E95312] hover:shadow-lg active:scale-[0.99]">Continue</SubmitButton>
@@ -305,7 +301,7 @@ function DynamicFields({
   );
 }
 
-export default function ServicePaymentForm({ activeSlug, activeTitle, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0, initialBillerCode, hideBillerSelector = false, variant = 'marketplace', initialEmail = '' }: ServicePaymentFormProps) {
+export default function ServicePaymentForm({ activeSlug, activeTitle, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0, initialBillerCode, hideBillerSelector = false, hideProductSelector = false, variant = 'marketplace', initialEmail = '' }: ServicePaymentFormProps) {
   const [selectedBillerCode, setSelectedBillerCode] = useState<string | undefined>(initialBillerCode);
   const [selectedProductCode, setSelectedProductCode] = useState<string>();
   const selectedBiller = billers.find((biller) => biller.billerCode === selectedBillerCode) ?? billers[0];
@@ -347,6 +343,7 @@ export default function ServicePaymentForm({ activeSlug, activeTitle, billers, i
             activeTitle={activeTitle}
             billers={billers}
             hideBillerSelector={hideBillerSelector}
+            hideProductSelector={hideProductSelector}
             variant={variant}
             onBillerChange={(billerCode) => {
               setSelectedBillerCode(billerCode);
