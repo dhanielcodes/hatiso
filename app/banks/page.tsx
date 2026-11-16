@@ -1,10 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import Image from "next/image";
 import {
-  Search,
-  ArrowUpRight,
   ShieldCheck,
   Building2,
   FileText,
@@ -13,168 +10,39 @@ import {
   Menu,
   ExternalLink,
   X,
+  Search,
+  ArrowUpRight,
 } from "lucide-react";
 import Navbar from "@/components/marketplace/Navbar";
 import Footer from "@/components/marketplace/Footer";
-
-export interface BankItem {
-  id: string;
-  name: string;
-  logo: string;
-  status: "Online" | "Degraded" | "Down";
-  services: string[];
-  websiteUrl: string;
-  description?: string;
-}
-
-const BANKS_DATA: BankItem[] = [
-  {
-    id: "tm30",
-    status: "Online",
-    name: "TM30 MFB",
-    services: [
-      "Transfer",
-      "Bills",
-      "Airtime & data",
-      "Card",
-      "USSD",
-      "Virtual account",
-    ],
-    logo: "/images/bank_ab_mfb_hq.png",
-    websiteUrl: "https://tm-30-bank.vercel.app/",
-    description:
-      "Licensed by the Central Bank of Nigeria to deliver innovative microfinance and retail banking services.",
-  },
-  {
-    id: "tm302",
-    status: "Online",
-    name: "TM30 MFB 2",
-    services: [
-      "Transfer",
-      "Bills",
-      "Airtime & data",
-      "Card",
-      "USSD",
-      "Virtual account",
-    ],
-    logo: "/images/bank_ab_mfb_hq.png",
-    websiteUrl: "https://tm-30-bank.vercel.app/",
-    description:
-      "Licensed by the Central Bank of Nigeria to deliver innovative microfinance and retail banking services.",
-  },
-  /* {
-    id: 'ibile',
-    name: 'IBILE MFB',
-    logo: '/images/bank_ibile_hq.png',
-    status: 'Online',
-    services: ['Transfer', 'Bills', 'Airtime & data', 'Card', 'USSD', 'Virtual account'],
-    websiteUrl: 'https://ibilemfb.com',
-    description: 'Licensed by the Central Bank of Nigeria to deliver innovative microfinance and retail banking services.',
-  },
-  {
-    id: 'ab_mfb',
-    name: 'AB MFB',
-    logo: '/images/bank_ab_mfb_hq.png',
-    status: 'Online',
-    services: ['Transfer', 'Bills', 'Airtime & data', 'Card', 'USSD'],
-    websiteUrl: 'https://ab-mfb.com',
-    description: 'Providing accessible financial solutions, digital transfers, and business credit across Nigeria.',
-  },
-  {
-    id: 'moneytrust',
-    name: 'Moneytrust MFB',
-    logo: '/images/bank_moneytrust.png',
-    status: 'Online',
-    services: ['Transfer', 'Bills', 'Airtime & data', 'USSD', 'Virtual account'],
-    websiteUrl: 'https://moneytrustmfb.com',
-    description: 'Secure, modern digital banking tailored for individuals and emerging commercial enterprises.',
-  },
-  {
-    id: 'fastcredit',
-    name: 'Fast Credit',
-    logo: '/images/bank_fastcredit.png',
-    status: 'Online',
-    services: ['Transfer', 'Bills', 'Virtual account', 'Card', 'USSD'],
-    websiteUrl: 'https://fastcredit-ng.com',
-    description: 'Fast digital lending, account top-ups, and frictionless bill settlement solutions.',
-  },
-  {
-    id: 'fastcredit_degraded',
-    name: 'Fast Credit',
-    logo: '/images/bank_fastcredit_degraded.png',
-    status: 'Degraded',
-    services: ['Transfer', 'Bills', 'Airtime & data', 'Card', 'USSD', 'Virtual account'],
-    websiteUrl: 'https://fastcredit-ng.com',
-    description: 'Secondary settlement gateway experiencing occasional network latency.',
-  },
-  {
-    id: 'koins',
-    name: 'Koins MFB',
-    logo: '/images/bank_koins.png',
-    status: 'Online',
-    services: ['Transfer', 'Bills', 'Airtime & data', 'Card', 'USSD', 'Virtual account'],
-    websiteUrl: 'https://koinsmfb.com',
-    description: 'Next-generation digital microfinance platform supporting smart savings, cards, and daily transactions.',
-  },
-  {
-    id: 'hasal',
-    name: 'Hasal MFB',
-    logo: '/images/bank_hasal.png',
-    status: 'Degraded',
-    services: ['Transfer', 'Bills', 'Airtime & data', 'Card', 'USSD', 'Virtual account'],
-    websiteUrl: 'https://hasalmfb.com',
-    description: 'Serving businesses and households with tailored deposit accounts and instant merchant settlement.',
-  },
-  {
-    id: 'alert_group',
-    name: 'Alert Group',
-    logo: '/images/bank_alert_group.png',
-    status: 'Online',
-    services: ['Transfer', 'Bills', 'Airtime & data', 'USSD', 'Virtual account'],
-    websiteUrl: 'https://alertgroup.com.ng',
-    description: 'Specialized retail micro-lending and automated virtual account management services.',
-  },
-  {
-    id: 'ajo_card',
-    name: 'Ajo Card',
-    logo: '/images/bank_ajo_card.png',
-    status: 'Down',
-    services: ['Transfer', 'Bills', 'Airtime & data', 'Card', 'Virtual account'],
-    websiteUrl: 'https://ajocard.com',
-    description: 'Scheduled maintenance currently in progress on gateway endpoints.',
-  },
-  {
-    id: 'bowen',
-    name: 'Bowen MFB',
-    logo: '/images/bank_bowen.png',
-    status: 'Online',
-    services: ['Transfer', 'Bills', 'Airtime & data', 'USSD', 'Virtual account'],
-    websiteUrl: 'https://bowenmicrofinancebank.com',
-    description: 'Pioneering community-first commercial microfinance and student educational financial services.',
-  }, */
-];
-
-const ALL_SERVICES = [
-  "Transfer",
-  "Bills",
-  "Airtime & data",
-  "Card",
-  "USSD",
-  "Virtual account",
-];
-const ALL_STATUSES: Array<"Online" | "Degraded" | "Down"> = [
-  "Online",
-  "Degraded",
-  "Down",
-];
+import BankLogo from "@/components/banks/BankLogo";
+import { useBanks } from "@/lib/queries/useBanks";
+import type { Bank } from "@/lib/api/banks";
+import {
+  bankDomain,
+  bankStatus,
+  bankWebsite,
+  channelLabels,
+  STATUS_DOT,
+  STATUS_TEXT,
+} from "@/lib/banks/bankDisplay";
 
 export default function BanksPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBankNames, setSelectedBankNames] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [selectedBankModal, setSelectedBankModal] = useState<BankItem | null>(
-    null,
+  const [selectedBankModal, setSelectedBankModal] = useState<Bank | null>(null);
+  const { data: banks = [], isLoading, isError, refetch } = useBanks();
+
+  // Filter options come from the banks the API returns.
+  const allChannels = useMemo(
+    () => Array.from(new Set(banks.flatMap(channelLabels))),
+    [banks],
+  );
+  const allStatuses = useMemo(
+    () => Array.from(new Set(banks.map((b) => bankStatus(b).label))),
+    [banks],
   );
 
   // Toggle bank checkbox
@@ -207,7 +75,7 @@ export default function BanksPage() {
 
   // Filtered Banks
   const filteredBanks = useMemo(() => {
-    return BANKS_DATA.filter((bank) => {
+    return banks.filter((bank) => {
       // 1. Search Query
       if (
         searchQuery &&
@@ -227,7 +95,7 @@ export default function BanksPage() {
       // 3. Service Supported filter (bank must support all checked services)
       if (
         selectedServices.length > 0 &&
-        !selectedServices.every((srv) => bank.services.includes(srv))
+        !selectedServices.every((srv) => channelLabels(bank).includes(srv))
       ) {
         return false;
       }
@@ -235,14 +103,20 @@ export default function BanksPage() {
       // 4. Status filter
       if (
         selectedStatuses.length > 0 &&
-        !selectedStatuses.includes(bank.status)
+        !selectedStatuses.includes(bankStatus(bank).label)
       ) {
         return false;
       }
 
       return true;
     });
-  }, [searchQuery, selectedBankNames, selectedServices, selectedStatuses]);
+  }, [
+    banks,
+    searchQuery,
+    selectedBankNames,
+    selectedServices,
+    selectedStatuses,
+  ]);
 
   const hasActiveFilters =
     searchQuery ||
@@ -381,7 +255,7 @@ export default function BanksPage() {
 
                 {/* Scrollable Checkbox List */}
                 <div className="max-h-48 overflow-y-auto space-y-2 pr-1 no-scrollbar text-xs">
-                  {Array.from(new Set(BANKS_DATA.map((b) => b.name))).map(
+                  {Array.from(new Set(banks.map((b) => b.name))).map(
                     (bName) => {
                       const isChecked = selectedBankNames.includes(bName);
                       return (
@@ -408,10 +282,10 @@ export default function BanksPage() {
               {/* 2. Service Supported */}
               <div className="pt-4 border-t border-slate-100">
                 <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5">
-                  Service Supported
+                  Channels
                 </h3>
                 <div className="space-y-2 text-xs">
-                  {ALL_SERVICES.map((srv) => {
+                  {allChannels.map((srv) => {
                     const isChecked = selectedServices.includes(srv);
                     return (
                       <label
@@ -439,14 +313,14 @@ export default function BanksPage() {
                   Bank Status
                 </h3>
                 <div className="space-y-2 text-xs">
-                  {ALL_STATUSES.map((status) => {
+                  {allStatuses.map((status) => {
                     const isChecked = selectedStatuses.includes(status);
-                    const dotColor =
-                      status === "Online"
-                        ? "bg-emerald-500"
-                        : status === "Degraded"
-                          ? "bg-amber-500"
-                          : "bg-red-500";
+                    const tone = banks.find(
+                      (b) => bankStatus(b).label === status,
+                    );
+                    const dotColor = tone
+                      ? STATUS_DOT[bankStatus(tone).tone]
+                      : STATUS_DOT.down;
 
                     return (
                       <label
@@ -479,12 +353,40 @@ export default function BanksPage() {
               {/* Header Count */}
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900">
-                  {filteredBanks.length} Banks
+                  {isLoading
+                    ? "Loading banks…"
+                    : `${filteredBanks.length} ${filteredBanks.length === 1 ? "Bank" : "Banks"}`}
                 </h3>
               </div>
 
               {/* Grid of Bank Cards */}
-              {filteredBanks.length === 0 ? (
+              {isLoading ? (
+                <div
+                  aria-busy="true"
+                  className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                >
+                  {Array.from({ length: 3 }, (_, i) => (
+                    <div
+                      key={i}
+                      className="h-[260px] animate-pulse rounded-2xl border border-slate-200 bg-slate-50"
+                    />
+                  ))}
+                </div>
+              ) : isError ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center">
+                  <Building2 className="mx-auto h-12 w-12 text-slate-300" />
+                  <h4 className="mt-4 text-base font-bold text-slate-900">
+                    We couldn&apos;t load the banks
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => refetch()}
+                    className="mt-4 rounded-xl bg-[#E95312] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#E04B14]"
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : filteredBanks.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center">
                   <Building2 className="mx-auto h-12 w-12 text-slate-300" />
                   <h4 className="mt-4 text-base font-bold text-slate-900">
@@ -504,12 +406,8 @@ export default function BanksPage() {
               ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {filteredBanks.map((bank, index) => {
-                    const dotColor =
-                      bank.status === "Online"
-                        ? "bg-emerald-500"
-                        : bank.status === "Degraded"
-                          ? "bg-amber-500"
-                          : "bg-red-500";
+                    const status = bankStatus(bank);
+                    const dotColor = STATUS_DOT[status.tone];
 
                     return (
                       <div
@@ -524,20 +422,22 @@ export default function BanksPage() {
                             <span
                               className={`h-1.5 w-1.5 rounded-full ${dotColor}`}
                             />
-                            <span>{bank.status}</span>
+                            <span>{status.label}</span>
                           </div>
 
                           {/* Full space Bank Logo */}
-                          <div className="relative h-full w-full">
-                            <Image
-                              src={bank.logo}
-                              alt={bank.name}
-                              fill
-                              quality={95}
-                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                              className="object-contain p-2"
+                          {bank.logoUrl ? (
+                            <BankLogo
+                              bank={bank}
+                              className="h-full w-full p-2"
                             />
-                          </div>
+                          ) : (
+                            <BankLogo
+                              bank={bank}
+                              className="h-24 w-24 rounded-3xl"
+                              textClassName="text-3xl"
+                            />
+                          )}
                         </div>
 
                         {/* Middle Area: Opaque Bar with Name and Arrow */}
@@ -552,7 +452,7 @@ export default function BanksPage() {
 
                         {/* Bottom Area: Service Supported Pills */}
                         <div className="px-4 py-3 bg-white border-t border-slate-100 flex flex-wrap gap-1.5">
-                          {bank.services.map((srv) => (
+                          {channelLabels(bank).map((srv) => (
                             <span
                               key={srv}
                               className="rounded-lg bg-[#F8ECE5] px-2.5 py-1 text-[11px] font-medium text-slate-800"
@@ -579,15 +479,11 @@ export default function BanksPage() {
           <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="relative h-7 w-7 flex-shrink-0">
-                  <Image
-                    src={selectedBankModal.logo}
-                    alt={selectedBankModal.name}
-                    fill
-                    sizes="28px"
-                    className="rounded-lg object-contain"
-                  />
-                </div>
+                <BankLogo
+                  bank={selectedBankModal}
+                  className="h-7 w-7 flex-shrink-0 rounded-lg"
+                  textClassName="text-[10px]"
+                />
                 <h3 className="text-base font-bold text-slate-900">
                   {selectedBankModal.name}
                 </h3>
@@ -603,7 +499,8 @@ export default function BanksPage() {
 
             <div className="my-5 space-y-3.5 text-xs text-slate-600">
               <p className="text-sm text-slate-700 leading-relaxed">
-                {selectedBankModal.description}
+                {selectedBankModal.name} is a verified partner bank on Hatiso.
+                You&apos;ll continue to its own secure banking service.
               </p>
 
               <div className="rounded-xl bg-[#EEF7FB] p-3.5 space-y-2">
@@ -612,15 +509,9 @@ export default function BanksPage() {
                     Gateway Status:
                   </span>
                   <span
-                    className={`font-bold ${
-                      selectedBankModal.status === "Online"
-                        ? "text-emerald-700"
-                        : selectedBankModal.status === "Degraded"
-                          ? "text-amber-700"
-                          : "text-red-700"
-                    }`}
+                    className={`font-bold ${STATUS_TEXT[bankStatus(selectedBankModal).tone]}`}
                   >
-                    {selectedBankModal.status}
+                    {bankStatus(selectedBankModal).label}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -628,17 +519,17 @@ export default function BanksPage() {
                     Official Domain:
                   </span>
                   <span className="font-mono font-medium text-slate-800">
-                    {selectedBankModal.websiteUrl.replace("https://", "")}
+                    {bankDomain(selectedBankModal)}
                   </span>
                 </div>
               </div>
 
               <div>
                 <span className="font-bold text-slate-800 block mb-1.5">
-                  Supported Services:
+                  Channels:
                 </span>
                 <div className="flex flex-wrap gap-1.5">
-                  {selectedBankModal.services.map((s) => (
+                  {channelLabels(selectedBankModal).map((s) => (
                     <span
                       key={s}
                       className="rounded-md bg-[#FDF2EC] px-2 py-0.5 text-[11px] font-medium text-slate-800"
@@ -652,7 +543,7 @@ export default function BanksPage() {
 
             <div className="space-y-2">
               <a
-                href={selectedBankModal.websiteUrl}
+                href={bankWebsite(selectedBankModal)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E95312] py-3 text-center text-xs sm:text-sm font-bold text-white shadow transition hover:bg-[#E04B14]"

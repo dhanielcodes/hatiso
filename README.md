@@ -180,6 +180,16 @@ export default function DashboardAccountPage() {
 - The home "Popular Categories" cards, the service tabs, the dashboard Digital Services cards (`/dashboard/services`), the slug → category lookup (`CATEGORY_BY_SLUG`) and the form heading (`SERVICE_LABEL_BY_SLUG`) all read from this file, so add new services there.
 - On the dashboard, the card's description, icon, colour and badge come from `serviceConfig` in `components/dashboard/DigitalServicesPage.tsx`, keyed by service slug. A service missing there doesn't get a card.
 
+## Banks
+
+The banks page (`/banks`), the home "Banks" section and the dashboard banking page (`/dashboard/banking`) all list banks from `GET /banks` through `useBanks` (`lib/queries/useBanks.ts`). Each shows a loading skeleton and a "Try again" message if the request fails. Shared helpers are in `lib/banks/bankDisplay.ts`:
+
+- **Logo:** `components/banks/BankLogo.tsx` shows `logoUrl`. With no logo, it shows the bank's initials on its `primaryColor` (or dark teal).
+- **Status:** `ACTIVE` reads as "Online". `MAINTENANCE` or `DEGRADED` is amber, and any other status is red and shown as the API sends it. The status filters on `/banks` and the dashboard tabs are built from the statuses the API returns.
+- **Channels:** `channels` (e.g. `INTERNET_BANKING`) are shown as "Internet banking", and the `/banks` "Channels" filter is built from them.
+- **Website:** the API doesn't return a website URL yet. "Continue to bank" uses `BANK_WEBSITES` (keyed by `bankIdentifier`), or `DEFAULT_BANK_URL` when a bank isn't listed there. Replace this once the API sends a URL.
+- The home section shows the first 10 banks (`HOME_BANK_LIMIT`).
+
 ---
 
 ## Endpoint structure
@@ -281,6 +291,7 @@ await updateProfile.mutateAsync({ firstName, lastName, displayName, bio });
 
 | File | Hooks |
 | --- | --- |
+| `useBanks.ts` | `useBanks` (public `GET /banks?page=0&size=100`) |
 | `useAuth.ts` | `useCurrentUser`, `useUpdateProfile`, `useResetPassword`, `useForgotPassword`, `useRecoverPassword`, `useRegister`, `useVerifyUser`, `useResendVerification` |
 | `useDashboard.ts` | `useDashboard`, `useAnalytics`, `useAnalyticsCSV` |
 | `useDigitalServices.ts` | `useDigitalServiceCategories`, `useDigitalServiceCatalogues`, `useCreateDigitalServiceOrder`, `useCreatePaymentQuote`, `useCreatePayment`, `useVerifyPayment` |

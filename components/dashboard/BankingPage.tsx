@@ -17,124 +17,17 @@ import * as Yup from "yup";
 import OtpInput from "@/components/auth/OtpInput";
 import { Button, PhoneField, SubmitButton } from "@/components/forms";
 import { useAuthStore } from "@/lib/store/authStore";
+import BankLogo from "@/components/banks/BankLogo";
+import { useBanks } from "@/lib/queries/useBanks";
+import type { Bank } from "@/lib/api/banks";
+import {
+  bankStatus,
+  bankWebsite,
+  channelLabels,
+} from "@/lib/banks/bankDisplay";
 
-export interface BankCardItem {
-  id: string;
-  name: string;
-  logo: string;
-  badge?: "Popular" | "Recently used" | "Maintenance";
-  subtitle?: string;
-  url: string;
-  categories: Array<"All" | "Popular" | "Recently used" | "Maintenance">;
-}
-
-const BANKS: BankCardItem[] = [
-  {
-    id: "tm30",
-    name: "TM30 MFB",
-    logo: "/images/bank_ab_mfb_hq.png",
-    badge: "Popular",
-    subtitle: "Internet & Mobile Banking",
-    url: "https://tm-30-bank.vercel.app/",
-    categories: ["All", "Popular"],
-  },
-  {
-    id: "tm302",
-    name: "TM30 MFB 2",
-    logo: "/images/bank_ab_mfb_hq.png",
-    badge: "Popular",
-    subtitle: "Internet & Mobile Banking",
-    url: "https://tm-30-bank.vercel.app/",
-    categories: ["All", "Popular"],
-  },
-  /*  {
-     id: 'ibile',
-     name: 'IBILE MFB',
-     logo: '/images/bank_ibile_hq.png',
-     badge: 'Popular',
-     subtitle: 'Internet & Mobile Banking',
-     url: 'https://ibilemfb.com',
-     categories: ['All', 'Popular'],
-   },
-   {
-     id: 'ab_mfb',
-     name: 'AB MFB',
-     logo: '/images/bank_ab_mfb_hq.png',
-     subtitle: 'Internet & Mobile Banking',
-     url: 'https://ab-mfb.com',
-     categories: ['All'],
-   },
-   {
-     id: 'moneytrust',
-     name: 'Moneytrust MFB',
-     logo: '/images/bank_moneytrust.png',
-     badge: 'Recently used',
-     subtitle: 'Internet & Mobile Banking',
-     url: 'https://moneytrustmfb.com',
-     categories: ['All', 'Recently used'],
-   },
-   {
-     id: 'boa',
-     name: 'BOA',
-     logo: '/images/bank_boa.png',
-     subtitle: 'Internet & Mobile Banking',
-     url: 'https://bankofagricultureng.com',
-     categories: ['All'],
-   },
-   {
-     id: 'hasal',
-     name: 'Hasal MFB',
-     logo: '/images/bank_hasal.png',
-     subtitle: 'Internet & Mobile Banking',
-     url: 'https://hasalmfb.com',
-     categories: ['All'],
-   },
-   {
-     id: 'koins',
-     name: 'Koins MFB',
-     logo: '/images/bank_koins.png',
-     subtitle: 'Internet & Mobile Banking',
-     url: 'https://koinsmfb.com',
-     categories: ['All'],
-   },
-   {
-     id: 'fastcredit',
-     name: 'Fast Credit',
-     logo: '/images/bank_fastcredit.png',
-     badge: 'Maintenance',
-     subtitle: 'Internet & Mobile Banking',
-     url: 'https://fastcredit-ng.com',
-     categories: ['All', 'Maintenance'],
-   },
-   {
-     id: 'alert_group',
-     name: 'Alert Group',
-     logo: '/images/bank_alert_group.png',
-     subtitle: 'Internet & Mobile Banking',
-     url: 'https://alertgroup.com.ng',
-     categories: ['All'],
-   },
-   {
-     id: 'bowen',
-     name: 'Bowen MFB',
-     logo: '/images/bank_bowen.png',
-     badge: 'Popular',
-     subtitle: 'Internet & Mobile Banking',
-     url: 'https://bowenmicrofinancebank.com',
-     categories: ['All', 'Popular'],
-   },
-   {
-     id: 'ajo_card',
-     name: 'Ajo Card',
-     logo: '/images/bank_ajo_card.png',
-     badge: 'Maintenance',
-     subtitle: 'Internet & Mobile Banking',
-     url: 'https://ajocard.com',
-     categories: ['All', 'Maintenance'],
-   }, */
-];
-
-type FilterTab = "All" | "Popular" | "Recently used" | "Maintenance";
+/** "All", then one tab per status the API returns (e.g. "Online"). */
+type FilterTab = string;
 
 const phoneStepSchema = Yup.object({
   phone: Yup.string()
@@ -151,9 +44,14 @@ export default function BankingPage() {
   const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("All");
+  const { data: banks = [], isLoading, isError, refetch } = useBanks();
+  const tabs = useMemo<FilterTab[]>(
+    () => ["All", ...new Set(banks.map((b) => bankStatus(b).label))],
+    [banks],
+  );
 
   // Redirection Modal State
-  const [selectedBank, setSelectedBank] = useState<BankCardItem | null>(null);
+  const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
   const [modalStep, setModalStep] = useState<"phone" | "otp" | null>(null);
   const [phoneNumber, setPhoneNumber] = useState("+234 904 637 3748");
   const [otp, setOtp] = useState("");
@@ -162,9 +60,9 @@ export default function BankingPage() {
 
   // Filter banks
   const filteredBanks = useMemo(() => {
-    return BANKS.filter((bank) => {
+    return banks.filter((bank) => {
       // Tab filter
-      if (activeTab !== "All" && !bank.categories.includes(activeTab)) {
+      if (activeTab !== "All" && bankStatus(bank).label !== activeTab) {
         return false;
       }
       // Search filter
@@ -172,15 +70,15 @@ export default function BankingPage() {
         const query = searchQuery.toLowerCase().trim();
         return (
           bank.name.toLowerCase().includes(query) ||
-          (bank.subtitle && bank.subtitle.toLowerCase().includes(query))
+          channelLabels(bank).join(" ").toLowerCase().includes(query)
         );
       }
       return true;
     });
-  }, [activeTab, searchQuery]);
+  }, [banks, activeTab, searchQuery]);
 
   // Open modal step 1
-  const handleBankClick = (bank: BankCardItem) => {
+  const handleBankClick = (bank: Bank) => {
     setSelectedBank(bank);
     setModalStep("phone");
     setOtp("");
@@ -219,38 +117,23 @@ export default function BankingPage() {
       setIsVerifying(false);
       if (selectedBank) {
         toast.success(`Verified! Opening ${selectedBank.name}...`);
-        window.open(selectedBank.url, "_blank", "noopener,noreferrer");
+        window.open(bankWebsite(selectedBank), "_blank", "noopener,noreferrer");
       }
       handleCloseModal();
     }, 800);
   };
 
-  // Badge styling helper
-  const renderBadge = (badge: BankCardItem["badge"]) => {
-    if (!badge) return null;
-
-    if (badge === "Popular") {
-      return (
-        <span className="rounded-full bg-[#EEF2F6] px-2 py-0.5 text-[11px] font-medium text-[#4B5563]">
-          Popular
-        </span>
-      );
-    }
-    if (badge === "Recently used") {
-      return (
-        <span className="rounded-full bg-[#E6F8ED] px-2 py-0.5 text-[11px] font-medium text-[#1E7E44]">
-          Recently used
-        </span>
-      );
-    }
-    if (badge === "Maintenance") {
-      return (
-        <span className="rounded-full bg-[#FEF6E6] px-2 py-0.5 text-[11px] font-medium text-[#B7791F]">
-          Maintenance
-        </span>
-      );
-    }
-    return null;
+  // Status badge: nothing for online banks, amber/red otherwise
+  const renderBadge = (bank: Bank) => {
+    const status = bankStatus(bank);
+    if (status.tone === "online") return null;
+    return (
+      <span
+        className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${status.tone === "warning" ? "bg-[#FEF6E6] text-[#B7791F]" : "bg-red-50 text-red-700"}`}
+      >
+        {status.label}
+      </span>
+    );
   };
 
   return (
@@ -294,9 +177,7 @@ export default function BankingPage() {
 
           {/* Filter Pills */}
           <div className="flex flex-wrap items-center gap-2">
-            {(
-              ["All", "Popular", "Recently used", "Maintenance"] as FilterTab[]
-            ).map((tab) => {
+            {tabs.map((tab) => {
               const isActive = activeTab === tab;
               return (
                 <button
@@ -326,7 +207,33 @@ export default function BankingPage() {
         </div>
 
         {/* Bank Cards Grid */}
-        {filteredBanks.length === 0 ? (
+        {isLoading ? (
+          <div
+            aria-busy="true"
+            className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+          >
+            {Array.from({ length: 3 }, (_, i) => (
+              <div
+                key={i}
+                className="h-[84px] animate-pulse rounded-2xl border border-[#EDE8E4] bg-white"
+              />
+            ))}
+          </div>
+        ) : isError ? (
+          <div className="rounded-2xl border border-dashed border-[#DDD7D2] bg-white p-12 text-center">
+            <Building2 className="mx-auto h-10 w-10 text-[#C4C0BE]" />
+            <h3 className="mt-3 text-base font-semibold text-[#1B3C4A]">
+              We couldn&apos;t load the banks
+            </h3>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-3 text-sm font-semibold text-[#E95312] hover:underline"
+            >
+              Try again
+            </button>
+          </div>
+        ) : filteredBanks.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#DDD7D2] bg-white p-12 text-center">
             <Building2 className="mx-auto h-10 w-10 text-[#C4C0BE]" />
             <h3 className="mt-3 text-base font-semibold text-[#1B3C4A]">
@@ -348,15 +255,7 @@ export default function BankingPage() {
                 <div className="flex min-w-0 items-center gap-3.5">
                   {/* Bank Logo */}
                   <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white p-1">
-                    <Image
-                      src={bank.logo}
-                      alt={bank.name}
-                      width={96}
-                      height={96}
-                      quality={100}
-                      sizes="96px"
-                      className="h-10 w-10 object-contain"
-                    />
+                    <BankLogo bank={bank} className="h-10 w-10" />
                   </div>
                   {/* Info */}
                   <div className="min-w-0">
@@ -364,10 +263,10 @@ export default function BankingPage() {
                       <h3 className="truncate text-sm font-semibold text-[#1B3C4A] sm:text-base">
                         {bank.name}
                       </h3>
-                      {renderBadge(bank.badge)}
+                      {renderBadge(bank)}
                     </div>
                     <p className="mt-0.5 text-xs text-[#8A8583]">
-                      {bank.subtitle || "Internet & Mobile Banking"}
+                      {channelLabels(bank).join(" · ") || "Digital banking"}
                     </p>
                   </div>
                 </div>
@@ -427,14 +326,10 @@ export default function BankingPage() {
           <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl sm:p-7">
             {/* Bank Logo */}
             <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-[#EDE8E4] bg-white p-1.5">
-              <Image
-                src={selectedBank.logo}
-                alt={selectedBank.name}
-                width={112}
-                height={112}
-                quality={100}
-                sizes="56px"
-                className="h-11 w-11 object-contain"
+              <BankLogo
+                bank={selectedBank}
+                className="h-11 w-11"
+                textClassName="text-xs"
               />
             </div>
 
@@ -445,7 +340,7 @@ export default function BankingPage() {
                 validationSchema={phoneStepSchema}
                 onSubmit={() => {
                   window.open(
-                    selectedBank.url,
+                    bankWebsite(selectedBank),
                     "_blank",
                     "noopener,noreferrer",
                   );
