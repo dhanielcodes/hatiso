@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ComponentType, type ReactNode } from 'react';
+import { useCallback, useState, type ComponentType, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -18,6 +18,7 @@ import {
     XCircle,
     Zap,
 } from 'lucide-react';
+import TransactionSupportModal from '@/components/support/TransactionSupportModal';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 type Transaction = {
@@ -43,7 +44,7 @@ type IconType = ComponentType<{ className?: string }>;
 
 /* ─── Constants ────────────────────────────────────────────────── */
 const CARD = 'rounded-xl border border-[#EBE6E1] bg-white';
-const SUPPORT_HREF = '/dashboard/support'; // adjust to your support route
+const SUPPORT_HREF = '/dashboard/support';
 
 const CATEGORY_META: Record<string, { label: string; icon: IconType }> = {
     TELCO: { label: 'Telecom', icon: Smartphone },
@@ -197,6 +198,8 @@ function ReferenceItem({ label, value }: { label: string; value: string }) {
 
 /* ─── Details view ─────────────────────────────────────────────── */
 function TransactionDetails({ transaction }: { transaction: Transaction }) {
+    const [supportOpen, setSupportOpen] = useState(false);
+    const closeSupport = useCallback(() => setSupportOpen(false), []);
     const status = STATUS_META[transaction.fulfilmentStatus.toUpperCase()] ?? {
         label: titleCase(transaction.fulfilmentStatus),
         icon: Clock,
@@ -363,17 +366,31 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
                             <div className="min-w-0">
                                 <p className="text-sm font-semibold text-[#20232A]">Need help with this transaction?</p>
                                 <p className="mt-1 text-xs text-[#52617A]">Our support team is available 24 hours a day.</p>
-                                <Link
-                                    href={SUPPORT_HREF}
-                                    className="mt-4 inline-block rounded-md border border-[#E6E3E0] bg-white px-3.5 py-2 text-xs font-medium text-[#20232A] transition hover:bg-slate-50"
-                                >
-                                    Contact support
-                                </Link>
+                                <div className="mt-4 flex flex-wrap items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSupportOpen(true)}
+                                        className="rounded-md bg-[#EE7230] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#D9622B]"
+                                    >
+                                        Report an issue
+                                    </button>
+                                    <Link href={SUPPORT_HREF} className="text-xs font-medium text-[#52617A] underline-offset-2 transition hover:text-[#20232A] hover:underline">
+                                        My support requests
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <TransactionSupportModal
+                open={supportOpen}
+                onClose={closeSupport}
+                transactionReference={transaction.reference}
+                summary={`${productName} ${categoryLabel.toLowerCase()} to ${transaction.recipient} · ${formatMoney(transaction.amountMinor, transaction.currency)}`}
+                complaint={upper === 'FAILED' || upper === 'PENDING' || upper === 'PROCESSING'}
+            />
         </main>
     );
 }

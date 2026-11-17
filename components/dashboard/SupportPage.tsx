@@ -1,13 +1,17 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
+import Link from 'next/link';
 import { Formik, Form, type FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import { DateField, SelectField, SubmitButton, TextAreaField, useFormField } from '@/components/forms';
+import { SubmitButton, TextAreaField, useFormField } from '@/components/forms';
 import {
+    CheckCircle2,
     ChevronDown,
     ChevronLeft,
     ChevronRight,
+    ExternalLink,
+    FileText,
     Headphones,
     Mail,
     Minus,
@@ -16,18 +20,13 @@ import {
     Star,
     X,
 } from 'lucide-react';
+import SupportEnquiryForm from '@/components/support/SupportEnquiryForm';
+import { formatDateTime, formatPlainDate, ticketHref, ticketStatus, ticketTypeLabel } from '@/components/support/supportDisplay';
+import { newIdempotencyKey, type SupportContentEntry, type SupportReceipt } from '@/lib/api/support';
+import { useSubmitSupportFeedback, useSupportHistory, useSupportOptions } from '@/lib/queries/useSupport';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 type SupportTab = 'help' | 'faqs' | 'feedback';
-type EnquiryStatus = 'In progress' | 'Approved' | 'Cancel';
-
-type HistoryItem = {
-    id: number;
-    comment: string;
-    type: string;
-    date: string; // dd/mm/yyyy
-    status: EnquiryStatus;
-};
 
 type ContactItem = {
     id: string;
@@ -43,45 +42,16 @@ const TABS: { id: SupportTab; label: string }[] = [
     { id: 'feedback', label: 'Feedback' },
 ];
 
-const ENQUIRY_TYPES = ['Transaction', 'Onboarding', 'Status', 'Account', 'Other'];
-
 /* ─── Forms ────────────────────────────────────────────────────── */
-type EnquiryValues = { enquiryType: string; date: string; remark: string };
-const EMPTY_ENQUIRY: EnquiryValues = { enquiryType: '', date: '', remark: '' };
-const enquirySchema = Yup.object({
-    enquiryType: Yup.string().required('Select an enquiry type.'),
-    date: Yup.string().required('Pick a date.'),
-    remark: Yup.string().trim().required('Enter a remark.'),
-});
-
 type FeedbackValues = { rating: number; remark: string };
 const EMPTY_FEEDBACK: FeedbackValues = { rating: 0, remark: '' };
 const feedbackSchema = Yup.object({
-    rating: Yup.number().min(1, 'Choose a rating.'),
-    remark: Yup.string().trim(),
+    rating: Yup.number().min(1, 'Choose a rating.').max(5),
+    remark: Yup.string().trim().max(10_000, 'Keep it under 10,000 characters.'),
 });
 const PAGE_SIZES = [10, 20, 50];
 
-const STATUS_STYLES: Record<EnquiryStatus, string> = {
-    'In progress': 'text-[#F2A900]',
-    Approved: 'text-[#4CAF50]',
-    Cancel: 'text-[#E22E41]',
-};
-
-/* ─── Dummy data ───────────────────────────────────────────────── */
-const HISTORY_SEED: Omit<HistoryItem, 'id'>[] = [
-    { comment: 'My Transfer...', type: 'Transaction', date: '21/05/2025', status: 'In progress' },
-    { comment: 'Signatories..', type: 'Onboarding', date: '16/05/2025', status: 'Approved' },
-    { comment: 'Approval..', type: 'Status', date: '13/02/2024', status: 'Cancel' },
-];
-
-// 100 dummy rows so pagination has something to page through
-const INITIAL_HISTORY: HistoryItem[] = Array.from({ length: 100 }, (_, i) => ({
-    id: i + 1,
-    ...HISTORY_SEED[i % HISTORY_SEED.length],
-}));
-
-// Replace the hrefs with your real contact details / social links
+// Fallback contacts, used until support publishes CONTACT entries in GET /support/options
 const CONTACTS: ContactItem[] = [
     { id: 'phone', label: '0-2562718', href: 'tel:02562718', icon: Phone },
     { id: 'email', label: 'Qapp@gmail.com', href: 'mailto:Qapp@gmail.com', icon: Mail },
@@ -189,14 +159,33 @@ function XLogo(props: SVGProps<SVGSVGElement>) {
     );
 }
 
-function formatDate(iso: string) {
-    const [y, m, d] = iso.split('-');
-    return y && m && d ? `${d}/${m}/${y}` : iso;
+function bySection(content: SupportContentEntry[], section: string) {
+    return content.filter((entry) => entry.section?.toUpperCase() === section);
 }
 
+/** Turns a published CONTACT entry into a link: an email, phone number or URL. */
+function contactFromEntry(entry: SupportContentEntry, index: number): ContactItem {
+    const value = (entry.url || entry.body || '').trim();
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    const isPhone = /^\+?[\d\s()-]{6,}$/.test(value);
+    const href = entry.url || (isEmail ? `mailto:${value}` : isPhone ? `tel:${value.replace(/[^\d+]/g, '')}` : '#');
+    const lower = `${entry.title} ${value}`.toLowerCase();
+    const icon = isEmail || lower.includes('mail')
+        ? Mail
+        : isPhone || lower.includes('phone') || lower.includes('call')
+            ? Phone
+            : lower.includes('facebook')
+                ? FacebookLogo
+                : lower.includes('instagram')
+                    ? InstagramLogo
+                    : lower.includes('twitter') || lower.includes('x.com')
+                        ? XLogo
+                        : ExternalLink;
+    return { id: `contact-${index}`, label: entry.body && entry.url ? `${entry.title} · ${entry.body}` : entry.title || value, href, icon };
+}
 
 /* ─── Contact Us modal ─────────────────────────────────────────── */
-function ContactModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function ContactModal({ open, onClose, contacts }: { open: boolean; onClose: () => void; contacts: ContactItem[] }) {
     const closeRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
@@ -242,7 +231,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
                     </button>
                 </div>
                 <ul className="px-6 pb-6 pt-2">
-                    {CONTACTS.map((item, index) => {
+                    {contacts.map((item, index) => {
                         const Icon = item.icon;
                         const external = item.href.startsWith('http');
                         return (
@@ -267,42 +256,45 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
 }
 
 /* ─── Tab: Help Center ─────────────────────────────────────────── */
-function HelpCenter() {
-    const [history, setHistory] = useState<HistoryItem[]>(INITIAL_HISTORY);
-    const [sent, setSent] = useState(false);
+type HelpCenterProps = {
+    enquiryTypes: string[];
+    loadingTypes: boolean;
+    content: SupportContentEntry[];
+};
+
+function HistorySkeleton({ rows }: { rows: number }) {
+    return (
+        <ul className="mt-6" aria-hidden="true">
+            {Array.from({ length: rows }, (_, index) => (
+                <li key={index} className={`grid grid-cols-2 gap-4 py-4 md:grid-cols-[1.4fr_1fr_1fr_1fr] ${index > 0 ? 'border-t border-[#EEEAE6]' : ''}`}>
+                    {Array.from({ length: 4 }, (_, cell) => (
+                        <div key={cell}>
+                            <span className="block h-3 w-16 animate-pulse rounded bg-[#EEF0F2]" />
+                            <span className="mt-3 block h-4 w-24 animate-pulse rounded bg-[#EEF0F2]" />
+                        </div>
+                    ))}
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+function HelpCenter({ enquiryTypes, loadingTypes, content }: HelpCenterProps) {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
     const [contactOpen, setContactOpen] = useState(false);
     const closeContact = useCallback(() => setContactOpen(false), []);
 
-    useEffect(() => {
-        if (!sent) return;
-        const timer = setTimeout(() => setSent(false), 3000);
-        return () => clearTimeout(timer);
-    }, [sent]);
-
-    const handleSubmit = (values: EnquiryValues, { resetForm }: FormikHelpers<EnquiryValues>) => {
-        // Dummy only: no request is sent
-        const text = values.remark.trim();
-        setHistory((h) => [
-            {
-                id: Date.now(),
-                comment: text.length > 16 ? `${text.slice(0, 16)}...` : text,
-                type: values.enquiryType,
-                date: formatDate(values.date),
-                status: 'In progress',
-            },
-            ...h,
-        ]);
-        setPage(1);
-        resetForm();
-        setSent(true);
-    };
-
-    const total = history.length;
-    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const history = useSupportHistory(page - 1, pageSize);
+    const rows = history.data ?? [];
+    // The history endpoint has no total count, so a short page means it is the last one.
+    const hasNext = rows.length === pageSize;
     const start = (page - 1) * pageSize;
-    const rows = history.slice(start, start + pageSize);
+
+    const helpEntries = bySection(content, 'HELP');
+    const publishedContacts = bySection(content, 'CONTACT').map(contactFromEntry);
+    const contacts = publishedContacts.length ? publishedContacts : CONTACTS;
+    const legalLinks = [...bySection(content, 'TERMS'), ...bySection(content, 'PRIVACY')].filter((entry) => entry.url);
 
     return (
         <div>
@@ -315,84 +307,115 @@ function HelpCenter() {
                 </p>
             </div>
 
+            {/* Published help entries */}
+            {helpEntries.length > 0 && (
+                <section className="mt-6" aria-labelledby="help-articles-title">
+                    <h3 id="help-articles-title" className="text-sm font-semibold text-[#20232A]">
+                        Helpful articles
+                    </h3>
+                    <ul className="mt-3 grid gap-3 md:grid-cols-2">
+                        {helpEntries.map((entry, index) => {
+                            const body = (
+                                <>
+                                    <span className="flex items-center gap-2 text-sm font-medium text-[#20232A]">
+                                        <FileText className="h-4 w-4 shrink-0 text-[#E95312]" />
+                                        {entry.title}
+                                        {entry.url && <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-[#7A7F8A]" />}
+                                    </span>
+                                    {entry.body && <span className="mt-1.5 line-clamp-3 block text-xs leading-relaxed text-[#52617A]">{entry.body}</span>}
+                                </>
+                            );
+                            const cls = 'block h-full rounded-lg border border-[#EBE6E1] bg-white px-4 py-3.5';
+                            return (
+                                <li key={`${entry.title}-${index}`}>
+                                    {entry.url ? (
+                                        <a href={entry.url} target="_blank" rel="noreferrer" className={`${cls} transition hover:border-[#F6D9C8] hover:bg-[#FFF9F6]`}>
+                                            {body}
+                                        </a>
+                                    ) : (
+                                        <div className={cls}>{body}</div>
+                                    )}
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </section>
+            )}
+
             <p className="mt-8 text-sm text-[#7A7F8A] sm:text-base">Hi there! 👋 Need a hand with anything today?</p>
 
             {/* Enquiry form */}
-            <Formik<EnquiryValues> initialValues={EMPTY_ENQUIRY} validationSchema={enquirySchema} onSubmit={handleSubmit}>
-                <Form className="mt-6" noValidate>
-                    <div className="grid gap-5 md:grid-cols-2">
-                        <SelectField
-                            name="enquiryType"
-                            id="enquiry-type"
-                            label="Enquiry Type"
-                            required
-                            variant="dashboard"
-                            placeholder="Select enquiry type"
-                            options={ENQUIRY_TYPES.map((type) => ({ value: type, label: type }))}
-                        />
-                        <DateField name="date" id="enquiry-date" label="Date" required variant="dashboard" />
-                    </div>
-
-                    <TextAreaField
-                        name="remark"
-                        id="enquiry-remark"
-                        label="Remark"
-                        required
-                        variant="dashboard"
-                        placeholder="Enter Remark"
-                        rows={4}
-                        className="mt-5"
-                    />
-
-                    <div className="mt-6 flex items-center justify-end gap-4">
-                        {sent && (
-                            <p className="text-sm text-[#2E9A4F]" aria-live="polite">
-                                Enquiry sent.
-                            </p>
-                        )}
-                        <SubmitButton variant="primary">Send Enquiry</SubmitButton>
-                    </div>
-                </Form>
-            </Formik>
+            <div className="mt-6">
+                <SupportEnquiryForm enquiryTypes={enquiryTypes} loadingTypes={loadingTypes} onSent={() => setPage(1)} />
+            </div>
 
             {/* Recent Support History */}
             <section className="mt-8 rounded-xl border border-[#EBE6E1] bg-white px-5 py-6 sm:px-6" aria-labelledby="history-title">
                 <h3 id="history-title" className="text-base font-semibold text-[#20232A]">
                     Recent Support History
                 </h3>
-                <p className="mt-2 text-xs text-[#52617A]">Here is the most recent history</p>
+                <p className="mt-2 text-xs text-[#52617A]">Select a request to see replies and its progress.</p>
 
-                <ul className="mt-6">
-                    {rows.map((row, index) => (
-                        <li
-                            key={row.id}
-                            className={`grid grid-cols-2 gap-x-4 gap-y-4 py-4 md:grid-cols-[1.4fr_1fr_1fr_1fr] ${index > 0 ? 'border-t border-[#EEEAE6]' : ''}`}
+                {history.isLoading ? (
+                    <HistorySkeleton rows={3} />
+                ) : history.isError && !rows.length ? (
+                    <div className="mt-6 rounded-lg bg-[#FFF5F4] px-4 py-6 text-center">
+                        <p className="text-sm text-[#52617A]">We could not load your support history.</p>
+                        <button
+                            type="button"
+                            onClick={() => history.refetch()}
+                            className="mt-3 rounded-md border border-[#E6E3E0] bg-white px-3.5 py-2 text-xs font-medium text-[#20232A] transition hover:bg-slate-50"
                         >
-                            <div>
-                                <p className="text-xs text-[#7A7F8A]">Comment</p>
-                                <p className="mt-2 text-sm font-medium text-[#20232A] sm:text-base">{row.comment}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-[#7A7F8A]">Enquiry Type</p>
-                                <p className="mt-2 text-sm font-medium text-[#20232A] sm:text-base">{row.type}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-[#7A7F8A]">Date</p>
-                                <p className="mt-2 text-sm font-medium text-[#20232A] sm:text-base">{row.date}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-[#7A7F8A]">Enquiries Status</p>
-                                <p className={`mt-2 text-sm font-medium sm:text-base ${STATUS_STYLES[row.status]}`}>{row.status}</p>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+                            Try again
+                        </button>
+                    </div>
+                ) : !rows.length ? (
+                    <p className="mt-6 rounded-lg bg-[#F9F9FA] px-4 py-8 text-center text-sm text-[#7A7F8A]">
+                        {page > 1 ? 'No more requests.' : 'You have not contacted support yet. Your requests will show here.'}
+                    </p>
+                ) : (
+                    <ul className={`mt-6 transition-opacity ${history.isPlaceholderData ? 'opacity-55' : ''}`}>
+                        {rows.map((row, index) => {
+                            const status = ticketStatus(row.status);
+                            return (
+                                <li key={row.ticketId} className={index > 0 ? 'border-t border-[#EEEAE6]' : ''}>
+                                    <Link
+                                        href={ticketHref(row.ticketId)}
+                                        className="-mx-3 grid grid-cols-2 gap-x-4 gap-y-4 rounded-lg px-3 py-4 transition hover:bg-[#FFF9F6] md:grid-cols-[1.4fr_1fr_1fr_1fr_auto] md:items-center"
+                                    >
+                                        <div className="min-w-0">
+                                            <p className="text-xs text-[#7A7F8A]">Comment</p>
+                                            <p className="mt-2 truncate text-sm font-medium text-[#20232A] sm:text-base">
+                                                {row.remark?.trim() || (row.rating != null ? `${row.rating} star rating` : '—')}
+                                            </p>
+                                            <p className="mt-1 truncate font-mono text-[11px] text-[#7A7F8A]">{row.reference}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-[#7A7F8A]">Enquiry Type</p>
+                                            <p className="mt-2 text-sm font-medium text-[#20232A] sm:text-base">{ticketTypeLabel(row)}</p>
+                                            {row.requestType === 'COMPLAINT' && <p className="mt-1 text-[11px] text-[#C2410C]">Complaint</p>}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-[#7A7F8A]">Date</p>
+                                            <p className="mt-2 text-sm font-medium text-[#20232A] sm:text-base">
+                                                {row.date ? formatPlainDate(row.date) : formatDateTime(row.createdAt)}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-[#7A7F8A]">Status</p>
+                                            <span className={`mt-2 inline-block rounded px-2.5 py-1 text-xs font-medium ${status.className}`}>{status.label}</span>
+                                        </div>
+                                        <ChevronRight className="hidden h-4 w-4 text-[#A3A8B1] md:block" aria-hidden="true" />
+                                    </Link>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
 
                 {/* Pagination */}
                 <div className="mt-8 flex flex-wrap items-center justify-between gap-4 text-sm text-[#7A7F8A]">
-                    <p>
-                        Showing {total === 0 ? 0 : start + 1}-{Math.min(start + pageSize, total)} of {total} entries
-                    </p>
+                    <p>{rows.length ? `Showing ${start + 1}-${start + rows.length}` : `Page ${page}`}</p>
                     <div className="flex items-center gap-2">
                         <label htmlFor="page-size">Show</label>
                         <div className="relative">
@@ -428,8 +451,8 @@ function HelpCenter() {
                         </span>
                         <button
                             type="button"
-                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                            disabled={page === totalPages}
+                            onClick={() => setPage((p) => p + 1)}
+                            disabled={!hasNext || history.isPlaceholderData}
                             aria-label="Next page"
                             className="flex h-7 w-7 items-center justify-center rounded-md border border-[#E6E3E0] bg-white text-[#20232A] transition disabled:cursor-not-allowed disabled:opacity-50"
                         >
@@ -454,16 +477,34 @@ function HelpCenter() {
                 </button>
             </div>
 
-            <ContactModal open={contactOpen} onClose={closeContact} />
+            {legalLinks.length > 0 && (
+                <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#52617A]">
+                    {legalLinks.map((entry, index) => (
+                        <li key={`${entry.section}-${index}`}>
+                            <a href={entry.url as string} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 transition hover:text-[#E95312]">
+                                {entry.title} <ExternalLink className="h-3 w-3" />
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            )}
+
+            <ContactModal open={contactOpen} onClose={closeContact} contacts={contacts} />
         </div>
     );
 }
 
 /* ─── Tab: FAQs ────────────────────────────────────────────────── */
-function Faqs() {
-    const [groupId, setGroupId] = useState(FAQ_GROUPS[0].id);
+type FaqGroup = { id: string; label: string; items: { q: string; a: string; url?: string | null }[] };
+
+function Faqs({ entries }: { entries: SupportContentEntry[] }) {
+    // Published FAQ entries from the API replace the built-in list once support adds any.
+    const groups: FaqGroup[] = entries.length
+        ? [{ id: 'published', label: 'Frequently asked questions', items: entries.map((e) => ({ q: e.title, a: e.body ?? '', url: e.url })) }]
+        : FAQ_GROUPS;
+    const [groupId, setGroupId] = useState(groups[0].id);
     const [openIndex, setOpenIndex] = useState<number | null>(null);
-    const group = FAQ_GROUPS.find((g) => g.id === groupId) ?? FAQ_GROUPS[0];
+    const group = groups.find((g) => g.id === groupId) ?? groups[0];
 
     const selectGroup = (id: string) => {
         setGroupId(id);
@@ -475,8 +516,8 @@ function Faqs() {
             <aside className="h-fit self-start rounded-xl border border-[#EBE6E1] bg-white px-3.5 pb-6 pt-6" aria-label="FAQ categories">
                 <p className="px-3 text-xs font-medium uppercase text-[#52617A]">Select FAQs type</p>
                 <ul className="mt-3 space-y-1">
-                    {FAQ_GROUPS.map((item) => {
-                        const active = item.id === groupId;
+                    {groups.map((item) => {
+                        const active = item.id === group.id;
                         return (
                             <li key={item.id}>
                                 <button
@@ -524,9 +565,14 @@ function Faqs() {
                                     {item.q}
                                 </button>
                                 {open && (
-                                    <p id={panelId} className="pb-5 pl-8 text-sm leading-relaxed text-[#52617A]">
-                                        {item.a}
-                                    </p>
+                                    <div id={panelId} className="pb-5 pl-8 text-sm leading-relaxed text-[#52617A]">
+                                        {item.a && <p className="whitespace-pre-line">{item.a}</p>}
+                                        {'url' in item && item.url && (
+                                            <a href={item.url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-[#E95312] hover:underline">
+                                                Read more <ExternalLink className="h-3 w-3" />
+                                            </a>
+                                        )}
+                                    </div>
                                 )}
                             </li>
                         );
@@ -574,23 +620,50 @@ function RatingField({ name }: { name: string }) {
 }
 
 function Feedback() {
-    const [done, setDone] = useState(false);
+    const submitFeedback = useSubmitSupportFeedback();
+    const [receipt, setReceipt] = useState<SupportReceipt | null>(null);
+    // Reused if the user retries after a failure; replaced after each successful submission.
+    const keyRef = useRef(newIdempotencyKey());
 
-    useEffect(() => {
-        if (!done) return;
-        const timer = setTimeout(() => setDone(false), 3000);
-        return () => clearTimeout(timer);
-    }, [done]);
-
-    const handleSubmit = (_values: FeedbackValues, { resetForm }: FormikHelpers<FeedbackValues>) => {
-        // Dummy only: no request is sent
-        resetForm();
-        setDone(true);
+    const handleSubmit = async (values: FeedbackValues, { resetForm }: FormikHelpers<FeedbackValues>) => {
+        const remark = values.remark.trim();
+        try {
+            const result = await submitFeedback.mutateAsync({
+                rating: values.rating,
+                ...(remark ? { remark } : {}),
+                idempotencyKey: keyRef.current,
+            });
+            keyRef.current = newIdempotencyKey();
+            resetForm();
+            setReceipt(result);
+        } catch {
+            // The axios interceptor shows the error toast; keep the values so the user can retry.
+        }
     };
 
     return (
         <Formik<FeedbackValues> initialValues={EMPTY_FEEDBACK} validationSchema={feedbackSchema} onSubmit={handleSubmit}>
             <Form noValidate>
+                {receipt && (
+                    <div className="mb-6 flex flex-wrap items-start justify-between gap-3 rounded-lg border border-[#D5EEDD] bg-[#F3FAF6] px-4 py-4" aria-live="polite">
+                        <div className="flex min-w-0 items-start gap-3">
+                            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#2E9A4F]" />
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold text-[#20232A]">Thanks for your feedback.</p>
+                                <p className="mt-1 text-xs text-[#52617A]">
+                                    Reference <span className="break-all font-mono font-medium text-[#20232A]">{receipt.reference}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <Link
+                            href={ticketHref(receipt.ticketId)}
+                            className="shrink-0 rounded-md border border-[#E6E3E0] bg-white px-3.5 py-2 text-xs font-medium text-[#20232A] transition hover:bg-slate-50"
+                        >
+                            View ticket
+                        </Link>
+                    </div>
+                )}
+
                 <p className="text-sm text-[#7A7F8A] sm:text-base">How would you rate your experience with QApp today?</p>
 
                 <RatingField name="rating" />
@@ -602,16 +675,14 @@ function Feedback() {
                     variant="dashboard"
                     placeholder="Enter Remark"
                     rows={4}
+                    maxLength={10_000}
                     className="mt-7"
                 />
 
                 <div className="mt-4 flex items-center justify-end gap-4">
-                    {done && (
-                        <p className="text-sm text-[#2E9A4F]" aria-live="polite">
-                            Thanks for your feedback.
-                        </p>
-                    )}
-                    <SubmitButton variant="primary">Submit</SubmitButton>
+                    <SubmitButton variant="primary" loadingLabel="Submitting…">
+                        Submit
+                    </SubmitButton>
                 </div>
             </Form>
         </Formik>
@@ -621,6 +692,8 @@ function Feedback() {
 /* ═══════════════════════════════════════════════════════════════ */
 export default function SupportPage() {
     const [tab, setTab] = useState<SupportTab>('help');
+    const options = useSupportOptions();
+    const content = options.data?.content ?? [];
 
     return (
         <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
@@ -665,8 +738,10 @@ export default function SupportPage() {
                     aria-labelledby={`support-tab-${tab}`}
                     className="mt-8 min-w-0"
                 >
-                    {tab === 'help' && <HelpCenter />}
-                    {tab === 'faqs' && <Faqs />}
+                    {tab === 'help' && (
+                        <HelpCenter enquiryTypes={options.data?.enquiryTypes ?? []} loadingTypes={options.isLoading} content={content} />
+                    )}
+                    {tab === 'faqs' && <Faqs entries={bySection(content, 'FAQ')} />}
                     {tab === 'feedback' && <Feedback />}
                 </section>
             </main>

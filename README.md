@@ -13,6 +13,8 @@ This README is for frontend developers joining the project. It covers how to run
 - [Folder structure](#folder-structure)
 - [Routing and authentication](#routing-and-authentication)
 - [Digital services](#digital-services)
+- [Banks](#banks)
+- [Support](#support)
 - [Endpoint structure](#endpoint-structure)
 - [Forms](#forms)
 - [Buttons](#buttons)
@@ -99,13 +101,14 @@ Only run one `next dev` per checkout. A second one in the same folder won't star
 │       ├── layout.tsx          # Sidebar + header shell
 │       ├── page.tsx            # Overview
 │       ├── analytics/  banking/  notifications/  profile/
-│       ├── rewards/  services/  support/  transactions/[id]/
+│       ├── rewards/  services/  support/  support/tickets/[ticketId]/  transactions/[id]/
 │
 ├── components/
 │   ├── forms/                  # ⭐ Shared Formik fields, buttons and styles (see "Forms")
 │   ├── ui/Skeleton.tsx         # ⭐ Shared loading skeletons (see "Loading states")
 │   ├── dashboard/              # Dashboard page bodies (ProfilePage, SupportPage, …) + sidebar, charts
 │   ├── services/               # Service checkout pieces (payment form, selectors, Paystack)
+│   ├── support/                # Support enquiry form, transaction support modal, display helpers
 │   ├── marketplace/            # Public site sections (Navbar, Hero, Footer, …)
 │   └── auth/                   # Auth UI pieces (brand panel, OTP input, step indicator, …)
 │
@@ -189,6 +192,27 @@ The banks page (`/banks`), the home "Banks" section and the dashboard banking pa
 - **Channels:** `channels` (e.g. `INTERNET_BANKING`) are shown as "Internet banking", and the `/banks` "Channels" filter is built from them.
 - **Website:** the API doesn't return a website URL yet. "Continue to bank" uses `BANK_WEBSITES` (keyed by `bankIdentifier`), or `DEFAULT_BANK_URL` when a bank isn't listed there. Replace this once the API sends a URL.
 - The home section shows the first 10 banks (`HOME_BANK_LIMIT`).
+
+## Support
+
+The dashboard support module uses the individual support API (`lib/api/support.ts`, hooks in `lib/queries/useSupport.ts`). All calls need the signed-in token.
+
+| Screen | What it does | Endpoint |
+| --- | --- | --- |
+| Help Center tab (`/dashboard/support`) | Enquiry type dropdown and published help content | `GET /api/individual/support/options` |
+| | Send an enquiry or complaint (`SupportEnquiryForm`) | `POST /api/individual/support/enquiries` |
+| | Recent Support History, paged; each row opens its ticket | `GET /api/individual/support/history?page&size` |
+| Feedback tab | 1–5 star rating and optional remark | `POST /api/individual/support/feedback` |
+| Ticket page (`/dashboard/support/tickets/[ticketId]`) | Conversation, details and activity timeline | `GET /api/v1/support/tickets/{ticketId}` |
+| | Reply (open tickets) | `POST /api/v1/support/tickets/{ticketId}/messages` |
+| | Reopen with a reason (`RESOLVED` / `CLOSED` tickets) | `POST /api/v1/support/tickets/{ticketId}/reopen` |
+| Transaction details ("Report an issue") | `TransactionSupportModal` raises a ticket for that transaction | `POST /api/individual/support/enquiries` |
+
+- **Published content:** `HELP` entries show as "Helpful articles", `FAQ` entries replace the built-in FAQ list, `CONTACT` entries replace the built-in Contact Us list, and `TERMS` / `PRIVACY` entries with a URL show as links. With no published content, the built-in FAQs and contacts are shown.
+- **Transaction support:** the modal starts with "Transaction issue" and today's date. It starts as a complaint when the transaction failed or is still pending. The enquiry endpoint has no transaction field, so the reference is added to the top of the remark (`Transaction reference: …`).
+- **Idempotency:** each send uses an `Idempotency-Key` (`newIdempotencyKey()`). A retry after a failure reuses the key, and a new key is made after each success.
+- **History paging:** the history endpoint returns no total, so "next page" is disabled when a page comes back short.
+- **Messages:** the spec has no example message yet. A message counts as the customer's when its `authorType` / `senderType` says customer, or its author id matches the ticket's `customerId`; otherwise it shows as "Hatiso support".
 
 ---
 
@@ -297,6 +321,7 @@ await updateProfile.mutateAsync({ firstName, lastName, displayName, bio });
 | `useDigitalServices.ts` | `useDigitalServiceCategories`, `useDigitalServiceCatalogues`, `useCreateDigitalServiceOrder`, `useCreatePaymentQuote`, `useCreatePayment`, `useVerifyPayment` |
 | `useNotifications.ts` | `useNotifications`, `useNotificationSettings`, `useUpdateNotificationSettings` |
 | `useOrders.ts` | `useDigitalServiceOrders` |
+| `useSupport.ts` | `useSupportOptions`, `useSupportHistory`, `useSupportTicket`, `useCreateSupportEnquiry`, `useSubmitSupportFeedback`, `useReplyToSupportTicket`, `useReopenSupportTicket` |
 
 The checkout hooks take `authenticated` (default `false`): pass `true` on the dashboard to use the signed-in endpoints, and leave it off for guest checkout.
 
