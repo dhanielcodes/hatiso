@@ -12,6 +12,7 @@ This README is for frontend developers joining the project. It covers how to run
 - [Getting started](#getting-started)
 - [Folder structure](#folder-structure)
 - [Routing and authentication](#routing-and-authentication)
+- [Unfinished sign-ups (verification resume)](#unfinished-sign-ups-verification-resume)
 - [Digital services](#digital-services)
 - [Banks](#banks)
 - [Support](#support)
@@ -92,7 +93,7 @@ Only run one `next dev` per checkout. A second one in the same folder won't star
 │   ├── layout.tsx              # Root layout
 │   ├── providers.tsx           # React Query client + <Toaster />
 │   ├── page.tsx                # Marketplace home
-│   ├── auth/                   # login, register, forgot-password, reset-password
+│   ├── auth/                   # login, register, verify, forgot-password, reset-password
 │   ├── services/               # Public service catalogue + [slug] checkout
 │   ├── categories/[slug]/      # Category listing
 │   ├── banks/                  # Banks directory
@@ -123,6 +124,7 @@ Only run one `next dev` per checkout. A second one in the same folder won't star
 │   ├── queries/                # ⭐ React Query hooks, one file per lib/api module (useAuth.ts ↔ auth.ts, …)
 │   ├── store/                  # Zustand stores (authStore, uiStore, marketplaceStore)
 │   ├── auth/session.ts         # Token/cookie persistence helpers
+│   ├── auth/verification.ts    # Unfinished sign-up context (verify/resume flow)
 │   ├── validation/             # Reusable Yup schemas (email, phone, password, amount, …)
 │   └── constants/              # Static data (categories)
 │
@@ -169,6 +171,21 @@ export default function DashboardAccountPage() {
 - **Every request** gets `Authorization: Bearer <token>` from the axios request interceptor.
 - **On a `401`**, the response interceptor clears the session, resets the auth store and redirects to the login page.
 - **Unknown URLs** show `app/not-found.tsx`: a "Page not found" page in the marketplace look (navbar, dark teal background, footer), returned with a 404 status. It also shows when a page calls `notFound()`. It has "Back to home", "Contact us" and quick links to airtime, data, electricity and banks (`SUGGESTIONS` in the file).
+
+---
+
+## Unfinished sign-ups (verification resume)
+
+Someone who started signing up but never verified their email or phone is sent back to the code screen. They are never asked to create a second account.
+
+- **`/auth/verify`** (`app/auth/verify/page.tsx`) is the Verify Contact screen. It reads the pending sign-up from `sessionStorage` (`hatiso_verification_context`: `userId`, `purpose`, `contact`, `codeSentAt`). It never stores a password or a code. Helpers are in `lib/auth/verification.ts`.
+  - It uses the same layout as sign-up (step indicator on step 3), and the same "Account Verification" screen. With a saved sign-up, it shows `components/auth/VerifyContactPanel.tsx`: a six-digit code for `VERIFY_EMAIL` or `VERIFY_PHONE`, and "Click to resend code" after a 60-second wait. The wait survives a reload (it counts from `codeSentAt`).
+  - Without one, it asks for the email or phone and calls `POST /api/public/users/user/resume-verification`. It only moves on when the response has `verificationRequired: true`. Otherwise it shows the same neutral message, so it never reveals whether an account exists.
+  - After a correct code the account is active: the context is cleared and the user goes to `/auth/login`.
+- **Login.** A correct password on an unverified account returns `409` with `data.error === 'verification_required'`, plus `userId` and `purpose`. The login page saves those and opens `/auth/verify`. This is not shown as a wrong-password error, and it gets no toast. Every other login error shows as before. The login page has no link to `/auth/verify`; users land there from login or sign-up.
+- **Sign-up, fresh.** Step 3 of `/auth/register` uses the same `VerifyContactPanel`, and the sign-up is also saved to `sessionStorage`, so `/auth/verify` can pick it up after a reload. After the code, the page signs in with the password from step 2 and shows the welcome modal. If that sign-in fails, it goes to `/auth/login` instead.
+- **Sign-up, repeated.** If registering fails because the email or phone is taken (HTTP `409`, or a message like "already exists"), the page calls resume-verification. If `verificationRequired` is true, it continues to step 3 for that sign-up. If not, it shows the registration error.
+- **Errors.** `ApiError` now carries `code` (the backend's `data.error`) and `data` (the raw `data` object). The axios interceptor never toasts `verification_required`, and it skips the toast for any request sent with `{ skipErrorToast: true }`. Register and resume-verification use that option because the page shows those errors itself.
 
 ---
 
@@ -317,7 +334,7 @@ await updateProfile.mutateAsync({ firstName, lastName, displayName, bio });
 | File | Hooks |
 | --- | --- |
 | `useBanks.ts` | `useBanks` (public `GET /banks?page=0&size=100`) |
-| `useAuth.ts` | `useCurrentUser`, `useUpdateProfile`, `useResetPassword`, `useForgotPassword`, `useRecoverPassword`, `useRegister`, `useVerifyUser`, `useResendVerification` |
+| `useAuth.ts` | `useCurrentUser`, `useUpdateProfile`, `useResetPassword`, `useForgotPassword`, `useRecoverPassword`, `useRegister`, `useResumeVerification`, `useVerifyUser`, `useResendVerification` |
 | `useDashboard.ts` | `useDashboard`, `useAnalytics`, `useAnalyticsCSV` |
 | `useDigitalServices.ts` | `useDigitalServiceCategories`, `useDigitalServiceCatalogues`, `useCreateDigitalServiceOrder`, `useCreatePaymentQuote`, `useCreatePayment`, `useVerifyPayment` |
 | `useNotifications.ts` | `useNotifications`, `useNotificationSettings`, `useUpdateNotificationSettings` |
@@ -550,10 +567,13 @@ The React Query defaults in `app/providers.tsx` are: retry once, no refetch on w
 
 ## Errors and notifications
 
-- **All failed requests reject with the same `ApiError` shape** (`{ message, statusCode, errors? }`, in `types/index.ts`). The axios response interceptor does this for:
+- **All failed requests reject with the same `ApiError` shape** (`{ message, statusCode, errors?, code?, data? }`, in `types/index.ts`). `code` is the backend's `data.error` (e.g. `verification_required`). The axios response interceptor does this for:
   - HTTP errors
   - responses with `status: false`, even when the HTTP status is 2xx
-- **The interceptor shows the error toast for you** (sonner, top-right), except on `401`, where it logs the user out instead.
+- **The interceptor shows the error toast for you** (sonner, top-right), except:
+  - on `401`, where it logs the user out instead;
+  - for `verification_required`, which the login page turns into a redirect;
+  - for requests sent with `{ skipErrorToast: true }` (pass it as the axios config), where the page shows the error itself.
   - Don't toast HTTP failures again in components.
   - Only toast errors your own code throws, such as `new Error(...)`. `ProfilePage` has a `notifyError` helper that does exactly this.
 - **Success toasts are up to the component**: `toast.success('Profile updated.')`.

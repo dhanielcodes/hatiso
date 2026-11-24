@@ -54,8 +54,10 @@ export interface ResendVerificationPayload {
   userId: string;
 }
 
+export type VerificationPurpose = 'VERIFY_EMAIL' | 'VERIFY_PHONE';
+
 export interface VerifyUserPayload {
-  purpose: 'VERIFY_EMAIL' | 'VERIFY_PHONE';
+  purpose: VerificationPurpose;
   userId: string;
   code: string;
 }
@@ -66,6 +68,13 @@ export interface MessageData {
 
 export interface RegisterResponseData extends MessageData {
   userId: string;
+  purpose?: VerificationPurpose;
+}
+
+export interface ResumeVerificationData extends MessageData {
+  userId?: string;
+  purpose?: VerificationPurpose;
+  verificationRequired: boolean;
 }
 
 export interface VerifyUserResponseData extends MessageData {
@@ -101,7 +110,16 @@ export function recoverPassword(payload: RecoverPasswordPayload) {
 
 /* ─── Registration (public) ────────────────────────────────────── */
 export function registerUser(payload: RegisterPayload) {
-  return apiPost<ApiResponse<RegisterResponseData>>('/api/public/users/register', payload);
+  // The sign-up page shows the error inline (or resumes verification), so no toast.
+  return apiPost<ApiResponse<RegisterResponseData>>('/api/public/users/register', payload, { skipErrorToast: true });
+}
+
+/**
+ * Finds an unfinished sign-up by email or phone and (re)sends its code.
+ * Redirect only when `verificationRequired` is true: the response never says whether the account exists.
+ */
+export function resumeVerification(identifier: string) {
+  return apiPost<ApiResponse<ResumeVerificationData>>('/api/public/users/user/resume-verification', { identifier }, { skipErrorToast: true });
 }
 
 export function resendVerification(payload: ResendVerificationPayload) {

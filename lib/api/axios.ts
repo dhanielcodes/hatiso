@@ -11,8 +11,20 @@ import { clearAuthSession } from '@/lib/auth/session';
 
 interface BackendErrorDetails {
   message?: string;
+  error?: string;
   validationErrors?: Record<string, string[]> | null;
+  [key: string]: unknown;
 }
+
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** Skip the error toast; the caller shows the error itself. */
+    skipErrorToast?: boolean;
+  }
+}
+
+/** Errors the UI handles as a redirect, not as a failure, so they never get a toast. */
+const SILENT_ERROR_CODES = new Set(['verification_required']);
 
 interface BackendErrorResponse {
   message?: string;
@@ -76,13 +88,16 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     // Some failures come back as HTTP 2xx with `status: false` in the envelope.
     // Reject them here so every endpoint fails the same way (and callers never need to check).
-    const body = response.data as { status?: unknown; data?: { message?: string }; message?: string } | undefined;
+    const body = response.data as { status?: unknown; code?: number; data?: BackendErrorDetails; message?: string } | undefined;
     if (body && typeof body === 'object' && body.status === false) {
       const formattedError: ApiError = {
         message: body.data?.message || body.message || 'The request could not be completed. Please try again.',
-        statusCode: response.status,
+        statusCode: typeof body.code === 'number' ? body.code : response.status,
+        code: typeof body.data?.error === 'string' ? body.data.error : undefined,
+        data: body.data,
       };
-      if (typeof window !== 'undefined') toast.error(formattedError.message);
+      const silent = response.config.skipErrorToast || (formattedError.code && SILENT_ERROR_CODES.has(formattedError.code));
+      if (typeof window !== 'undefined' && !silent) toast.error(formattedError.message);
       return Promise.reject(formattedError);
     }
     return response;
@@ -99,7 +114,10 @@ apiClient.interceptors.response.use(
         'An unexpected network error occurred. Please try again.',
       statusCode: status,
       errors: responseData?.data?.validationErrors || responseData?.errors,
+      code: typeof responseData?.data?.error === 'string' ? responseData.data.error : undefined,
+      data: responseData?.data,
     };
+    const silent = error.config?.skipErrorToast || (formattedError.code && SILENT_ERROR_CODES.has(formattedError.code));
 
     if (typeof window !== 'undefined') {
 
@@ -120,6 +138,8 @@ apiClient.interceptors.response.use(
         if (!currentPath.startsWith('/auth')) {
           window.location.href = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
         }
+      } else if (silent) {
+        // The caller handles this error itself.
       } else if (status === 403) {
         toast.error(formattedError.message);
 

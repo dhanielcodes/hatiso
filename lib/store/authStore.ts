@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { AuthState, User } from '@/types';
 import { getCurrentUser, loginUser } from '@/lib/api/auth';
 import { clearAuthSession, persistAuthSession, persistUserEmail } from '@/lib/auth/session';
+import { verificationContextFromError } from '@/lib/auth/verification';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string'
@@ -59,9 +60,11 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
         } catch (err: unknown) {
+          // An unverified account is not a wrong password: the login page redirects to /auth/verify instead.
+          const unverified = verificationContextFromError(err) !== null;
           set({
             isLoading: false,
-            error: getErrorMessage(err, 'Login failed. Please verify your credentials.'),
+            error: unverified ? null : getErrorMessage(err, 'Login failed. Please verify your credentials.'),
           });
           throw err;
         }

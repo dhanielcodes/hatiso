@@ -8,6 +8,7 @@ import {
   registerUser,
   resendVerification,
   resetPassword,
+  resumeVerification,
   updateProfile,
   verifyUser,
   type ProfileUpdatePayload,
@@ -65,6 +66,12 @@ export function useRecoverPassword() {
 export function useRegister() {
   return useMutation({
     mutationFn: (payload: RegisterPayload) => registerUser(payload).then((response) => response.data),
+  });
+}
+
+export function useResumeVerification() {
+  return useMutation({
+    mutationFn: (identifier: string) => resumeVerification(identifier).then((response) => response.data),
   });
 }
 

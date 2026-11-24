@@ -9,6 +9,7 @@ import { PasswordField, TextField, SubmitButton } from '@/components/forms';
 import { loginSchema, LoginFormValues } from '@/lib/validation/schemas';
 import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
 import XnettLogo from '@/components/auth/XnettLogo';
+import { saveVerificationContext, verificationContextFromError, VERIFY_PATH } from '@/lib/auth/verification';
 
 const initialValues: LoginFormValues = {
   emailOrPhone: '',
@@ -57,8 +58,14 @@ export default function LoginPage() {
                     password: values.password,
                   });
                   router.push('/dashboard');
-                } catch {
-                  // Error is set in store
+                } catch (err) {
+                  // Correct password, but the sign-up was never verified: finish it instead of showing an error.
+                  const pending = verificationContextFromError(err, values.emailOrPhone.trim());
+                  if (pending) {
+                    saveVerificationContext(pending);
+                    router.push(VERIFY_PATH);
+                  }
+                  // Any other error is set in the store and shown above the form.
                 }
               }}
             >

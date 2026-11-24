@@ -1,18 +1,27 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
+import { toast } from 'sonner';
 import { CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useRegister, useResendVerification, useVerifyUser } from '@/lib/queries/useAuth';
+import { useRegister, useResumeVerification } from '@/lib/queries/useAuth';
 import { TextField, PasswordField, PhoneField, CheckboxField, SubmitButton } from '@/components/forms';
 import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
 import StepIndicator from '@/components/auth/StepIndicator';
-import OtpInput from '@/components/auth/OtpInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
+import VerifyContactPanel from '@/components/auth/VerifyContactPanel';
+import {
+  clearVerificationContext,
+  formatNigerianPhone,
+  purposeFor,
+  saveVerificationContext,
+  type VerificationContext,
+} from '@/lib/auth/verification';
+import type { ApiError } from '@/types';
 
 /* ─── Sign-up method ───────────────────────────────────────────── */
 type SignupMethod = 'email' | 'phone';
@@ -103,18 +112,15 @@ function MethodTabs({
   );
 }
 
-/* ─── Format phone to E.164 (+234...) ───────────────────────────── */
-function formatNigerianPhone(phone: string): string | null {
-  const digits = (phone || '').replace(/\D/g, '');
-  if (!digits) return null;
+/* ─── Did registration fail because the email/phone is taken? ──── */
+function isAlreadyRegistered(error: unknown) {
+  if (typeof error !== 'object' || error === null) return false;
+  const { statusCode, message } = error as ApiError;
+  return statusCode === 409 || /already|exist|taken|in use|registered/i.test(message ?? '');
+}
 
-  const national = digits.startsWith('234')
-    ? digits.slice(3)
-    : digits.startsWith('0')
-      ? digits.slice(1)
-      : digits;
-
-  return national ? `+234${national}` : null;
+function errorMessage(error: unknown, fallback: string) {
+  return typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string' ? error.message : fallback;
 }
 
 /* ─── Saved step-1 data ─────────────────────────────────────────── */
@@ -138,112 +144,40 @@ export default function RegisterPage() {
     phone: '',
   });
   const [savedPassword, setSavedPassword] = useState('');
-  const [userId, setUserId] = useState('');
+  /** The sign-up waiting for its code (fresh, or resumed after a repeated sign-up). */
+  const [verification, setVerification] = useState<VerificationContext | null>(null);
 
   const [registerError, setRegisterError] = useState('');
   const register = useRegister();
-  const isRegistering = register.isPending;
-
-  const [otp, setOtp] = useState('');
-  const [otpError, setOtpError] = useState('');
-  const verify = useVerifyUser();
-  const isVerifying = verify.isPending;
-  const [resendCount, setResendCount] = useState(60);
-  const resend = useResendVerification();
-  const isResending = resend.isPending;
-  const [resendFeedback, setResendFeedback] = useState('');
+  const resume = useResumeVerification();
+  const isRegistering = register.isPending || resume.isPending;
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdName, setCreatedName] = useState('');
 
-  /* The contact the user signed up with, used for OTP copy and auto-login */
   const isEmailMethod = step1Data.method === 'email';
-  const formattedPhone = formatNigerianPhone(step1Data.phone);
-  const contactDisplay = isEmailMethod ? step1Data.email : formattedPhone || step1Data.phone;
 
-  /* Countdown timer for resend OTP */
-  const startCountdown = useCallback(() => {
-    setResendCount(60);
-    const id = setInterval(() => {
-      setResendCount((n) => {
-        if (n <= 1) {
-          clearInterval(id);
-          return 0;
-        }
-        return n - 1;
-      });
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  /* Cleanup on unmount */
-  useEffect(() => {
-    let timer: NodeJS.Timeout | null = null;
-    if (resendFeedback) {
-      timer = setTimeout(() => setResendFeedback(''), 5000);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [resendFeedback]);
-
-  /* ── Handle Resend Verification Code ── */
-  const handleResendOtp = async () => {
-    if (!userId || resendCount > 0 || isResending) return;
-    setOtpError('');
-    setResendFeedback('');
-    try {
-      const res = await resend.mutateAsync({ userId });
-      setResendFeedback(
-        res.message ||
-        `A new verification code has been sent to your ${isEmailMethod ? 'email' : 'phone'}.`
-      );
-      startCountdown();
-    } catch (err: unknown) {
-      const msg =
-        typeof err === 'object' && err !== null && 'message' in err && typeof err.message === 'string'
-          ? err.message
-          : 'Unable to resend verification code. Please try again later.';
-      setOtpError(msg);
-    }
+  /** Park the sign-up (so /auth/verify can pick it up after a reload) and show the code screen. */
+  const goToVerification = (context: VerificationContext) => {
+    saveVerificationContext(context);
+    setVerification(context);
+    setStep(3);
   };
 
-  /* ── Handle Verify Code ── */
-  const handleVerifyOtp = async () => {
-    if (otp.length < 6) {
-      setOtpError(
-        `Please enter the 6-digit code sent to your ${isEmailMethod ? 'email' : 'phone'}.`
-      );
+  /* ── Code accepted: the account is active ── */
+  const handleVerified = async (context: VerificationContext) => {
+    clearVerificationContext();
+    try {
+      // Sign straight in with the password from step 2. If it doesn't match (e.g. a repeated
+      // sign-up with a different password), the user signs in on the login page instead.
+      await login({ emailOrPhone: context.contact ?? '', password: savedPassword });
+    } catch {
+      toast.success('Your account is verified. Sign in to continue.');
+      router.replace('/auth/login');
       return;
     }
-    setOtpError('');
-    try {
-      await verify.mutateAsync({
-        // NOTE: confirm the exact purpose value your backend expects for phone sign-ups
-        purpose: isEmailMethod ? 'VERIFY_EMAIL' : 'VERIFY_PHONE',
-        userId,
-        code: otp.trim(),
-      });
-
-      // Verification succeeded! Auto-login the user into dashboard session
-      try {
-        await login({
-          emailOrPhone: isEmailMethod ? step1Data.email : formattedPhone || step1Data.phone,
-          password: savedPassword,
-        });
-      } catch (loginErr) {
-        console.warn('Auto-login note:', loginErr);
-      }
-
-      setCreatedName(step1Data.fullName.split(' ')[0] || 'there');
-      setShowSuccess(true);
-    } catch (err: unknown) {
-      const msg =
-        typeof err === 'object' && err !== null && 'message' in err && typeof err.message === 'string'
-          ? err.message
-          : 'Invalid verification code. Please check and try again.';
-      setOtpError(msg);
-    }
+    setCreatedName(step1Data.fullName.split(' ')[0] || 'there');
+    setShowSuccess(true);
   };
 
   return (
@@ -397,17 +331,17 @@ export default function RegisterPage() {
                   validationSchema={step2Schema}
                   onSubmit={async (values) => {
                     setRegisterError('');
+                    const parts = step1Data.fullName.trim().split(/\s+/);
+                    const firstName = parts[0] || 'User';
+                    const lastName = parts.slice(1).join(' ') || parts[0] || 'User';
+
+                    // Send only the contact the user signed up with
+                    const email = step1Data.method === 'email' ? step1Data.email.trim().toLowerCase() : '';
+                    const phone = step1Data.method === 'phone' ? formatNigerianPhone(step1Data.phone) : null;
+                    const contact = email ? { email } : { phone };
+                    const identifier = email || phone || step1Data.phone.trim();
+
                     try {
-                      const parts = step1Data.fullName.trim().split(/\s+/);
-                      const firstName = parts[0] || 'User';
-                      const lastName = parts.slice(1).join(' ') || parts[0] || 'User';
-
-                      // Send only the contact the user signed up with
-                      const contact =
-                        step1Data.method === 'email'
-                          ? { email: step1Data.email.trim().toLowerCase() }
-                          : { phone: formatNigerianPhone(step1Data.phone) };
-
                       const res = await register.mutateAsync({
                         type: 'INDIVIDUAL',
                         ...contact,
@@ -416,19 +350,28 @@ export default function RegisterPage() {
                         lastName,
                       });
 
-                      setUserId(res.userId);
                       setSavedPassword(values.password);
-                      setStep(3);
-                      startCountdown();
+                      goToVerification(
+                        { userId: res.userId, purpose: res.purpose ?? purposeFor(identifier), contact: identifier, codeSentAt: Date.now() }
+                      );
                     } catch (err: unknown) {
-                      const msg =
-                        typeof err === 'object' &&
-                          err !== null &&
-                          'message' in err &&
-                          typeof err.message === 'string'
-                          ? err.message
-                          : 'Registration failed. Please verify your details.';
-                      setRegisterError(msg);
+                      // Signing up again with an email/phone whose sign-up was never verified:
+                      // pick that sign-up back up instead of creating another account.
+                      if (isAlreadyRegistered(err)) {
+                        try {
+                          const pending = await resume.mutateAsync(identifier);
+                          if (pending.verificationRequired && pending.userId) {
+                            setSavedPassword(values.password);
+                            goToVerification(
+                              { userId: pending.userId, purpose: pending.purpose ?? purposeFor(identifier), contact: identifier, codeSentAt: Date.now() }
+                            );
+                            return;
+                          }
+                        } catch {
+                          // Fall back to the registration error below.
+                        }
+                      }
+                      setRegisterError(errorMessage(err, 'Registration failed. Please verify your details.'));
                     }
                   }}
                 >
@@ -486,102 +429,27 @@ export default function RegisterPage() {
               </>
             )}
 
-            {/* ══ STEP 3: OTP VERIFICATION ════════════════════════ */}
-            {step === 3 && (
+            {/* ══ STEP 3: VERIFY CONTACT ══════════════════════════ */}
+            {step === 3 && verification && (
               <>
-                <div className="mb-8 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#E95312]">
-                    STEP 3
-                  </p>
-                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
-                    Account Verification
-                  </h1>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500">
-                    An OTP (One-Time Password) has been sent{' '}
-                    {isEmailMethod ? 'to' : 'by SMS to'}{' '}
-                    <span className="font-semibold text-slate-800">{contactDisplay}</span>.
-                    <br />
-                    Enter OTP below to verify your account.
-                  </p>
-                </div>
-
-                {otpError && (
-                  <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-center text-xs text-rose-600">
-                    {otpError}
-                  </div>
-                )}
-
-                {resendFeedback && (
-                  <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-center text-xs text-emerald-700">
-                    {resendFeedback}
-                  </div>
-                )}
-
-                <OtpInput
-                  value={otp}
-                  onChange={(val) => {
-                    setOtp(val);
-                    setOtpError('');
-                  }}
-                  hasError={Boolean(otpError)}
+                <VerifyContactPanel
+                  eyebrow="STEP 3"
+                  context={verification}
+                  onVerified={() => handleVerified(verification)}
+                  footer={
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clearVerificationContext();
+                        setVerification(null);
+                        setStep(1);
+                      }}
+                      className="text-xs text-slate-500 underline hover:text-slate-800"
+                    >
+                      {isEmailMethod ? 'Change email or details' : 'Change phone number or details'}
+                    </button>
+                  }
                 />
-
-                <button
-                  type="button"
-                  disabled={isVerifying || otp.length < 6}
-                  onClick={handleVerifyOtp}
-                  className={`${BTN} mt-8`}
-                >
-                  {isVerifying ? (
-                    <span className="inline-flex items-center justify-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Verifying...
-                    </span>
-                  ) : (
-                    'Verify'
-                  )}
-                </button>
-
-                <p className="mt-5 text-center text-[13px] text-slate-500">
-                  {resendCount > 0 ? (
-                    <>
-                      Resend code in {resendCount}s?{' '}
-                      <button
-                        type="button"
-                        disabled
-                        className="font-semibold text-slate-400 cursor-not-allowed opacity-60"
-                      >
-                        Click to resend code
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      Didn&apos;t receive code?{' '}
-                      <button
-                        type="button"
-                        disabled={isResending}
-                        onClick={handleResendOtp}
-                        className="font-semibold text-[#E95312] hover:text-[#E84D15] disabled:opacity-50"
-                      >
-                        {isResending ? 'Sending...' : 'Click to resend code'}
-                      </button>
-                    </>
-                  )}
-                </p>
-
-                <div className="mt-6 text-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtp('');
-                      setOtpError('');
-                      setStep(1);
-                    }}
-                    className="text-xs text-slate-500 hover:text-slate-800 underline"
-                  >
-                    {isEmailMethod ? 'Change email or details' : 'Change phone number or details'}
-                  </button>
-                </div>
               </>
             )}
           </div>

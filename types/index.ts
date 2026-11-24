@@ -62,4 +62,8 @@ export interface ApiError {
   message: string;
   statusCode?: number;
   errors?: Record<string, string[]>;
+  /** Machine-readable error from the backend (`data.error`), e.g. `verification_required`. */
+  code?: string;
+  /** The raw `data` object of the failed response, for callers that need more than the message. */
+  data?: Record<string, unknown>;
 }
