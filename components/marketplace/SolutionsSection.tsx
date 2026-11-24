@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
 
 interface SlideData {
   badge: string;
@@ -12,63 +12,65 @@ interface SlideData {
   buttonHref: string;
   imageSrc: string;
   imageAlt: string;
-  imagePosition: 'left' | 'right';
+  imagePosition: "left" | "right";
   hasTransactionsGauge?: boolean;
 }
 
 const INDIVIDUAL_SLIDES: SlideData[] = [
   {
-    badge: 'For individuals',
-    title: ['Pay for what you', 'need, instantly'],
+    badge: "For individuals",
+    title: ["Pay for what you", "need, instantly"],
     description:
-      'Bills, airtime, transfers, and merchant payments settled in seconds, no extra apps required.',
-    buttonText: 'Create your account now',
-    buttonHref: '/auth/register',
-    imageSrc: '/images/market-place/pay-for-what-you-need.png',
-    imageAlt: 'Track spending across every service',
-    imagePosition: 'right',
+      "Bills, airtime, transfers, and merchant payments settled in seconds, no extra apps required.",
+    buttonText: "Create your account now",
+    buttonHref: "/auth/register",
+    imageSrc: "/images/market-place/pay-for-what-you-need.png",
+    imageAlt: "Track spending across every service",
+    imagePosition: "right",
     hasTransactionsGauge: true,
   },
   {
-    badge: 'For individuals',
-    title: ['Built around your', 'everyday life'],
+    badge: "For individuals",
+    title: ["Built around your", "everyday life"],
     description:
-      'From paying bills to managing your money, Hatiso brings the services you use most into one secure account.',
-    buttonText: 'Create your account now',
-    buttonHref: '/auth/register',
-    imageSrc: '/images/market-place/built-aroung-your-everyday-life.png',
-    imageAlt: 'Built around your everyday life payment flows',
-    imagePosition: 'left',
+      "From paying bills to managing your money, Hatiso brings the services you use most into one secure account.",
+    buttonText: "Create your account now",
+    buttonHref: "/auth/register",
+    imageSrc: "/images/market-place/built-aroung-your-everyday-life.png",
+    imageAlt: "Built around your everyday life payment flows",
+    imagePosition: "left",
   },
 ];
 
 const BUSINESS_SLIDES: SlideData[] = [
   {
-    badge: 'For businesses',
-    title: ['Put your services in front', 'of every Hatiso user'],
+    badge: "For businesses",
+    title: ["Put your services in front", "of every Hatiso user"],
     description:
-      'Onboard your business onto Hatiso and reach people already looking for services like yours.',
-    buttonText: 'Contact Us',
-    buttonHref: '/auth/register?role=business',
-    imageSrc: '/images/market-place/put-your-services-in-front.png',
-    imageAlt: 'Put your services in front of every Hatiso user',
-    imagePosition: 'right',
+      "Onboard your business onto Hatiso and reach people already looking for services like yours.",
+    buttonText: "Contact Us",
+    buttonHref: "/contact",
+    imageSrc: "/images/market-place/put-your-services-in-front.png",
+    imageAlt: "Put your services in front of every Hatiso user",
+    imagePosition: "right",
   },
   {
-    badge: 'For businesses',
-    title: ['Manage your transactions', 'in one dashboard'],
+    badge: "For businesses",
+    title: ["Manage your transactions", "in one dashboard"],
     description:
-      'See every payment, transfer, and order across services in a single, up-to-date view.',
-    buttonText: 'Contact Us',
-    buttonHref: '/auth/register?role=business',
-    imageSrc: '/images/market-place/manage-your-transactions.png',
-    imageAlt: 'Manage your transactions in one dashboard',
-    imagePosition: 'left',
+      "See every payment, transfer, and order across services in a single, up-to-date view.",
+    buttonText: "Contact Us",
+    buttonHref: "/contact",
+    imageSrc: "/images/market-place/manage-your-transactions.png",
+    imageAlt: "Manage your transactions in one dashboard",
+    imagePosition: "left",
   },
 ];
 
 export default function SolutionsSection() {
-  const [activeTab, setActiveTab] = useState<'personal' | 'business'>('personal');
+  const [activeTab, setActiveTab] = useState<"personal" | "business">(
+    "personal",
+  );
   const [individualSlide, setIndividualSlide] = useState(0);
   const [businessSlide, setBusinessSlide] = useState(0);
   const [isHoveredIndividual, setIsHoveredIndividual] = useState(false);
@@ -76,7 +78,7 @@ export default function SolutionsSection() {
 
   // Auto-animate Individual section slides every 4.2 seconds when Personal tab is active
   useEffect(() => {
-    if (activeTab !== 'personal' || isHoveredIndividual) return;
+    if (activeTab !== "personal" || isHoveredIndividual) return;
     const timer = setInterval(() => {
       setIndividualSlide((prev) => (prev + 1) % INDIVIDUAL_SLIDES.length);
     }, 4200);
@@ -85,16 +87,16 @@ export default function SolutionsSection() {
 
   // Auto-animate Business section slides every 4.2 seconds when Business tab is active
   useEffect(() => {
-    if (activeTab !== 'business' || isHoveredBusiness) return;
+    if (activeTab !== "business" || isHoveredBusiness) return;
     const timer = setInterval(() => {
       setBusinessSlide((prev) => (prev + 1) % BUSINESS_SLIDES.length);
     }, 4200);
     return () => clearInterval(timer);
   }, [activeTab, isHoveredBusiness]);
 
-  const handleTabChange = (tab: 'personal' | 'business') => {
+  const handleTabChange = (tab: "personal" | "business") => {
     setActiveTab(tab);
-    if (tab === 'personal') {
+    if (tab === "personal") {
       setIndividualSlide(0);
     } else {
       setBusinessSlide(0);
@@ -102,26 +104,31 @@ export default function SolutionsSection() {
   };
 
   return (
-    <section id='solutions' className="relative bg-white px-4 py-20 sm:px-8 lg:px-20 xl:px-28 text-slate-900 overflow-hidden lg:overflow-visible">
+    <section
+      id="solutions"
+      className="relative bg-white px-4 py-20 sm:px-8 lg:px-20 xl:px-28 text-slate-900 overflow-hidden lg:overflow-visible"
+    >
       <div className="mx-auto max-w-7xl">
         {/* Segmented Control Pill: [ Personal | Business ] */}
         <div className="mb-12 flex items-center justify-start">
           <div className="inline-flex items-center rounded-xl bg-[#F0F2F5] p-1 shadow-inner">
             <button
-              onClick={() => handleTabChange('personal')}
-              className={`rounded-lg px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${activeTab === 'personal'
-                ? 'bg-white text-[#102A36] shadow-sm'
-                : 'text-slate-500 hover:text-[#102A36]'
-                }`}
+              onClick={() => handleTabChange("personal")}
+              className={`rounded-lg px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                activeTab === "personal"
+                  ? "bg-white text-[#102A36] shadow-sm"
+                  : "text-slate-500 hover:text-[#102A36]"
+              }`}
             >
               Personal
             </button>
             <button
-              onClick={() => handleTabChange('business')}
-              className={`rounded-lg px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${activeTab === 'business'
-                ? 'bg-white text-[#102A36] shadow-sm'
-                : 'text-slate-500 hover:text-[#102A36]'
-                }`}
+              onClick={() => handleTabChange("business")}
+              className={`rounded-lg px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                activeTab === "business"
+                  ? "bg-white text-[#102A36] shadow-sm"
+                  : "text-slate-500 hover:text-[#102A36]"
+              }`}
             >
               Business
             </button>
@@ -133,7 +140,7 @@ export default function SolutionsSection() {
         {/* ============================================================== */}
 
         {/* 1. PERSONAL TAB CARD */}
-        {activeTab === 'personal' && (
+        {activeTab === "personal" && (
           <div
             id="personal-card"
             onMouseEnter={() => setIsHoveredIndividual(true)}
@@ -142,15 +149,16 @@ export default function SolutionsSection() {
           >
             {INDIVIDUAL_SLIDES.map((slide, index) => {
               const isActive = individualSlide === index;
-              const isLeftImage = slide.imagePosition === 'left';
+              const isLeftImage = slide.imagePosition === "left";
 
               return (
                 <div
                   key={index}
-                  className={`w-full grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-8 transition-all duration-700 ease-in-out ${isActive
-                    ? 'opacity-100 translate-x-0 relative z-10 pointer-events-auto'
-                    : 'opacity-0 absolute inset-0 p-8 sm:p-12 lg:px-14 lg:py-16 z-0 pointer-events-none'
-                    }`}
+                  className={`w-full grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-8 transition-all duration-700 ease-in-out ${
+                    isActive
+                      ? "opacity-100 translate-x-0 relative z-10 pointer-events-auto"
+                      : "opacity-0 absolute inset-0 p-8 sm:p-12 lg:px-14 lg:py-16 z-0 pointer-events-none"
+                  }`}
                 >
                   {/* SLIDE 1 (Built around your everyday life): Visual on Left, Text on Right (NO POP OUT, standard layout) */}
                   {isLeftImage ? (
@@ -234,7 +242,10 @@ export default function SolutionsSection() {
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                             </div>
                             <div className="relative mx-auto my-1.5 h-12 w-12">
-                              <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
+                              <svg
+                                className="h-full w-full -rotate-90"
+                                viewBox="0 0 36 36"
+                              >
                                 <circle
                                   cx="18"
                                   cy="18"
@@ -264,14 +275,18 @@ export default function SolutionsSection() {
                                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                                   Success
                                 </span>
-                                <span className="font-bold text-slate-800">92%</span>
+                                <span className="font-bold text-slate-800">
+                                  92%
+                                </span>
                               </div>
                               <div className="flex items-center justify-between">
                                 <span className="flex items-center gap-1">
                                   <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
                                   Failed
                                 </span>
-                                <span className="font-bold text-slate-800">8%</span>
+                                <span className="font-bold text-slate-800">
+                                  8%
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -302,10 +317,11 @@ export default function SolutionsSection() {
                   key={i}
                   onClick={() => setIndividualSlide(i)}
                   aria-label={`Go to individual slide ${i + 1}`}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${individualSlide === i
-                    ? 'w-6 bg-[#E95312]'
-                    : 'w-2 bg-slate-300 hover:bg-slate-400'
-                    }`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    individualSlide === i
+                      ? "w-6 bg-[#E95312]"
+                      : "w-2 bg-slate-300 hover:bg-slate-400"
+                  }`}
                 />
               ))}
             </div>
@@ -313,7 +329,7 @@ export default function SolutionsSection() {
         )}
 
         {/* 2. BUSINESS TAB CARD */}
-        {activeTab === 'business' && (
+        {activeTab === "business" && (
           <div
             id="business-card"
             onMouseEnter={() => setIsHoveredBusiness(true)}
@@ -322,15 +338,16 @@ export default function SolutionsSection() {
           >
             {BUSINESS_SLIDES.map((slide, index) => {
               const isActive = businessSlide === index;
-              const isLeftImage = slide.imagePosition === 'left';
+              const isLeftImage = slide.imagePosition === "left";
 
               return (
                 <div
                   key={index}
-                  className={`w-full grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-8 transition-all duration-700 ease-in-out ${isActive
-                    ? 'opacity-100 translate-x-0 relative z-10 pointer-events-auto'
-                    : 'opacity-0 absolute inset-0 p-8 sm:p-12 lg:px-14 lg:py-16 z-0 pointer-events-none'
-                    }`}
+                  className={`w-full grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-8 transition-all duration-700 ease-in-out ${
+                    isActive
+                      ? "opacity-100 translate-x-0 relative z-10 pointer-events-auto"
+                      : "opacity-0 absolute inset-0 p-8 sm:p-12 lg:px-14 lg:py-16 z-0 pointer-events-none"
+                  }`}
                 >
                   {/* SLIDE 1 (Manage your transactions): DRAMATIC POP OUT ON LEFT (extending top, bottom, and BEYOND LEFT EDGE) */}
                   {isLeftImage ? (
@@ -430,10 +447,11 @@ export default function SolutionsSection() {
                   key={i}
                   onClick={() => setBusinessSlide(i)}
                   aria-label={`Go to business slide ${i + 1}`}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${businessSlide === i
-                    ? 'w-6 bg-[#E95312]'
-                    : 'w-2 bg-slate-300 hover:bg-slate-400'
-                    }`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    businessSlide === i
+                      ? "w-6 bg-[#E95312]"
+                      : "w-2 bg-slate-300 hover:bg-slate-400"
+                  }`}
                 />
               ))}
             </div>

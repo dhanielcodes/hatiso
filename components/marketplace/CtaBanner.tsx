@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
+import React from "react";
+import Link from "next/link";
 
 interface CtaBannerProps {
   secondaryButtonText?: string;
@@ -9,8 +9,8 @@ interface CtaBannerProps {
 }
 
 export default function CtaBanner({
-  secondaryButtonText = 'Contact Us',
-  secondaryButtonHref = '/auth/register?role=business',
+  secondaryButtonText = "Contact Us",
+  secondaryButtonHref = "/contact",
 }: CtaBannerProps) {
   return (
     <section className="relative bg-[#1B3C4A] px-4 py-20 sm:px-8 lg:px-14">
@@ -60,7 +60,8 @@ export default function CtaBanner({
             </h2>
             <p className="text-sm sm:text-base text-slate-200/90 leading-relaxed font-normal max-w-xl mx-auto">
               Create an account instantly to get started or contact us
-              <br className="hidden sm:inline" /> to design a custom package for your business
+              <br className="hidden sm:inline" /> to design a custom package for
+              your business
             </p>
 
             <div className="pt-6 sm:pt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
@@ -83,4 +84,3 @@ export default function CtaBanner({
     </section>
   );
 }
-

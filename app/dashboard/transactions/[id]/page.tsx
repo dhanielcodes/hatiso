@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, type ComponentType, type ReactNode } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore, type ComponentType, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -114,8 +114,27 @@ const DATE_TIME_FORMAT = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Africa/Lagos', // fixed zone so server and client render the same text
 });
 
-/* ─── Dummy data (replace with your query result) ──────────────── */
-const TRANSACTION: Transaction = JSON.parse(localStorage.getItem('transactionDetails') || '{}');
+/* ─── Saved transaction ────────────────────────────────────────── */
+// The transactions list saves the clicked row to localStorage before opening this page.
+// localStorage only exists in the browser, so it is read with useSyncExternalStore:
+// the server render (and first hydration pass) gets `null` instead of crashing.
+const STORAGE_KEY = 'transactionDetails';
+const subscribeToStorage = (onChange: () => void) => {
+    window.addEventListener('storage', onChange);
+    return () => window.removeEventListener('storage', onChange);
+};
+const readSavedTransaction = () => localStorage.getItem(STORAGE_KEY);
+const readOnServer = () => undefined;
+
+function parseTransaction(raw: string | null): Transaction | null {
+    if (!raw) return null;
+    try {
+        const value = JSON.parse(raw) as Partial<Transaction>;
+        return value && typeof value.reference === 'string' && typeof value.fulfilmentStatus === 'string' ? (value as Transaction) : null;
+    } catch {
+        return null;
+    }
+}
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 function titleCase(value: string) {
@@ -399,9 +418,11 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
 export default function TransactionDetailsPage() {
     const router = useRouter();
 
-    // TODO: replace TRANSACTION with the result of your transaction query (e.g. looked up by the reference in the URL)
-    const transaction: Transaction = JSON.parse(localStorage.getItem('transactionDetails') || '{}');
-
+    // `undefined` while rendering on the server, then the saved string (or null) in the browser.
+    // TODO: replace with a transaction query (looked up by the reference in the URL) once the API has one.
+    const raw = useSyncExternalStore(subscribeToStorage, readSavedTransaction, readOnServer);
+    const transaction = useMemo(() => (raw === undefined ? null : parseTransaction(raw)), [raw]);
+    const loading = raw === undefined;
 
     return (
         <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
@@ -410,8 +431,8 @@ export default function TransactionDetailsPage() {
                 <button
                     type="button"
                     onClick={() => {
-                        localStorage.removeItem('transactionDetails')
-                        router.back()
+                        localStorage.removeItem(STORAGE_KEY);
+                        router.back();
                     }}
                     className="mb-4 flex items-center gap-1 text-sm text-[#52617A] transition hover:text-[#20232A]"
                 >
@@ -421,10 +442,32 @@ export default function TransactionDetailsPage() {
                 <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">
                     Every detail, <span className="text-[#FF6500]">in one place.</span>
                 </h2>
-                <p className="mt-2 break-all text-sm text-[#777486] sm:text-base">Reference: {transaction.reference}</p>
+                {transaction && <p className="mt-2 break-all text-sm text-[#777486] sm:text-base">Reference: {transaction.reference}</p>}
             </section>
 
-            <TransactionDetails transaction={transaction} />
+            {transaction ? (
+                <TransactionDetails transaction={transaction} />
+            ) : loading ? (
+                <div className="grid gap-5 px-5 py-6 sm:px-8 lg:grid-cols-[1.6fr_1fr] lg:py-7" aria-hidden="true">
+                    {[0, 1].map((col) => (
+                        <div key={col} className={`${CARD} h-64 animate-pulse bg-[#F6F4F2]`} />
+                    ))}
+                </div>
+            ) : (
+                <div className="px-5 py-10 sm:px-8">
+                    <div className={`${CARD} mx-auto max-w-md px-6 py-10 text-center`}>
+                        <Receipt className="mx-auto h-8 w-8 text-[#A3A8B1]" />
+                        <p className="mt-3 text-sm font-medium text-[#20232A]">We couldn&apos;t find this transaction.</p>
+                        <p className="mt-1 text-xs text-[#7A7F8A]">Open it again from your transactions list.</p>
+                        <Link
+                            href="/dashboard/transactions"
+                            className="mt-5 inline-block rounded-md border border-[#E6E3E0] bg-white px-3.5 py-2 text-xs font-medium text-[#20232A] transition hover:bg-slate-50"
+                        >
+                            Go to transactions
+                        </Link>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
