@@ -8,7 +8,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { PasswordField, TextField, SubmitButton } from '@/components/forms';
 import { loginSchema, LoginFormValues } from '@/lib/validation/schemas';
 import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
-import XnettLogo from '@/components/auth/XnettLogo';
+import HatisoLogo from '@/components/brand/HatisoLogo';
 import { saveVerificationContext, verificationContextFromError, VERIFY_PATH } from '@/lib/auth/verification';
 
 const initialValues: LoginFormValues = {
@@ -27,7 +27,7 @@ export default function LoginPage() {
 
       <main className="flex min-h-screen flex-col bg-[#F7F4EF] px-5 py-6 sm:px-10 lg:px-16 xl:px-24">
         <div className="mb-8 lg:hidden">
-          <XnettLogo />
+          <HatisoLogo variant="carbon" height={28} />
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center py-6">

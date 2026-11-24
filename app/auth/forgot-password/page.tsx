@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { Check, ArrowLeft } from 'lucide-react';
 import { PasswordField, SubmitButton, TextField } from '@/components/forms';
 import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
-import XnettLogo from '@/components/auth/XnettLogo';
+import HatisoLogo from '@/components/brand/HatisoLogo';
 import OtpInput from '@/components/auth/OtpInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { useForgotPassword, useRecoverPassword } from '@/lib/queries/useAuth';
@@ -120,7 +120,7 @@ export default function ForgotPasswordPage() {
       {/* ── Right Content Panel ── */}
       <main className="flex min-h-screen flex-col bg-[#F7F4EF] px-5 py-6 sm:px-10 lg:px-16 xl:px-24">
         <div className="mb-8 lg:hidden">
-          <XnettLogo />
+          <HatisoLogo variant="carbon" height={28} />
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center py-6">

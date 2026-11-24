@@ -111,6 +111,7 @@ Only run one `next dev` per checkout. A second one in the same folder won't star
 │   ├── services/               # Service checkout pieces (payment form, selectors, Paystack)
 │   ├── support/                # Support enquiry form, transaction support modal, display helpers
 │   ├── marketplace/            # Public site sections (Navbar, Hero, Footer, …)
+│   ├── brand/HatisoLogo.tsx    # The Hatiso wordmark (use this for every logo)
 │   └── auth/                   # Auth UI pieces (brand panel, OTP input, step indicator, …)
 │
 ├── lib/
@@ -131,6 +132,7 @@ Only run one `next dev` per checkout. A second one in the same folder won't star
 ├── types/index.ts              # Shared types: ApiResponse<T>, ApiError, User, AuthState, …
 ├── proxy.ts                    # Route protection (redirects for /dashboard and auth pages)
 ├── public/                     # Static assets
+│   └── brand/                  # Hatiso wordmark SVGs (carbon, graphite, cloud, white, black) + app icons
 └── next.config.ts              # Next.js config (remote image hosts, Turbopack, …)
 ```
 
@@ -583,6 +585,7 @@ The React Query defaults in `app/providers.tsx` are: retry once, no refetch on w
 ## Styling
 
 - **Tailwind CSS v4**, configured through `app/globals.css`, with utility classes in JSX.
+- **Font: Outfit** (the brand typeface from the Hatiso colour palette), loaded with `next/font/google` in `app/layout.tsx` as the `--font-outfit` variable, which `--font-sans` in `app/globals.css` points to. It's a variable font, so any weight from 100 to 900 works.
 - **Brand colours used throughout:**
   - Orange `#E95312` / `#EE7230` / `#FF6500`
   - Navy `#243B4A` / `#20232A`
@@ -601,6 +604,10 @@ The React Query defaults in `app/providers.tsx` are: retry once, no refetch on w
   - When a guest closes the payment receipt on a service page ("Make another payment" or "Return to marketplace"), `ServiceDetailPage` shows the "Ready to make it official?" popup before continuing.
   - Its buttons link to `/auth/login` and `/auth/register`. Closing it (✕, Escape or the backdrop) carries on where the guest was going.
   - `shouldInviteGuest(isAuthenticated)` skips logged-in users, and guests who already saw it this browser session (`sessionStorage` key `hasito_invite_shown`).
+- **Logo:** always use `components/brand/HatisoLogo.tsx`. Don't paste logo SVG into components.
+  - It renders `public/brand/hatiso-logo-<variant>.svg`. Pick the variant by background, following the brand palette: `cloud` (#F1F2F4) on dark (navbar, footer, dashboard sidebar, auth brand panel, hero card), and `carbon` (#12151A) on light (mobile auth header, invite popup). `graphite`, `white` and `black` are also there.
+  - Props: `height` (width follows the artwork), `href` (defaults to `/`; `null` for a plain image), `priority`.
+- **Favicons and app icons** use the "cloud on carbon" set: `app/favicon.ico`, `app/icon.svg` and `app/apple-icon.png` (Next.js file conventions), the matching copies in `public/` referenced by `metadata.icons`, and the Android icons in `public/brand/icons/` listed in `app/manifest.ts`. The other icon sets (carbon on white, cloud on graphite, graphite on cloud, white on black) aren't in the repo; swap the files from the brand pack to change them.
 - **Icons** come from `lucide-react`.
 - **Remote images** must come from a host listed under `images.remotePatterns` in `next.config.ts`.
 

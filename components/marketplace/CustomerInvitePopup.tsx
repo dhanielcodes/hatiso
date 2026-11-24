@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
-import XnettLogo from '@/components/auth/XnettLogo';
+import HatisoLogo from '@/components/brand/HatisoLogo';
 
 const SHOWN_KEY = 'hasito_invite_shown';
 
@@ -65,9 +65,8 @@ export default function CustomerInvitePopup({ onClose }: { onClose: () => void }
         </button>
 
         <div className="border-b border-[#ECEEF0] px-6 pb-5 pt-9 sm:px-8">
-          {/* The logo's wordmark is white by default; darken it for the white card */}
-          <div className="flex justify-center [&_path[fill='white']]:fill-[#1B3C4A] [&_path[fill='#F9FAFB']]:fill-[#1B3C4A]">
-            <XnettLogo href="/" className="pointer-events-none [&_svg]:h-11 [&_svg]:w-auto" />
+          <div className="flex justify-center">
+            <HatisoLogo variant="carbon" height={36} href={null} />
           </div>
           <h2 id="invite-title" className="mt-3 text-[19px] font-semibold leading-snug tracking-tight text-[#1C2733] sm:text-[21px]">
             Hey there! Ready to make it <span className="whitespace-nowrap">official? <span aria-hidden="true">👋</span></span>

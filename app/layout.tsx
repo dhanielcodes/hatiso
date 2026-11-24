@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Be_Vietnam_Pro } from "next/font/google";
+import { Outfit } from "next/font/google";
 import Providers from "./providers";
 import "./globals.css";
 
-const beVietnamPro = Be_Vietnam_Pro({
-  variable: "--font-be-vietnam-pro",
+// Brand typeface (from the Hatiso colour palette). Variable font, so every weight from 100 to 900 is available.
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
@@ -27,9 +27,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${beVietnamPro.variable} h-full antialiased`}
+      className={`${outfit.variable} h-full antialiased`}
     >
-      <body className={`${beVietnamPro.className} min-h-full flex flex-col font-sans`}>
+      <body className={`${outfit.className} min-h-full flex flex-col font-sans`}>
         <Providers>{children}</Providers>
       </body>
     </html>

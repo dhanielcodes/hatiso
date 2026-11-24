@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Dices, HandCoins, MonitorPlay, Vibrate } from 'lucide-react';
-import XnettLogo from './XnettLogo';
+import HatisoLogo from '@/components/brand/HatisoLogo';
 
 /**
  * Left-hand brand panel shared by login, register and forgot-password (desktop only).
@@ -79,7 +79,7 @@ export default function AuthBrandPanel() {
 
   return (
     <aside className="relative hidden flex-col overflow-hidden bg-[#1B3C4A] px-10 pb-6 pt-8 text-white lg:sticky lg:top-0 lg:flex lg:h-screen xl:px-14">
-      <XnettLogo />
+      <HatisoLogo variant="cloud" height={30} />
 
       <div className="mt-[clamp(1.5rem,5vh,3.5rem)] max-w-[540px]">
         <h2 className="text-[clamp(2rem,3.1vw,2.9rem)] font-semibold leading-[1.15] tracking-tight text-[#E8ECEF]">

@@ -18,9 +18,8 @@ import {
   LogOut,
   X,
 } from 'lucide-react';
-import XnettLogo from '@/components/auth/XnettLogo';
 import { useAuthStore } from '@/lib/store/authStore';
-import XnettLogoDashboard from '../auth/XnettLogoDashboard';
+import HatisoLogo from '@/components/brand/HatisoLogo';
 
 /* ── nav structure ─────────────────────────────────────────────── */
 interface NavItem {
@@ -191,7 +190,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
       >
         {/* ── Logo ── */}
         <div className="flex items-start justify-start px-5 pt-7 pb-5">
-          <XnettLogoDashboard />
+          <HatisoLogo variant="cloud" height={28} href="/dashboard" />
           {/* Close button (mobile only) */}
           {onClose && (
             <button
