@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./theme.css";
 
 @theme inline {
   --font-sans: var(--font-outfit);
@@ -6,16 +7,38 @@
 }
 
 :root {
-  --brand-bg: #1B3C4A;
-  --brand-bg-dark: #0E2028;
-  --brand-bg-card: #183541;
-  --brand-orange: #E95312;
-  --brand-orange-hover: #E84D15;
-  --brand-cyan: #22D3EE;
+  /* Follow the active theme (app/theme.css). */
+  --brand-bg: var(--color-ink-662);
+  --brand-bg-dark: var(--color-ink-755);
+  --brand-bg-card: var(--color-ink-674);
+  --brand-orange: var(--color-brand-361);
+  --brand-orange-hover: var(--color-brand-370);
+  --brand-cyan: var(--color-info-203);
   --text-main: #FFFFFF;
   --text-muted: #94A3B8;
 }
 
+
+/*
+ * Hatiso Monochrome also re-points the Tailwind palettes the screens use, so slate greys come from the
+ * brand's supporting greys and the few orange/cyan accents turn monochrome. Generated tokens are in theme.css.
+ */
+[data-theme="hatiso"] {
+  --color-slate-50: #F1F2F4;
+  --color-slate-100: #F1F2F4;
+  --color-slate-200: #D3D4D5;
+  --color-slate-300: #C9CACB;
+  --color-slate-400: #919397;
+  --color-slate-500: #79797A;
+  --color-slate-600: #616366;
+  --color-slate-700: #484B52;
+  --color-slate-800: #23272F;
+  --color-slate-900: #12151A;
+  --color-orange-400: #B8BCC2;
+  --color-cyan-300: #B8BCC2;
+  --color-cyan-400: #B8BCC2;
+  --color-cyan-500: #B8BCC2;
+}
 
 body {
   background-color: var(--brand-bg);
@@ -33,7 +56,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0E2028;
+  background: var(--brand-bg-dark);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -42,7 +65,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #E95312;
+  background: var(--brand-orange);
 }
 
 /* Hide scrollbar utility across all modern browsers */
@@ -110,5 +133,5 @@ body {
 .hero-glow-bg {
   background: radial-gradient(circle at 75% 20%, rgba(34, 211, 238, 0.06) 0%, transparent 50%),
     radial-gradient(circle at 20% 80%, rgba(255, 90, 31, 0.05) 0%, transparent 45%),
-    #1B3C4A;
+    var(--brand-bg);
 }

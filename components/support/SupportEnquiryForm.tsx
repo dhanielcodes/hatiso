@@ -31,7 +31,7 @@ function RequestTypeField({ name }: { name: string }) {
   const { field, setValue } = useFormField<RequestType>(name);
   return (
     <div>
-      <p id={`${name}-label`} className="mb-2 text-sm font-medium text-[#20232A]">
+      <p id={`${name}-label`} className="mb-2 text-sm font-medium text-tone-744">
         Request type
       </p>
       <div role="radiogroup" aria-labelledby={`${name}-label`} className="grid grid-cols-2 gap-3">
@@ -44,10 +44,10 @@ function RequestTypeField({ name }: { name: string }) {
               role="radio"
               aria-checked={active}
               onClick={() => setValue(option.value)}
-              className={`rounded-lg border px-3.5 py-2.5 text-left transition ${active ? 'border-[#243B4A] bg-[#243B4A] text-white' : 'border-[#E6E3E0] bg-white text-[#20232A] hover:bg-slate-50'}`}
+              className={`rounded-lg border px-3.5 py-2.5 text-left transition ${active ? 'border-ink-660 bg-ink-660 text-white' : 'border-tone-98 bg-surface text-tone-744 hover:bg-slate-50'}`}
             >
               <span className="block text-sm font-medium">{option.label}</span>
-              <span className={`block text-xs ${active ? 'text-white/70' : 'text-[#7A7F8A]'}`}>{option.hint}</span>
+              <span className={`block text-xs ${active ? 'text-white/70' : 'text-tone-405'}`}>{option.hint}</span>
             </button>
           );
         })}
@@ -124,17 +124,17 @@ export default function SupportEnquiryForm({
   return (
     <div>
       {receipt && (
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-3 rounded-lg border border-[#D5EEDD] bg-[#F3FAF6] px-4 py-4" aria-live="polite">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-3 rounded-lg border border-tone-90 bg-tone-21 px-4 py-4" aria-live="polite">
           <div className="flex min-w-0 items-start gap-3">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#2E9A4F]" />
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success-392" />
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#20232A]">We&apos;ve received your request</p>
-              <p className="mt-1 text-xs text-[#52617A]">
-                Your tracking reference is <span className="break-all font-mono font-medium text-[#20232A]">{receipt.reference}</span>
+              <p className="text-sm font-semibold text-tone-744">We&apos;ve received your request</p>
+              <p className="mt-1 text-xs text-ink-510">
+                Your tracking reference is <span className="break-all font-mono font-medium text-tone-744">{receipt.reference}</span>
               </p>
             </div>
           </div>
-          <Link href={ticketHref(receipt.ticketId)} className="shrink-0 rounded-md border border-[#E6E3E0] bg-white px-3.5 py-2 text-xs font-medium text-[#20232A] transition hover:bg-slate-50">
+          <Link href={ticketHref(receipt.ticketId)} className="shrink-0 rounded-md border border-tone-98 bg-surface px-3.5 py-2 text-xs font-medium text-tone-744 transition hover:bg-slate-50">
             View ticket
           </Link>
         </div>
@@ -143,8 +143,8 @@ export default function SupportEnquiryForm({
       <Formik<EnquiryValues> initialValues={initialValues} validationSchema={enquirySchema} onSubmit={handleSubmit} enableReinitialize>
         <Form noValidate>
           {transactionReference && (
-            <div className="mb-5 flex items-center gap-2 rounded-lg bg-[#EEF4F6] px-3.5 py-2.5 text-xs text-[#243B4A]">
-              <Link2 className="h-4 w-4 shrink-0 text-[#2A7F86]" />
+            <div className="mb-5 flex items-center gap-2 rounded-lg bg-tone-48 px-3.5 py-2.5 text-xs text-ink-660">
+              <Link2 className="h-4 w-4 shrink-0 text-info-450" />
               <span className="min-w-0">
                 Linked to transaction <span className="break-all font-mono font-medium">{transactionReference}</span>
               </span>

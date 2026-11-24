@@ -22,10 +22,10 @@ export default function LoginPage() {
   const { login, isLoading, error, clearError } = useAuthStore();
 
   return (
-    <div className="grid min-h-screen bg-[#F7F4EF] lg:grid-cols-2">
+    <div className="grid min-h-screen bg-tone-35 lg:grid-cols-2">
       <AuthBrandPanel />
 
-      <main className="flex min-h-screen flex-col bg-[#F7F4EF] px-5 py-6 sm:px-10 lg:px-16 xl:px-24">
+      <main className="flex min-h-screen flex-col bg-tone-35 px-5 py-6 sm:px-10 lg:px-16 xl:px-24">
         <div className="mb-8 lg:hidden">
           <HatisoLogo variant="carbon" height={28} />
         </div>
@@ -33,7 +33,7 @@ export default function LoginPage() {
         <div className="flex flex-1 flex-col items-center justify-center py-6">
           <div className="w-full max-w-[420px]">
             <div className="mb-7 text-center">
-              <h1 className="text-[1.75rem] font-bold tracking-tight text-[#111111] sm:text-[2rem]">
+              <h1 className="text-[1.75rem] font-bold tracking-tight text-tone-822 sm:text-[2rem]">
                 Welcome back.
               </h1>
               <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-relaxed text-slate-500">
@@ -99,7 +99,7 @@ export default function LoginPage() {
                     <div className="flex justify-end">
                       <Link
                         href="/auth/forgot-password"
-                        className="text-[13px] font-medium text-[#E95312] transition-colors hover:text-[#E84D15]"
+                        className="text-[13px] font-medium text-brand-361 transition-colors hover:text-brand-370"
                       >
                         Forgot Password
                       </Link>
@@ -108,7 +108,7 @@ export default function LoginPage() {
 
                   <SubmitButton
                     disabled={isLoading}
-                    className="w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50"
+                    className="w-full rounded-xl bg-brand-305 py-3.5 text-sm font-semibold text-on-brand hover:bg-brand-249 active:scale-[0.99] disabled:opacity-50"
                     loadingLabel={
                       <span className="inline-flex items-center justify-center gap-2">
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -126,7 +126,7 @@ export default function LoginPage() {
               Don&apos;t have an account with Hatiso?{' '}
               <Link
                 href="/auth/register"
-                className="font-semibold text-[#E95312] transition-colors hover:text-[#E84D15]"
+                className="font-semibold text-brand-361 transition-colors hover:text-brand-370"
               >
                 Create a free account
               </Link>

@@ -55,7 +55,7 @@ export function SkeletonRepeat({ count, children }: { count: number; children: (
 /* ─── Composed skeletons ───────────────────────────────────────── */
 
 /** Stat / metric card: label, big value, change line. */
-export function MetricCardSkeleton({ className = 'rounded-xl border border-[#E6E3E0] bg-white px-5 py-6' }: { className?: string }) {
+export function MetricCardSkeleton({ className = 'rounded-xl border border-tone-98 bg-surface px-5 py-6' }: { className?: string }) {
   return (
     <SkeletonGroup className={className} label="Loading metric">
       <Skeleton className="h-4 w-28" />
@@ -138,11 +138,11 @@ export function ListSkeleton({
   label?: string;
 }) {
   return (
-    <SkeletonGroup className={card ? `space-y-4 ${className}` : `divide-y divide-[#E8E5E2] ${className}`} label={label}>
+    <SkeletonGroup className={card ? `space-y-4 ${className}` : `divide-y divide-tone-92 ${className}`} label={label}>
       {Array.from({ length: rows }, (_, i) => (
         <div
           key={i}
-          className={`flex items-center gap-3 ${card ? 'rounded-xl border border-[#F4EFEB] bg-white px-6 py-5' : 'py-4'}`}
+          className={`flex items-center gap-3 ${card ? 'rounded-xl border border-tone-62 bg-surface px-6 py-5' : 'py-4'}`}
         >
           {avatar && <Skeleton className="h-12 w-12 shrink-0 rounded-full" />}
           <div className="min-w-0 flex-1 space-y-2">
@@ -178,7 +178,7 @@ export function TableRowsSkeleton({ rows = 8, columns }: { rows?: number; column
   return (
     <>
       {Array.from({ length: rows }, (_, r) => (
-        <tr key={r} className="border-b border-[#EEF0F2]" aria-hidden="true">
+        <tr key={r} className="border-b border-tone-63" aria-hidden="true">
           {Array.from({ length: columns }, (_, c) => (
             <td key={c} className="px-6 py-4">
               <Skeleton className={`h-4 ${c === 0 ? 'w-28' : 'w-20'}`} />

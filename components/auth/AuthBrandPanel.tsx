@@ -49,7 +49,7 @@ function FloatingIcon({ children, className }: { children: React.ReactNode; clas
   return (
     <div
       aria-hidden="true"
-      className={`absolute z-10 flex h-12 w-12 items-center justify-center rounded-full bg-[#D9DDE0]/90 text-[#C8561B] shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-sm xl:h-[52px] xl:w-[52px] ${className}`}
+      className={`absolute z-10 flex h-12 w-12 items-center justify-center rounded-full bg-tone-105/90 text-brand-409 shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-sm xl:h-[52px] xl:w-[52px] ${className}`}
     >
       {children}
     </div>
@@ -78,12 +78,12 @@ export default function AuthBrandPanel() {
   }, [active, hidden]);
 
   return (
-    <aside className="relative hidden flex-col overflow-hidden bg-[#1B3C4A] px-10 pb-6 pt-8 text-white lg:sticky lg:top-0 lg:flex lg:h-screen xl:px-14">
+    <aside className="relative hidden flex-col overflow-hidden bg-ink-662 px-10 pb-6 pt-8 text-white lg:sticky lg:top-0 lg:flex lg:h-screen xl:px-14">
       <HatisoLogo variant="cloud" height={30} />
 
       <div className="mt-[clamp(1.5rem,5vh,3.5rem)] max-w-[540px]">
-        <h2 className="text-[clamp(2rem,3.1vw,2.9rem)] font-semibold leading-[1.15] tracking-tight text-[#E8ECEF]">
-          Start managing your financial life <span className="text-[#E8692B]">in one place.</span>
+        <h2 className="text-[clamp(2rem,3.1vw,2.9rem)] font-semibold leading-[1.15] tracking-tight text-tone-77">
+          Start managing your financial life <span className="text-brand-334">in one place.</span>
         </h2>
         <p className="mt-4 max-w-[470px] text-[15px] leading-relaxed text-white/75">
           Join Hatiso to explore trusted services and businesses, connect with your bank and enjoy an experience built
@@ -95,7 +95,7 @@ export default function AuthBrandPanel() {
       <div className="flex min-h-0 flex-1 items-center justify-center py-[clamp(1.25rem,4vh,3rem)]">
         <div className="relative aspect-[19/20] h-full max-h-[440px] max-w-full">
           <div
-            className="relative h-full w-full touch-pan-y select-none overflow-hidden bg-[#2A4B59]"
+            className="relative h-full w-full touch-pan-y select-none overflow-hidden bg-ink-606"
             style={{ clipPath: SQUIRCLE }}
             onPointerDown={(e) => {
               swipeStart.current = e.clientX;
@@ -155,7 +155,7 @@ export default function AuthBrandPanel() {
           >
             <span
               className={`block h-1 rounded-full transition-all duration-300 ${
-                i === active ? 'w-6 bg-white' : 'w-3 bg-[#5E7F8D] hover:bg-[#7E9DAA]'
+                i === active ? 'w-6 bg-surface' : 'w-3 bg-info-423 hover:bg-info-323'
               }`}
             />
           </button>

@@ -102,8 +102,8 @@ export default function OtpInput({
           className={`h-12 w-10 rounded-xl sm:h-14 sm:w-12 border-2 text-center text-xl font-bold text-slate-900 transition-all focus:outline-none ${hasError
               ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
               : filled[idx]
-                ? 'border-[#E95312] bg-[#FEF0E6] focus:border-[#E95312] focus:ring-2 focus:ring-[#E95312]/20'
-                : 'border-[#E8E4DE] bg-white focus:border-[#E95312] focus:ring-2 focus:ring-[#E95312]/20'
+                ? 'border-brand-361 bg-tone-49 focus:border-brand-361 focus:ring-2 focus:ring-brand-361/20'
+                : 'border-tone-95 bg-surface focus:border-brand-361 focus:ring-2 focus:ring-brand-361/20'
             }`}
         />
       ))}

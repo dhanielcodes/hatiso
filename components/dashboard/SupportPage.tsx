@@ -214,10 +214,10 @@ function ContactModal({ open, onClose, contacts }: { open: boolean; onClose: () 
                 aria-modal="true"
                 aria-labelledby="contact-title"
                 onClick={(event) => event.stopPropagation()}
-                className="w-full max-w-[523px] rounded-2xl bg-white shadow-xl"
+                className="w-full max-w-[523px] rounded-2xl bg-surface shadow-xl"
             >
-                <div className="flex items-center justify-between border-b border-[#EEEAE6] px-6 py-5">
-                    <h2 id="contact-title" className="text-xl font-semibold text-[#20232A]">
+                <div className="flex items-center justify-between border-b border-tone-78 px-6 py-5">
+                    <h2 id="contact-title" className="text-xl font-semibold text-tone-744">
                         Contact Us
                     </h2>
                     <button
@@ -225,7 +225,7 @@ function ContactModal({ open, onClose, contacts }: { open: boolean; onClose: () 
                         type="button"
                         onClick={onClose}
                         aria-label="Close"
-                        className="rounded-md p-1 text-[#243B4A] transition hover:bg-slate-100"
+                        className="rounded-md p-1 text-ink-660 transition hover:bg-slate-100"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -235,13 +235,13 @@ function ContactModal({ open, onClose, contacts }: { open: boolean; onClose: () 
                         const Icon = item.icon;
                         const external = item.href.startsWith('http');
                         return (
-                            <li key={item.id} className={index > 0 ? 'border-t border-[#F0EDEA]' : ''}>
+                            <li key={item.id} className={index > 0 ? 'border-t border-tone-70' : ''}>
                                 <a
                                     href={item.href}
                                     {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-                                    className="flex items-center gap-3 py-4 text-sm text-[#3B4150] transition hover:text-[#E95312]"
+                                    className="flex items-center gap-3 py-4 text-sm text-tone-624 transition hover:text-brand-361"
                                 >
-                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EEF0F2] text-[#243B4A]">
+                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-tone-63 text-ink-660">
                                         <Icon className="h-4 w-4" />
                                     </span>
                                     {item.label}
@@ -266,11 +266,11 @@ function HistorySkeleton({ rows }: { rows: number }) {
     return (
         <ul className="mt-6" aria-hidden="true">
             {Array.from({ length: rows }, (_, index) => (
-                <li key={index} className={`grid grid-cols-2 gap-4 py-4 md:grid-cols-[1.4fr_1fr_1fr_1fr] ${index > 0 ? 'border-t border-[#EEEAE6]' : ''}`}>
+                <li key={index} className={`grid grid-cols-2 gap-4 py-4 md:grid-cols-[1.4fr_1fr_1fr_1fr] ${index > 0 ? 'border-t border-tone-78' : ''}`}>
                     {Array.from({ length: 4 }, (_, cell) => (
                         <div key={cell}>
-                            <span className="block h-3 w-16 animate-pulse rounded bg-[#EEF0F2]" />
-                            <span className="mt-3 block h-4 w-24 animate-pulse rounded bg-[#EEF0F2]" />
+                            <span className="block h-3 w-16 animate-pulse rounded bg-tone-63" />
+                            <span className="mt-3 block h-4 w-24 animate-pulse rounded bg-tone-63" />
                         </div>
                     ))}
                 </li>
@@ -299,37 +299,37 @@ function HelpCenter({ enquiryTypes, loadingTypes, content }: HelpCenterProps) {
     return (
         <div>
             {/* Service banner */}
-            <div className="flex items-center gap-3 rounded-lg bg-[#EEF4F6] px-4 py-4 text-sm text-[#243B4A]">
-                <Headphones className="h-5 w-5 shrink-0 text-[#2A7F86]" />
+            <div className="flex items-center gap-3 rounded-lg bg-tone-48 px-4 py-4 text-sm text-ink-660">
+                <Headphones className="h-5 w-5 shrink-0 text-info-450" />
                 <p>
                     <span className="font-semibold">Customer Service Center.</span>{' '}
-                    <span className="text-[#52617A]">24 hours service for you.</span>
+                    <span className="text-ink-510">24 hours service for you.</span>
                 </p>
             </div>
 
             {/* Published help entries */}
             {helpEntries.length > 0 && (
                 <section className="mt-6" aria-labelledby="help-articles-title">
-                    <h3 id="help-articles-title" className="text-sm font-semibold text-[#20232A]">
+                    <h3 id="help-articles-title" className="text-sm font-semibold text-tone-744">
                         Helpful articles
                     </h3>
                     <ul className="mt-3 grid gap-3 md:grid-cols-2">
                         {helpEntries.map((entry, index) => {
                             const body = (
                                 <>
-                                    <span className="flex items-center gap-2 text-sm font-medium text-[#20232A]">
-                                        <FileText className="h-4 w-4 shrink-0 text-[#E95312]" />
+                                    <span className="flex items-center gap-2 text-sm font-medium text-tone-744">
+                                        <FileText className="h-4 w-4 shrink-0 text-brand-361" />
                                         {entry.title}
-                                        {entry.url && <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-[#7A7F8A]" />}
+                                        {entry.url && <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-tone-405" />}
                                     </span>
-                                    {entry.body && <span className="mt-1.5 line-clamp-3 block text-xs leading-relaxed text-[#52617A]">{entry.body}</span>}
+                                    {entry.body && <span className="mt-1.5 line-clamp-3 block text-xs leading-relaxed text-ink-510">{entry.body}</span>}
                                 </>
                             );
-                            const cls = 'block h-full rounded-lg border border-[#EBE6E1] bg-white px-4 py-3.5';
+                            const cls = 'block h-full rounded-lg border border-tone-88 bg-surface px-4 py-3.5';
                             return (
                                 <li key={`${entry.title}-${index}`}>
                                     {entry.url ? (
-                                        <a href={entry.url} target="_blank" rel="noreferrer" className={`${cls} transition hover:border-[#F6D9C8] hover:bg-[#FFF9F6]`}>
+                                        <a href={entry.url} target="_blank" rel="noreferrer" className={`${cls} transition hover:border-brand-95 hover:bg-tone-15`}>
                                             {body}
                                         </a>
                                     ) : (
@@ -342,7 +342,7 @@ function HelpCenter({ enquiryTypes, loadingTypes, content }: HelpCenterProps) {
                 </section>
             )}
 
-            <p className="mt-8 text-sm text-[#7A7F8A] sm:text-base">Hi there! 👋 Need a hand with anything today?</p>
+            <p className="mt-8 text-sm text-tone-405 sm:text-base">Hi there! 👋 Need a hand with anything today?</p>
 
             {/* Enquiry form */}
             <div className="mt-6">
@@ -350,27 +350,27 @@ function HelpCenter({ enquiryTypes, loadingTypes, content }: HelpCenterProps) {
             </div>
 
             {/* Recent Support History */}
-            <section className="mt-8 rounded-xl border border-[#EBE6E1] bg-white px-5 py-6 sm:px-6" aria-labelledby="history-title">
-                <h3 id="history-title" className="text-base font-semibold text-[#20232A]">
+            <section className="mt-8 rounded-xl border border-tone-88 bg-surface px-5 py-6 sm:px-6" aria-labelledby="history-title">
+                <h3 id="history-title" className="text-base font-semibold text-tone-744">
                     Recent Support History
                 </h3>
-                <p className="mt-2 text-xs text-[#52617A]">Select a request to see replies and its progress.</p>
+                <p className="mt-2 text-xs text-ink-510">Select a request to see replies and its progress.</p>
 
                 {history.isLoading ? (
                     <HistorySkeleton rows={3} />
                 ) : history.isError && !rows.length ? (
-                    <div className="mt-6 rounded-lg bg-[#FFF5F4] px-4 py-6 text-center">
-                        <p className="text-sm text-[#52617A]">We could not load your support history.</p>
+                    <div className="mt-6 rounded-lg bg-tone-24 px-4 py-6 text-center">
+                        <p className="text-sm text-ink-510">We could not load your support history.</p>
                         <button
                             type="button"
                             onClick={() => history.refetch()}
-                            className="mt-3 rounded-md border border-[#E6E3E0] bg-white px-3.5 py-2 text-xs font-medium text-[#20232A] transition hover:bg-slate-50"
+                            className="mt-3 rounded-md border border-tone-98 bg-surface px-3.5 py-2 text-xs font-medium text-tone-744 transition hover:bg-slate-50"
                         >
                             Try again
                         </button>
                     </div>
                 ) : !rows.length ? (
-                    <p className="mt-6 rounded-lg bg-[#F9F9FA] px-4 py-8 text-center text-sm text-[#7A7F8A]">
+                    <p className="mt-6 rounded-lg bg-tone-18 px-4 py-8 text-center text-sm text-tone-405">
                         {page > 1 ? 'No more requests.' : 'You have not contacted support yet. Your requests will show here.'}
                     </p>
                 ) : (
@@ -378,34 +378,34 @@ function HelpCenter({ enquiryTypes, loadingTypes, content }: HelpCenterProps) {
                         {rows.map((row, index) => {
                             const status = ticketStatus(row.status);
                             return (
-                                <li key={row.ticketId} className={index > 0 ? 'border-t border-[#EEEAE6]' : ''}>
+                                <li key={row.ticketId} className={index > 0 ? 'border-t border-tone-78' : ''}>
                                     <Link
                                         href={ticketHref(row.ticketId)}
-                                        className="-mx-3 grid grid-cols-2 gap-x-4 gap-y-4 rounded-lg px-3 py-4 transition hover:bg-[#FFF9F6] md:grid-cols-[1.4fr_1fr_1fr_1fr_auto] md:items-center"
+                                        className="-mx-3 grid grid-cols-2 gap-x-4 gap-y-4 rounded-lg px-3 py-4 transition hover:bg-tone-15 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto] md:items-center"
                                     >
                                         <div className="min-w-0">
-                                            <p className="text-xs text-[#7A7F8A]">Comment</p>
-                                            <p className="mt-2 truncate text-sm font-medium text-[#20232A] sm:text-base">
+                                            <p className="text-xs text-tone-405">Comment</p>
+                                            <p className="mt-2 truncate text-sm font-medium text-tone-744 sm:text-base">
                                                 {row.remark?.trim() || (row.rating != null ? `${row.rating} star rating` : '—')}
                                             </p>
-                                            <p className="mt-1 truncate font-mono text-[11px] text-[#7A7F8A]">{row.reference}</p>
+                                            <p className="mt-1 truncate font-mono text-[11px] text-tone-405">{row.reference}</p>
                                         </div>
                                         <div>
-                                            <p className="text-xs text-[#7A7F8A]">Enquiry Type</p>
-                                            <p className="mt-2 text-sm font-medium text-[#20232A] sm:text-base">{ticketTypeLabel(row)}</p>
-                                            {row.requestType === 'COMPLAINT' && <p className="mt-1 text-[11px] text-[#C2410C]">Complaint</p>}
+                                            <p className="text-xs text-tone-405">Enquiry Type</p>
+                                            <p className="mt-2 text-sm font-medium text-tone-744 sm:text-base">{ticketTypeLabel(row)}</p>
+                                            {row.requestType === 'COMPLAINT' && <p className="mt-1 text-[11px] text-brand-447">Complaint</p>}
                                         </div>
                                         <div>
-                                            <p className="text-xs text-[#7A7F8A]">Date</p>
-                                            <p className="mt-2 text-sm font-medium text-[#20232A] sm:text-base">
+                                            <p className="text-xs text-tone-405">Date</p>
+                                            <p className="mt-2 text-sm font-medium text-tone-744 sm:text-base">
                                                 {row.date ? formatPlainDate(row.date) : formatDateTime(row.createdAt)}
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-xs text-[#7A7F8A]">Status</p>
+                                            <p className="text-xs text-tone-405">Status</p>
                                             <span className={`mt-2 inline-block rounded px-2.5 py-1 text-xs font-medium ${status.className}`}>{status.label}</span>
                                         </div>
-                                        <ChevronRight className="hidden h-4 w-4 text-[#A3A8B1] md:block" aria-hidden="true" />
+                                        <ChevronRight className="hidden h-4 w-4 text-tone-270 md:block" aria-hidden="true" />
                                     </Link>
                                 </li>
                             );
@@ -414,7 +414,7 @@ function HelpCenter({ enquiryTypes, loadingTypes, content }: HelpCenterProps) {
                 )}
 
                 {/* Pagination */}
-                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 text-sm text-[#7A7F8A]">
+                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 text-sm text-tone-405">
                     <p>{rows.length ? `Showing ${start + 1}-${start + rows.length}` : `Page ${page}`}</p>
                     <div className="flex items-center gap-2">
                         <label htmlFor="page-size">Show</label>
@@ -426,7 +426,7 @@ function HelpCenter({ enquiryTypes, loadingTypes, content }: HelpCenterProps) {
                                     setPageSize(Number(event.target.value));
                                     setPage(1);
                                 }}
-                                className="h-8 appearance-none rounded-md border border-[#E6E3E0] bg-white pl-3 pr-7 text-sm text-[#52617A] outline-none focus:border-[#E95312]"
+                                className="h-8 appearance-none rounded-md border border-tone-98 bg-surface pl-3 pr-7 text-sm text-ink-510 outline-none focus:border-brand-361"
                             >
                                 {PAGE_SIZES.map((size) => (
                                     <option key={size} value={size}>
@@ -442,11 +442,11 @@ function HelpCenter({ enquiryTypes, loadingTypes, content }: HelpCenterProps) {
                             onClick={() => setPage((p) => Math.max(1, p - 1))}
                             disabled={page === 1}
                             aria-label="Previous page"
-                            className="ml-1 flex h-7 w-7 items-center justify-center rounded-md border border-[#E6E3E0] bg-[#F1F3F9] text-[#52617A] transition disabled:cursor-not-allowed disabled:opacity-50"
+                            className="ml-1 flex h-7 w-7 items-center justify-center rounded-md border border-tone-98 bg-tone-47 text-ink-510 transition disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </button>
-                        <span className="px-1 font-medium text-[#20232A]" aria-current="page">
+                        <span className="px-1 font-medium text-tone-744" aria-current="page">
                             {page}
                         </span>
                         <button
@@ -454,7 +454,7 @@ function HelpCenter({ enquiryTypes, loadingTypes, content }: HelpCenterProps) {
                             onClick={() => setPage((p) => p + 1)}
                             disabled={!hasNext || history.isPlaceholderData}
                             aria-label="Next page"
-                            className="flex h-7 w-7 items-center justify-center rounded-md border border-[#E6E3E0] bg-white text-[#20232A] transition disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-7 w-7 items-center justify-center rounded-md border border-tone-98 bg-surface text-tone-744 transition disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <ChevronRight className="h-4 w-4" />
                         </button>
@@ -463,25 +463,25 @@ function HelpCenter({ enquiryTypes, loadingTypes, content }: HelpCenterProps) {
             </section>
 
             {/* Contact strip */}
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-[#FFEFE5] px-5 py-4">
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-tone-52 px-5 py-4">
                 <div>
-                    <p className="text-sm font-semibold text-[#20232A]">Do you still need our help?</p>
-                    <p className="mt-1 text-xs text-[#52617A]">Reach us via phone, email &amp; social accounts</p>
+                    <p className="text-sm font-semibold text-tone-744">Do you still need our help?</p>
+                    <p className="mt-1 text-xs text-ink-510">Reach us via phone, email &amp; social accounts</p>
                 </div>
                 <button
                     type="button"
                     onClick={() => setContactOpen(true)}
-                    className="rounded-md border border-[#E6E3E0] bg-white px-3.5 py-2 text-xs font-medium text-[#20232A] transition hover:bg-slate-50"
+                    className="rounded-md border border-tone-98 bg-surface px-3.5 py-2 text-xs font-medium text-tone-744 transition hover:bg-slate-50"
                 >
                     Contact Us
                 </button>
             </div>
 
             {legalLinks.length > 0 && (
-                <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#52617A]">
+                <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-ink-510">
                     {legalLinks.map((entry, index) => (
                         <li key={`${entry.section}-${index}`}>
-                            <a href={entry.url as string} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 transition hover:text-[#E95312]">
+                            <a href={entry.url as string} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 transition hover:text-brand-361">
                                 {entry.title} <ExternalLink className="h-3 w-3" />
                             </a>
                         </li>
@@ -513,8 +513,8 @@ function Faqs({ entries }: { entries: SupportContentEntry[] }) {
 
     return (
         <div className="grid gap-8 lg:grid-cols-[270px_1fr]">
-            <aside className="h-fit self-start rounded-xl border border-[#EBE6E1] bg-white px-3.5 pb-6 pt-6" aria-label="FAQ categories">
-                <p className="px-3 text-xs font-medium uppercase text-[#52617A]">Select FAQs type</p>
+            <aside className="h-fit self-start rounded-xl border border-tone-88 bg-surface px-3.5 pb-6 pt-6" aria-label="FAQ categories">
+                <p className="px-3 text-xs font-medium uppercase text-ink-510">Select FAQs type</p>
                 <ul className="mt-3 space-y-1">
                     {groups.map((item) => {
                         const active = item.id === group.id;
@@ -524,12 +524,12 @@ function Faqs({ entries }: { entries: SupportContentEntry[] }) {
                                     type="button"
                                     onClick={() => selectGroup(item.id)}
                                     aria-current={active ? 'true' : undefined}
-                                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${active ? 'bg-[#EEF0F2] font-medium text-[#20232A]' : 'text-[#52617A] hover:bg-slate-50'
+                                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${active ? 'bg-tone-63 font-medium text-tone-744' : 'text-ink-510 hover:bg-slate-50'
                                         }`}
                                 >
                                     <span className="flex-1">{item.label}</span>
                                     {active && (
-                                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#243B4A]">
+                                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-ink-660">
                                             <ChevronRight className="h-3 w-3 text-white" strokeWidth={3} />
                                         </span>
                                     )}
@@ -541,7 +541,7 @@ function Faqs({ entries }: { entries: SupportContentEntry[] }) {
             </aside>
 
             <section className="min-w-0 max-w-[592px] lg:pt-3" aria-labelledby="faq-title">
-                <h3 id="faq-title" className="text-lg font-semibold text-[#20232A]">
+                <h3 id="faq-title" className="text-lg font-semibold text-tone-744">
                     {group.label}
                 </h3>
                 <ul className="mt-4">
@@ -549,26 +549,26 @@ function Faqs({ entries }: { entries: SupportContentEntry[] }) {
                         const open = openIndex === index;
                         const panelId = `faq-panel-${group.id}-${index}`;
                         return (
-                            <li key={item.q} className="border-b border-[#E6E3E0]">
+                            <li key={item.q} className="border-b border-tone-98">
                                 <button
                                     type="button"
                                     onClick={() => setOpenIndex(open ? null : index)}
                                     aria-expanded={open}
                                     aria-controls={panelId}
-                                    className="flex w-full items-center gap-4 py-4 text-left text-base text-[#20232A]"
+                                    className="flex w-full items-center gap-4 py-4 text-left text-base text-tone-744"
                                 >
                                     {open ? (
-                                        <Minus className="h-4 w-4 shrink-0 text-[#E95312]" />
+                                        <Minus className="h-4 w-4 shrink-0 text-brand-361" />
                                     ) : (
-                                        <Plus className="h-4 w-4 shrink-0 text-[#E95312]" />
+                                        <Plus className="h-4 w-4 shrink-0 text-brand-361" />
                                     )}
                                     {item.q}
                                 </button>
                                 {open && (
-                                    <div id={panelId} className="pb-5 pl-8 text-sm leading-relaxed text-[#52617A]">
+                                    <div id={panelId} className="pb-5 pl-8 text-sm leading-relaxed text-ink-510">
                                         {item.a && <p className="whitespace-pre-line">{item.a}</p>}
                                         {'url' in item && item.url && (
-                                            <a href={item.url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-[#E95312] hover:underline">
+                                            <a href={item.url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-brand-361 hover:underline">
                                                 Read more <ExternalLink className="h-3 w-3" />
                                             </a>
                                         )}
@@ -592,8 +592,8 @@ function RatingField({ name }: { name: string }) {
 
     return (
         <div>
-            <p id={`${name}-label`} className="mt-7 text-base font-medium text-[#20232A]">
-                Rating <span className="text-[#E95312]">*</span>
+            <p id={`${name}-label`} className="mt-7 text-base font-medium text-tone-744">
+                Rating <span className="text-brand-361">*</span>
             </p>
             <div role="radiogroup" aria-labelledby={`${name}-label`} className="mt-5 flex gap-4" onMouseLeave={() => setHover(0)}>
                 {[1, 2, 3, 4, 5].map((value) => (
@@ -608,7 +608,7 @@ function RatingField({ name }: { name: string }) {
                         className="rounded-md transition hover:scale-105"
                     >
                         <Star
-                            className={`h-[52px] w-[52px] text-[#D2492A] ${value <= shown ? 'fill-[#D2492A]' : 'fill-transparent'}`}
+                            className={`h-[52px] w-[52px] text-brand-410 ${value <= shown ? 'fill-brand-410' : 'fill-transparent'}`}
                             strokeWidth={1.5}
                         />
                     </button>
@@ -645,26 +645,26 @@ function Feedback() {
         <Formik<FeedbackValues> initialValues={EMPTY_FEEDBACK} validationSchema={feedbackSchema} onSubmit={handleSubmit}>
             <Form noValidate>
                 {receipt && (
-                    <div className="mb-6 flex flex-wrap items-start justify-between gap-3 rounded-lg border border-[#D5EEDD] bg-[#F3FAF6] px-4 py-4" aria-live="polite">
+                    <div className="mb-6 flex flex-wrap items-start justify-between gap-3 rounded-lg border border-tone-90 bg-tone-21 px-4 py-4" aria-live="polite">
                         <div className="flex min-w-0 items-start gap-3">
-                            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#2E9A4F]" />
+                            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success-392" />
                             <div className="min-w-0">
-                                <p className="text-sm font-semibold text-[#20232A]">Thanks for your feedback.</p>
-                                <p className="mt-1 text-xs text-[#52617A]">
-                                    Reference <span className="break-all font-mono font-medium text-[#20232A]">{receipt.reference}</span>
+                                <p className="text-sm font-semibold text-tone-744">Thanks for your feedback.</p>
+                                <p className="mt-1 text-xs text-ink-510">
+                                    Reference <span className="break-all font-mono font-medium text-tone-744">{receipt.reference}</span>
                                 </p>
                             </div>
                         </div>
                         <Link
                             href={ticketHref(receipt.ticketId)}
-                            className="shrink-0 rounded-md border border-[#E6E3E0] bg-white px-3.5 py-2 text-xs font-medium text-[#20232A] transition hover:bg-slate-50"
+                            className="shrink-0 rounded-md border border-tone-98 bg-surface px-3.5 py-2 text-xs font-medium text-tone-744 transition hover:bg-slate-50"
                         >
                             View ticket
                         </Link>
                     </div>
                 )}
 
-                <p className="text-sm text-[#7A7F8A] sm:text-base">How would you rate your experience with QApp today?</p>
+                <p className="text-sm text-tone-405 sm:text-base">How would you rate your experience with QApp today?</p>
 
                 <RatingField name="rating" />
 
@@ -696,14 +696,14 @@ export default function SupportPage() {
     const content = options.data?.content ?? [];
 
     return (
-        <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
+        <div className="min-h-full bg-tone-12 text-tone-760">
             {/* ── Page header ── */}
-            <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Support</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">
-                    Real help, right <span className="text-[#EE7230]">when you need it.</span>
+            <section className="border-b border-tone-80 px-5 py-7 sm:px-8">
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-361">Support</p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-tone-744 sm:text-3xl">
+                    Real help, right <span className="text-brand-311">when you need it.</span>
                 </h2>
-                <p className="mt-2 text-sm text-[#777486] sm:text-base">Keep your information current and choose how Hatiso protects you.</p>
+                <p className="mt-2 text-sm text-tone-432 sm:text-base">Keep your information current and choose how Hatiso protects you.</p>
             </section>
 
             <main className="px-5 py-6 sm:px-8 lg:py-8">
@@ -721,8 +721,8 @@ export default function SupportPage() {
                                 aria-controls={`support-panel-${item.id}`}
                                 onClick={() => setTab(item.id)}
                                 className={`rounded-full border px-5 py-2.5 text-sm transition ${active
-                                    ? 'border-[#243B4A] bg-[#243B4A] font-medium text-white'
-                                    : 'border-[#EBE6E1] bg-white text-[#20232A] hover:bg-slate-50'
+                                    ? 'border-ink-660 bg-ink-660 font-medium text-white'
+                                    : 'border-tone-88 bg-surface text-tone-744 hover:bg-slate-50'
                                     }`}
                             >
                                 {item.label}

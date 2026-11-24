@@ -126,11 +126,11 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
     <Link
       href={item.href}
       className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${active
-        ? 'bg-[#1E3D4E] text-white'
-        : 'text-slate-400 hover:bg-[#1A3848] hover:text-slate-200'
+        ? 'bg-ink-656 text-white'
+        : 'text-slate-400 hover:bg-ink-675 hover:text-slate-200'
         }`}
     >
-      <span className={active ? 'text-[#FF6500]' : 'text-slate-500 group-hover:text-slate-300'}>
+      <span className={active ? 'text-brand-305' : 'text-slate-500 group-hover:text-slate-300'}>
         {item.icon}
       </span>
       {item.label}
@@ -183,7 +183,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
       {/* ── Sidebar shell ── */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-[#122B38] transition-transform duration-300 ease-out
+          fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-ink-724 transition-transform duration-300 ease-out
           lg:static lg:z-auto lg:translate-x-0
           ${open === undefined || open ? 'translate-x-0' : '-translate-x-full'}
         `}
@@ -196,7 +196,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
             <button
               type="button"
               onClick={onClose}
-              className="ml-auto rounded-lg p-1.5 text-slate-400 hover:bg-[#1E3D4E] hover:text-white lg:hidden"
+              className="ml-auto rounded-lg p-1.5 text-slate-400 hover:bg-ink-656 hover:text-white lg:hidden"
               aria-label="Close menu"
             >
               <X className="h-4 w-4" />
@@ -206,7 +206,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
 
         {/* ── Search ── */}
         <div className="px-4 pb-5">
-          <div className="flex items-center gap-2 rounded-xl border border-[#1E3D4E] bg-[#0D2330] px-3.5 py-2.5 transition focus-within:border-[#E95312]/40">
+          <div className="flex items-center gap-2 rounded-xl border border-ink-656 bg-ink-755 px-3.5 py-2.5 transition focus-within:border-brand-361/40">
             <Search className="h-3.5 w-3.5 flex-shrink-0 text-slate-500" />
             <input
               ref={searchRef}
@@ -217,7 +217,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
               className="w-full bg-transparent text-[13px] text-slate-300 placeholder-slate-600 focus:outline-none"
               aria-label="Search dashboard"
             />
-            <kbd className="hidden rounded bg-[#1A3040] px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 sm:block">
+            <kbd className="hidden rounded bg-ink-701 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 sm:block">
               ⌘K
             </kbd>
           </div>
@@ -243,9 +243,9 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
 
         {/* ── Help card ── */}
         {!helpDismissed && (
-          <div className="m-4 mt-3 rounded-2xl bg-[#0D2330] p-4 border border-[#1E3D4E]">
+          <div className="m-4 mt-3 rounded-2xl bg-ink-755 p-4 border border-ink-656">
             {/* Headset icon */}
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF6500] text-white shadow-md shadow-[#E95312]/30">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-305 text-on-brand shadow-md shadow-brand-361/30">
               <Headphones className="h-5 w-5" strokeWidth={2.2} />
             </div>
 
@@ -264,7 +264,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
               </button>
               <Link
                 href="/dashboard/support"
-                className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#FF6500] transition-colors hover:text-[#FF8A4C]"
+                className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand-305 transition-colors hover:text-brand-249"
               >
                 Reach out to us
                 <span aria-hidden>→</span>
@@ -288,16 +288,16 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
       </aside>
 
       {isLogoutConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102A36]/70 p-4 backdrop-blur-sm">
-          <div role="dialog" aria-modal="true" aria-labelledby="logout-title" className="w-full max-w-sm rounded-2xl bg-white p-6 text-[#18202A] shadow-2xl">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FFF1E8] text-[#E95312]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-729/70 p-4 backdrop-blur-sm">
+          <div role="dialog" aria-modal="true" aria-labelledby="logout-title" className="w-full max-w-sm rounded-2xl bg-surface p-6 text-tone-760 shadow-2xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-tone-39 text-brand-361">
               <LogOut className="h-5 w-5" />
             </div>
             <h2 id="logout-title" className="mt-4 text-xl font-semibold tracking-[-0.03em]">Log out?</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">Are you sure you want to log out of your account?</p>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={() => setIsLogoutConfirmOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Cancel</button>
-              <button type="button" onClick={handleLogout} className="rounded-xl bg-[#FF6500] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E95312] active:scale-[0.98]">Yes, log out</button>
+              <button type="button" onClick={handleLogout} className="rounded-xl bg-brand-305 px-4 py-2.5 text-sm font-semibold text-on-brand transition hover:bg-brand-361 active:scale-[0.98]">Yes, log out</button>
             </div>
           </div>
         </div>

@@ -48,7 +48,7 @@ const looksLikeCodeError = (message: string) => /code|otp|expired|invalid/i.test
 
 /* ─── Button Style ──────────────────────────────────────────────── */
 const ORANGE_BTN =
-  'w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(255,101,0,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
+  'w-full rounded-xl bg-brand-305 py-3.5 text-sm font-semibold text-on-brand shadow-[0_8px_20px_rgba(255,101,0,0.3)] transition-colors hover:bg-brand-249 active:scale-[0.99] disabled:opacity-50';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -113,12 +113,12 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="grid min-h-screen bg-[#F7F4EF] lg:grid-cols-2">
+    <div className="grid min-h-screen bg-tone-35 lg:grid-cols-2">
       {/* ── Left Brand Panel ── */}
       <AuthBrandPanel />
 
       {/* ── Right Content Panel ── */}
-      <main className="flex min-h-screen flex-col bg-[#F7F4EF] px-5 py-6 sm:px-10 lg:px-16 xl:px-24">
+      <main className="flex min-h-screen flex-col bg-tone-35 px-5 py-6 sm:px-10 lg:px-16 xl:px-24">
         <div className="mb-8 lg:hidden">
           <HatisoLogo variant="carbon" height={28} />
         </div>
@@ -129,7 +129,7 @@ export default function ForgotPasswordPage() {
             {step === 1 && (
               <>
                 <div className="mb-7 text-center">
-                  <h1 className="text-[1.75rem] font-bold tracking-tight text-[#111111] sm:text-[2rem]">
+                  <h1 className="text-[1.75rem] font-bold tracking-tight text-tone-822 sm:text-[2rem]">
                     Reset your password
                   </h1>
                   <p className="mx-auto mt-2 max-w-[340px] text-[13px] leading-relaxed text-slate-500">
@@ -187,7 +187,7 @@ export default function ForgotPasswordPage() {
                   Already have an account?{' '}
                   <Link
                     href="/auth/login"
-                    className="font-semibold text-[#E95312] transition-colors hover:text-[#E84D15]"
+                    className="font-semibold text-brand-361 transition-colors hover:text-brand-370"
                   >
                     Sign In
                   </Link>
@@ -199,7 +199,7 @@ export default function ForgotPasswordPage() {
             {step === 2 && (
               <>
                 <div className="mb-8 text-center">
-                  <h1 className="text-[1.75rem] font-bold tracking-tight text-[#111111] sm:text-[2rem]">
+                  <h1 className="text-[1.75rem] font-bold tracking-tight text-tone-822 sm:text-[2rem]">
                     Check your email
                   </h1>
                   <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-relaxed text-slate-500">
@@ -242,7 +242,7 @@ export default function ForgotPasswordPage() {
                     type="button"
                     disabled={resendCount > 0 || isResending}
                     onClick={handleResend}
-                    className="font-semibold text-[#E95312] hover:text-[#E84D15] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="font-semibold text-brand-361 hover:text-brand-370 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isResending ? 'Sending...' : 'Click to resend code'}
                   </button>
@@ -269,7 +269,7 @@ export default function ForgotPasswordPage() {
             {step === 3 && (
               <>
                 <div className="mb-6 text-center">
-                  <h1 className="text-[1.75rem] font-bold tracking-tight text-[#111111] sm:text-[2rem]">
+                  <h1 className="text-[1.75rem] font-bold tracking-tight text-tone-822 sm:text-[2rem]">
                     Create New Password
                   </h1>
                   <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-relaxed text-slate-500">
@@ -349,8 +349,8 @@ export default function ForgotPasswordPage() {
       {/* ══ SUCCESS MODAL ═══════════════════════════════════════════ */}
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-white p-8 text-center shadow-2xl">
-            <h2 className="flex items-center justify-center gap-2 text-xl font-bold text-[#111111]">
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-surface p-8 text-center shadow-2xl">
+            <h2 className="flex items-center justify-center gap-2 text-xl font-bold text-tone-822">
               Password Reset Successful
               <Check className="h-5 w-5 text-emerald-500 stroke-[3]" />
             </h2>

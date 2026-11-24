@@ -11,7 +11,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   airtime: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-brand-305"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -30,7 +30,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   data: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-brand-305"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -50,7 +50,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   electricity: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-brand-305"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -69,7 +69,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   tv: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-brand-305"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -89,7 +89,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   betting: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-brand-305"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -107,7 +107,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   education: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-brand-305"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -124,7 +124,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   'government-services': (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-brand-305"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -144,7 +144,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   shopping: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-brand-305"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -160,7 +160,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   embassies: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-brand-305"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -180,7 +180,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   'transport-travel': (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-[#FF6500]"
+      className="h-10 w-10 text-brand-305"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -232,19 +232,19 @@ export default function PopularCategories() {
                 <Link
                   key={service.slug}
                   href={`/categories/${service.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 hover:-translate-y-1 hover:ring-2 hover:ring-[#FF6500]/40 active:scale-95"
+                  className="group flex flex-col overflow-hidden rounded-xl bg-surface transition-all duration-200 hover:-translate-y-1 hover:ring-2 hover:ring-brand-305/40 active:scale-95"
                   style={{ minHeight: '190px' }}
                 >
                   {/* Top Portion: Soft Pale Ice-Blue Tint with Centered Orange Icon */}
-                  <div className="flex flex-1 items-center justify-center bg-[#EBF5FA] py-8 px-3 transition-colors group-hover:bg-[#E2EFF6]">
+                  <div className="flex flex-1 items-center justify-center bg-tone-46 py-8 px-3 transition-colors group-hover:bg-tone-74">
                     <div className="transition-transform duration-200 group-hover:scale-105">
                       {icon}
                     </div>
                   </div>
 
                   {/* Bottom Portion: Pure Crisp White with Dark Slate Navy Title */}
-                  <div className="flex items-center justify-center bg-white py-3 px-2 text-center">
-                    <span className="text-xs sm:text-sm font-semibold text-[#102A36] transition-colors group-hover:text-[#FF6500]">
+                  <div className="flex items-center justify-center bg-surface py-3 px-2 text-center">
+                    <span className="text-xs sm:text-sm font-semibold text-ink-729 transition-colors group-hover:text-brand-305">
                       {service.label}
                     </span>
                   </div>
@@ -257,7 +257,7 @@ export default function PopularCategories() {
           <div className="flex lg:col-span-4 xl:col-span-3">
             <Link
               href="/categories/airtime"
-              className="group flex w-full flex-col justify-between rounded-xl bg-[#26434D] p-5 transition-all duration-300 hover:bg-[#2B4B57]"
+              className="group flex w-full flex-col justify-between rounded-xl bg-ink-636 p-5 transition-all duration-300 hover:bg-ink-608"
             >
               {/* Inner Rounded Photo with rounded corners on all 4 sides */}
               <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-slate-900 sm:aspect-[4/3] lg:aspect-square">

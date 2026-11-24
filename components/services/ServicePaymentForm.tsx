@@ -296,7 +296,7 @@ function DynamicFields({
       {!hideProductSelector && <SelectField name="productCode" label="Select product" required placeholder="Select a product" options={products.map((product) => ({ value: product.code, label: product.name }))} onValueChange={onProductChange} />}
       {selectedProduct.formFields.filter((field) => field.type !== 'hidden' && field.path !== 'productCode').map((field) => <DynamicFormField key={field.path} field={field} />)}
       {!selectedProduct.formFields.some((field) => field.path === 'email') && <TextField name="email" type="email" label="Email for receipt (optional)" placeholder="Enter your email address" startIcon={<Mail className="h-4 w-4" />} />}
-      <SubmitButton className="w-full rounded-xl bg-[#FF6500] py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#E95312] hover:shadow-lg active:scale-[0.99]">Continue</SubmitButton>
+      <SubmitButton className="w-full rounded-xl bg-brand-305 py-3.5 text-center text-sm font-bold text-on-brand shadow-md transition-all duration-200 hover:bg-brand-361 hover:shadow-lg active:scale-[0.99]">Continue</SubmitButton>
     </Form>
   );
 }
@@ -314,7 +314,7 @@ export default function ServicePaymentForm({ activeSlug, activeTitle, billers, i
   );
 
   return (
-    <div className={variant === 'dashboard' ? 'w-full py-6' : `w-full max-w-xl rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl transition-all duration-300 ease-out sm:p-8 ${isFading ? 'scale-[0.99] opacity-30 blur-[0.4px]' : 'scale-100 opacity-100 blur-0'}`}>
+    <div className={variant === 'dashboard' ? 'w-full py-6' : `w-full max-w-xl rounded-3xl border border-slate-100 bg-surface p-6 shadow-2xl transition-all duration-300 ease-out sm:p-8 ${isFading ? 'scale-[0.99] opacity-30 blur-[0.4px]' : 'scale-100 opacity-100 blur-0'}`}>
       {isLoading ? <ServiceFormSkeleton /> : null}
       {isError ? <p className="py-14 text-center text-sm text-red-600">We could not load services right now. Please try again.</p> : null}
       {!isLoading && !isError && !initialValues ? <p className="py-14 text-center text-sm text-slate-500">No purchasable products are available for this service.</p> : null}

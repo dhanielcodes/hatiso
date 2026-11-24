@@ -69,7 +69,7 @@ const step2Schema = Yup.object({
 
 /* ─── Shared button style ───────────────────────────────────────── */
 const BTN =
-  'w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
+  'w-full rounded-xl bg-brand-305 py-3.5 text-sm font-semibold text-on-brand shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-brand-249 active:scale-[0.99] disabled:opacity-50';
 
 /* ─── Email / Phone tab switch ──────────────────────────────────── */
 function MethodTabs({
@@ -88,7 +88,7 @@ function MethodTabs({
     <div
       role="tablist"
       aria-label="Sign up method"
-      className="grid grid-cols-2 gap-1 rounded-xl bg-[#ECE7E0] p-1"
+      className="grid grid-cols-2 gap-1 rounded-xl bg-tone-85 p-1"
     >
       {tabs.map((tab) => {
         const active = value === tab.id;
@@ -100,7 +100,7 @@ function MethodTabs({
             aria-selected={active}
             onClick={() => onChange(tab.id)}
             className={`rounded-lg py-2.5 text-[13px] font-semibold transition ${active
-              ? 'bg-white text-[#E95312] shadow-sm'
+              ? 'bg-surface text-brand-361 shadow-sm'
               : 'text-slate-500 hover:text-slate-800'
               }`}
           >
@@ -181,11 +181,11 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="grid min-h-screen bg-[#F7F4EF] lg:grid-cols-2">
+    <div className="grid min-h-screen bg-tone-35 lg:grid-cols-2">
       <AuthBrandPanel />
 
       {/* ── Right panel ── */}
-      <main className="flex min-h-screen flex-col bg-[#F7F4EF] px-5 py-6 sm:px-10 lg:px-16 xl:px-20">
+      <main className="flex min-h-screen flex-col bg-tone-35 px-5 py-6 sm:px-10 lg:px-16 xl:px-20">
         <div className="flex flex-1 flex-col items-center justify-center py-4">
           <div className="w-full max-w-[460px]">
             {/* Step indicator */}
@@ -195,10 +195,10 @@ export default function RegisterPage() {
             {step === 1 && (
               <>
                 <div className="mb-6 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#E95312]">
+                  <p className="text-xs font-bold uppercase tracking-widest text-brand-361">
                     STEP 1
                   </p>
-                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
+                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-tone-822">
                     Create your account
                   </h1>
                   <p className="mt-1.5 text-[13px] text-slate-500">
@@ -297,7 +297,7 @@ export default function RegisterPage() {
                   Already have an account?{' '}
                   <Link
                     href="/auth/login"
-                    className="font-semibold text-[#E95312] hover:text-[#E84D15]"
+                    className="font-semibold text-brand-361 hover:text-brand-370"
                   >
                     Sign In
                   </Link>
@@ -309,10 +309,10 @@ export default function RegisterPage() {
             {step === 2 && (
               <>
                 <div className="mb-6 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#E95312]">
+                  <p className="text-xs font-bold uppercase tracking-widest text-brand-361">
                     STEP 2
                   </p>
-                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">
+                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-tone-822">
                     Create Password
                   </h1>
                   <p className="mt-1.5 text-[13px] text-slate-500">
@@ -459,13 +459,13 @@ export default function RegisterPage() {
       {/* ══ SUCCESS MODAL ═══════════════════════════════════════════ */}
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-white p-8 text-center shadow-2xl">
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-surface p-8 text-center shadow-2xl">
             {/* Green check */}
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
               <CheckCircle2 className="h-9 w-9 text-emerald-500" strokeWidth={2.2} />
             </div>
 
-            <h2 className="text-xl font-bold text-[#111111]">
+            <h2 className="text-xl font-bold text-tone-822">
               Welcome aboard, {createdName}.
             </h2>
             <p className="mx-auto mt-2 max-w-[260px] text-[13px] leading-relaxed text-slate-500">
@@ -476,7 +476,7 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => router.push('/dashboard')}
-              className="mt-7 w-full rounded-xl bg-[#E95312] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#E84D15] active:scale-[0.99]"
+              className="mt-7 w-full rounded-xl bg-brand-361 py-3.5 text-sm font-semibold text-on-brand transition-colors hover:bg-brand-370 active:scale-[0.99]"
             >
               Continue to Dashboard
             </button>

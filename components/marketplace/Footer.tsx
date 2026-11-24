@@ -6,7 +6,7 @@ import HatisoLogo from '@/components/brand/HatisoLogo';
 
 export default function Footer() {
   return (
-    <footer className="bg-[#1B3C4A] px-6 pt-16 pb-12 sm:px-12 lg:px-20 text-white">
+    <footer className="bg-ink-662 px-6 pt-16 pb-12 sm:px-12 lg:px-20 text-white">
       <div className="mx-auto max-w-7xl">
         {/* Top Section: Brand Info + Navigation Columns */}
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-8">

@@ -43,7 +43,7 @@ type StepState = 'done' | 'failed' | 'pending' | 'upcoming';
 type IconType = ComponentType<{ className?: string }>;
 
 /* ─── Constants ────────────────────────────────────────────────── */
-const CARD = 'rounded-xl border border-[#EBE6E1] bg-white';
+const CARD = 'rounded-xl border border-tone-88 bg-surface';
 const SUPPORT_HREF = '/dashboard/support';
 
 const CATEGORY_META: Record<string, { label: string; icon: IconType }> = {
@@ -69,43 +69,43 @@ const STATUS_META: Record<
     FULFILLED: {
         label: 'Successful',
         icon: CheckCircle2,
-        pill: 'bg-[#E7F5EE] text-[#2E9A4F]',
-        panel: 'border-[#D5EEDD] bg-[#F3FAF6]',
-        iconColor: 'text-[#2E9A4F]',
+        pill: 'bg-tone-58 text-success-392',
+        panel: 'border-tone-90 bg-tone-21',
+        iconColor: 'text-success-392',
         message: 'This service was delivered successfully.',
     },
     FAILED: {
         label: 'Failed',
         icon: XCircle,
-        pill: 'bg-[#FDECEC] text-[#E22E41]',
-        panel: 'border-[#F8D9D5] bg-[#FFF5F4]',
-        iconColor: 'text-[#E22E41]',
+        pill: 'bg-tone-59 text-danger-404',
+        panel: 'border-danger-90 bg-tone-24',
+        iconColor: 'text-danger-404',
         message:
             'This service could not be delivered. If payment was collected, payment or refund status is tracked separately.',
     },
     PENDING: {
         label: 'Pending',
         icon: Clock,
-        pill: 'bg-[#FFF3DB] text-[#9A4A00]',
-        panel: 'border-[#F6E3B8] bg-[#FFFAEF]',
-        iconColor: 'text-[#D98A00]',
+        pill: 'bg-tone-40 text-brand-499',
+        panel: 'border-warning-79 bg-tone-14',
+        iconColor: 'text-warning-301',
         message: 'Your provider has not confirmed the final delivery outcome. Please check back before repeating the purchase.',
     },
     PROCESSING: {
         label: 'Processing',
         icon: Clock,
-        pill: 'bg-[#FFF3DB] text-[#9A4A00]',
-        panel: 'border-[#F6E3B8] bg-[#FFFAEF]',
-        iconColor: 'text-[#D98A00]',
+        pill: 'bg-tone-40 text-brand-499',
+        panel: 'border-warning-79 bg-tone-14',
+        iconColor: 'text-warning-301',
         message: 'Your payment was received and your digital service is being processed.',
     },
 };
 
 const STEP_CIRCLE: Record<StepState, string> = {
-    done: 'bg-[#4CAF50] text-white',
-    failed: 'bg-[#E22E41] text-white',
-    pending: 'bg-[#F5B53F] text-white',
-    upcoming: 'border border-[#DED8D4] bg-white text-[#A29B9C]',
+    done: 'bg-success-327 text-white',
+    failed: 'bg-danger-404 text-white',
+    pending: 'bg-warning-187 text-white',
+    upcoming: 'border border-tone-114 bg-surface text-tone-304',
 };
 
 const DATE_TIME_FORMAT = new Intl.DateTimeFormat('en-GB', {
@@ -178,9 +178,9 @@ function CopyButton({ value, label }: { value: string; label: string }) {
             type="button"
             onClick={copy}
             aria-label={copied ? `${label} copied` : `Copy ${label}`}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#E6E3E0] bg-white text-[#52617A] transition hover:bg-slate-50"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-tone-98 bg-surface text-ink-510 transition hover:bg-slate-50"
         >
-            {copied ? <Check className="h-3.5 w-3.5 text-[#2E9A4F]" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? <Check className="h-3.5 w-3.5 text-success-392" /> : <Copy className="h-3.5 w-3.5" />}
         </button>
     );
 }
@@ -188,27 +188,27 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 function CardHeader({ title, subtitle }: { title: string; subtitle?: string }) {
     return (
         <div>
-            <h2 className="text-base font-semibold text-[#20232A]">{title}</h2>
-            {subtitle && <p className="mt-1.5 text-sm text-[#7A7F8A]">{subtitle}</p>}
+            <h2 className="text-base font-semibold text-tone-744">{title}</h2>
+            {subtitle && <p className="mt-1.5 text-sm text-tone-405">{subtitle}</p>}
         </div>
     );
 }
 
 function DetailRow({ label, children }: { label: string; children: ReactNode }) {
     return (
-        <div className="flex items-start justify-between gap-6 border-t border-[#EEEAE6] py-4 first:border-t-0">
-            <dt className="shrink-0 text-sm text-[#7A7F8A]">{label}</dt>
-            <dd className="min-w-0 break-words text-right text-sm font-medium text-[#20232A]">{children}</dd>
+        <div className="flex items-start justify-between gap-6 border-t border-tone-78 py-4 first:border-t-0">
+            <dt className="shrink-0 text-sm text-tone-405">{label}</dt>
+            <dd className="min-w-0 break-words text-right text-sm font-medium text-tone-744">{children}</dd>
         </div>
     );
 }
 
 function ReferenceItem({ label, value }: { label: string; value: string }) {
     return (
-        <li className="border-t border-[#EEEAE6] py-4 first:border-t-0 first:pt-0 last:pb-0">
-            <p className="text-xs text-[#7A7F8A]">{label}</p>
+        <li className="border-t border-tone-78 py-4 first:border-t-0 first:pt-0 last:pb-0">
+            <p className="text-xs text-tone-405">{label}</p>
             <div className="mt-2 flex items-start justify-between gap-3">
-                <p className="min-w-0 break-all font-mono text-[13px] leading-relaxed text-[#20232A]">{value}</p>
+                <p className="min-w-0 break-all font-mono text-[13px] leading-relaxed text-tone-744">{value}</p>
                 <CopyButton value={value} label={label} />
             </div>
         </li>
@@ -222,9 +222,9 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
     const status = STATUS_META[transaction.fulfilmentStatus.toUpperCase()] ?? {
         label: titleCase(transaction.fulfilmentStatus),
         icon: Clock,
-        pill: 'bg-[#EEF0F2] text-[#52617A]',
-        panel: 'border-[#E6E3E0] bg-[#F9F9FA]',
-        iconColor: 'text-[#52617A]',
+        pill: 'bg-tone-63 text-ink-510',
+        panel: 'border-tone-98 bg-tone-18',
+        iconColor: 'text-ink-510',
         message: 'We are checking the latest status of this transaction.',
     };
     const StatusIcon = status.icon;
@@ -263,21 +263,21 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
                     <section className={`${CARD} p-5 sm:p-6`} aria-labelledby="summary-title">
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div className="flex items-center gap-4">
-                                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#FFF3EC] text-[#E95312]">
+                                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-tone-30 text-brand-361">
                                     <CategoryIcon className="h-6 w-6" />
                                 </span>
                                 <div>
-                                    <h2 id="summary-title" className="text-lg font-semibold text-[#20232A]">
+                                    <h2 id="summary-title" className="text-lg font-semibold text-tone-744">
                                         {productName}
                                     </h2>
-                                    <p className="mt-1 text-sm text-[#7A7F8A]">
+                                    <p className="mt-1 text-sm text-tone-405">
                                         {categoryLabel} · To {transaction.recipient}
                                     </p>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-xs text-[#7A7F8A]">Amount</p>
-                                <p className="mt-1 text-[28px] font-semibold tracking-[-0.03em] text-[#364259]">
+                                <p className="text-xs text-tone-405">Amount</p>
+                                <p className="mt-1 text-[28px] font-semibold tracking-[-0.03em] text-ink-622">
                                     {formatMoney(transaction.amountMinor, transaction.currency)}
                                 </p>
                             </div>
@@ -287,19 +287,19 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
                             <StatusIcon className={`mt-0.5 h-5 w-5 shrink-0 ${status.iconColor}`} />
                             <div className="min-w-0">
                                 <span className={`inline-block rounded px-2.5 py-1 text-xs font-medium ${status.pill}`}>{status.label}</span>
-                                <p className="mt-2 text-sm leading-relaxed text-[#52617A]">{status.message}</p>
+                                <p className="mt-2 text-sm leading-relaxed text-ink-510">{status.message}</p>
                             </div>
                         </div>
                     </section>
 
                     {/* Delivery code (only when the provider returned one, e.g. electricity tokens) */}
                     {transaction.deliveryCode && (
-                        <section className="rounded-xl border border-[#F6D9C8] bg-[#FFF6F0] p-5 sm:p-6" aria-labelledby="code-title">
-                            <h2 id="code-title" className="text-base font-semibold text-[#20232A]">
+                        <section className="rounded-xl border border-brand-95 bg-tone-23 p-5 sm:p-6" aria-labelledby="code-title">
+                            <h2 id="code-title" className="text-base font-semibold text-tone-744">
                                 Delivery code
                             </h2>
-                            <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-[#F6D9C8] bg-white px-4 py-3">
-                                <p className="min-w-0 break-all font-mono text-lg font-semibold tracking-wider text-[#E95312]">
+                            <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-brand-95 bg-surface px-4 py-3">
+                                <p className="min-w-0 break-all font-mono text-lg font-semibold tracking-wider text-brand-361">
                                     {transaction.deliveryCode}
                                 </p>
                                 <CopyButton value={transaction.deliveryCode} label="delivery code" />
@@ -346,7 +346,7 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
                             {steps.map((step, index) => (
                                 <li key={step.label} className="relative flex gap-4 pb-6 last:pb-0">
                                     {index < steps.length - 1 && (
-                                        <span className="absolute bottom-0 left-4 top-9 w-px -translate-x-1/2 bg-[#E6E3E0]" aria-hidden="true" />
+                                        <span className="absolute bottom-0 left-4 top-9 w-px -translate-x-1/2 bg-tone-98" aria-hidden="true" />
                                     )}
                                     <span className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${STEP_CIRCLE[step.state]}`}>
                                         {step.state === 'done' && <Check className="h-4 w-4" strokeWidth={3} />}
@@ -354,8 +354,8 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
                                         {step.state === 'pending' && <Clock className="h-4 w-4" />}
                                     </span>
                                     <div className="min-w-0 pt-0.5">
-                                        <p className="text-sm font-medium text-[#20232A]">{step.label}</p>
-                                        <p className="mt-1 text-xs text-[#7A7F8A]">{step.description}</p>
+                                        <p className="text-sm font-medium text-tone-744">{step.label}</p>
+                                        <p className="mt-1 text-xs text-tone-405">{step.description}</p>
                                     </div>
                                 </li>
                             ))}
@@ -379,21 +379,21 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
                     </section>
 
                     {/* Help */}
-                    <div className="rounded-lg bg-[#FFEFE5] px-5 py-5">
+                    <div className="rounded-lg bg-tone-52 px-5 py-5">
                         <div className="flex items-start gap-3">
-                            <LifeBuoy className="mt-0.5 h-5 w-5 shrink-0 text-[#E95312]" />
+                            <LifeBuoy className="mt-0.5 h-5 w-5 shrink-0 text-brand-361" />
                             <div className="min-w-0">
-                                <p className="text-sm font-semibold text-[#20232A]">Need help with this transaction?</p>
-                                <p className="mt-1 text-xs text-[#52617A]">Our support team is available 24 hours a day.</p>
+                                <p className="text-sm font-semibold text-tone-744">Need help with this transaction?</p>
+                                <p className="mt-1 text-xs text-ink-510">Our support team is available 24 hours a day.</p>
                                 <div className="mt-4 flex flex-wrap items-center gap-3">
                                     <button
                                         type="button"
                                         onClick={() => setSupportOpen(true)}
-                                        className="rounded-md bg-[#EE7230] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#D9622B]"
+                                        className="rounded-md bg-brand-311 px-3.5 py-2 text-xs font-semibold text-on-brand transition hover:bg-brand-365"
                                     >
                                         Report an issue
                                     </button>
-                                    <Link href={SUPPORT_HREF} className="text-xs font-medium text-[#52617A] underline-offset-2 transition hover:text-[#20232A] hover:underline">
+                                    <Link href={SUPPORT_HREF} className="text-xs font-medium text-ink-510 underline-offset-2 transition hover:text-tone-744 hover:underline">
                                         My support requests
                                     </Link>
                                 </div>
@@ -425,24 +425,24 @@ export default function TransactionDetailsPage() {
     const loading = raw === undefined;
 
     return (
-        <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
+        <div className="min-h-full bg-tone-12 text-tone-760">
             {/* ── Page header ── */}
-            <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
+            <section className="border-b border-tone-80 px-5 py-7 sm:px-8">
                 <button
                     type="button"
                     onClick={() => {
                         localStorage.removeItem(STORAGE_KEY);
                         router.back();
                     }}
-                    className="mb-4 flex items-center gap-1 text-sm text-[#52617A] transition hover:text-[#20232A]"
+                    className="mb-4 flex items-center gap-1 text-sm text-ink-510 transition hover:text-tone-744"
                 >
                     <ChevronLeft className="h-4 w-4" /> Back
                 </button>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Transaction</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">
-                    Every detail, <span className="text-[#FF6500]">in one place.</span>
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-361">Transaction</p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-tone-744 sm:text-3xl">
+                    Every detail, <span className="text-brand-305">in one place.</span>
                 </h2>
-                {transaction && <p className="mt-2 break-all text-sm text-[#777486] sm:text-base">Reference: {transaction.reference}</p>}
+                {transaction && <p className="mt-2 break-all text-sm text-tone-432 sm:text-base">Reference: {transaction.reference}</p>}
             </section>
 
             {transaction ? (
@@ -450,18 +450,18 @@ export default function TransactionDetailsPage() {
             ) : loading ? (
                 <div className="grid gap-5 px-5 py-6 sm:px-8 lg:grid-cols-[1.6fr_1fr] lg:py-7" aria-hidden="true">
                     {[0, 1].map((col) => (
-                        <div key={col} className={`${CARD} h-64 animate-pulse bg-[#F6F4F2]`} />
+                        <div key={col} className={`${CARD} h-64 animate-pulse bg-tone-38`} />
                     ))}
                 </div>
             ) : (
                 <div className="px-5 py-10 sm:px-8">
                     <div className={`${CARD} mx-auto max-w-md px-6 py-10 text-center`}>
-                        <Receipt className="mx-auto h-8 w-8 text-[#A3A8B1]" />
-                        <p className="mt-3 text-sm font-medium text-[#20232A]">We couldn&apos;t find this transaction.</p>
-                        <p className="mt-1 text-xs text-[#7A7F8A]">Open it again from your transactions list.</p>
+                        <Receipt className="mx-auto h-8 w-8 text-tone-270" />
+                        <p className="mt-3 text-sm font-medium text-tone-744">We couldn&apos;t find this transaction.</p>
+                        <p className="mt-1 text-xs text-tone-405">Open it again from your transactions list.</p>
                         <Link
                             href="/dashboard/transactions"
-                            className="mt-5 inline-block rounded-md border border-[#E6E3E0] bg-white px-3.5 py-2 text-xs font-medium text-[#20232A] transition hover:bg-slate-50"
+                            className="mt-5 inline-block rounded-md border border-tone-98 bg-surface px-3.5 py-2 text-xs font-medium text-tone-744 transition hover:bg-slate-50"
                         >
                             Go to transactions
                         </Link>

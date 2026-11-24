@@ -9,24 +9,24 @@ export function humanizeEnum(value: string | null | undefined) {
 export const REOPENABLE_STATUSES = ['RESOLVED', 'CLOSED'];
 
 const STATUS_TONES: Record<string, string> = {
-  OPEN: 'bg-[#FFF3DB] text-[#9A4A00]',
-  REOPENED: 'bg-[#FFF3DB] text-[#9A4A00]',
-  PENDING: 'bg-[#FFF3DB] text-[#9A4A00]',
-  IN_PROGRESS: 'bg-[#E8F1FB] text-[#2463A6]',
-  ASSIGNED: 'bg-[#E8F1FB] text-[#2463A6]',
-  ESCALATED: 'bg-[#E8F1FB] text-[#2463A6]',
-  AWAITING_CUSTOMER: 'bg-[#FFEFE5] text-[#C2410C]',
-  RESOLVED: 'bg-[#E7F5EE] text-[#2E9A4F]',
-  CLOSED: 'bg-[#EEF0F2] text-[#52617A]',
-  CANCELLED: 'bg-[#FDECEC] text-[#E22E41]',
-  REJECTED: 'bg-[#FDECEC] text-[#E22E41]',
+  OPEN: 'bg-tone-40 text-brand-499',
+  REOPENED: 'bg-tone-40 text-brand-499',
+  PENDING: 'bg-tone-40 text-brand-499',
+  IN_PROGRESS: 'bg-tone-64 text-ink-505',
+  ASSIGNED: 'bg-tone-64 text-ink-505',
+  ESCALATED: 'bg-tone-64 text-ink-505',
+  AWAITING_CUSTOMER: 'bg-tone-52 text-brand-447',
+  RESOLVED: 'bg-tone-58 text-success-392',
+  CLOSED: 'bg-tone-63 text-ink-510',
+  CANCELLED: 'bg-tone-59 text-danger-404',
+  REJECTED: 'bg-tone-59 text-danger-404',
 };
 
 export function ticketStatus(status: string) {
   const key = (status || '').toUpperCase();
   return {
     label: key === 'OPEN' ? 'Open' : humanizeEnum(key) || 'Unknown',
-    className: STATUS_TONES[key] ?? 'bg-[#EEF0F2] text-[#52617A]',
+    className: STATUS_TONES[key] ?? 'bg-tone-63 text-ink-510',
   };
 }
 

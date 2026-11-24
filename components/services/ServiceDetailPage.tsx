@@ -54,18 +54,18 @@ function PaymentReview({ payment, isProcessing, error, onReset, onContinue }: {
   const dateLabel = new Intl.DateTimeFormat('en-NG', { dateStyle: 'long', timeStyle: 'short' }).format(new Date());
 
   return (
-    <article className="w-full max-w-xl overflow-hidden rounded-[24px] bg-white text-slate-900 shadow-2xl">
+    <article className="w-full max-w-xl overflow-hidden rounded-[24px] bg-surface text-slate-900 shadow-2xl">
       <header className="flex items-center justify-center gap-3 border-b border-slate-200 px-6 py-8 sm:py-10">
-        <Smartphone className="h-6 w-6 text-[#E95312]" />
+        <Smartphone className="h-6 w-6 text-brand-361" />
         <h2 className="text-xl font-semibold sm:text-2xl">{payment.slug?.toUpperCase()} Payment Review</h2>
       </header>
       <div className="space-y-8 p-6 sm:p-7">
-        <div className="flex items-center justify-between gap-4 rounded-xl bg-[#EAF7FC] p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-4 rounded-xl bg-tone-37 p-4 sm:p-5">
           <div className="flex min-w-0 items-center gap-3">
-            {payment.providerImage ? <Image src={payment.providerImage} alt={payment.providerName} width={58} height={58} className="h-12 w-12 shrink-0 rounded-full object-contain sm:h-[58px] sm:w-[58px]" /> : <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#204657] text-xs font-bold text-white sm:h-[58px] sm:w-[58px]">{payment.providerName.slice(0, 2).toUpperCase()}</span>}
+            {payment.providerImage ? <Image src={payment.providerImage} alt={payment.providerName} width={58} height={58} className="h-12 w-12 shrink-0 rounded-full object-contain sm:h-[58px] sm:w-[58px]" /> : <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ink-626 text-xs font-bold text-white sm:h-[58px] sm:w-[58px]">{payment.providerName.slice(0, 2).toUpperCase()}</span>}
             <div className="min-w-0"><p className="text-sm text-slate-500">Sending {payment.slug} to</p><p className="truncate text-xl font-semibold">{payment.recipientNumber}</p></div>
           </div>
-          <span className="shrink-0 text-lg font-bold text-[#204657]">- {formatNaira(payment.quote.totalMinor)}</span>
+          <span className="shrink-0 text-lg font-bold text-ink-626">- {formatNaira(payment.quote.totalMinor)}</span>
         </div>
         <div>
           <h3 className="text-lg font-semibold text-slate-700">Transaction Details</h3>
@@ -80,7 +80,7 @@ function PaymentReview({ payment, isProcessing, error, onReset, onContinue }: {
         {/* {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-center text-xs font-medium text-red-600">{error}</p> : null} */}
         <div className="flex flex-col-reverse gap-3 sm:flex-row">
           <button type="button" onClick={onReset} disabled={isProcessing} className="rounded-xl border border-slate-200 px-7 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50">Reset</button>
-          <button type="button" onClick={onContinue} disabled={isProcessing} aria-busy={isProcessing} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#FF6500] py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#E04B14] disabled:cursor-not-allowed disabled:opacity-50">{isProcessing ? <><span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /><span className="sr-only">Preparing payment</span></> : <>Continue <CreditCard className="h-4 w-4" /></>}</button>
+          <button type="button" onClick={onContinue} disabled={isProcessing} aria-busy={isProcessing} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-305 py-3 text-sm font-semibold text-on-brand shadow-md transition hover:bg-brand-385 disabled:cursor-not-allowed disabled:opacity-50">{isProcessing ? <><span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /><span className="sr-only">Preparing payment</span></> : <>Continue <CreditCard className="h-4 w-4" /></>}</button>
         </div>
       </div>
     </article>
@@ -317,7 +317,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
 
 
   return (
-    <div className="relative min-h-screen bg-[#1B3C4A] text-white selection:bg-[#E95312] selection:text-white">
+    <div className="relative min-h-screen bg-ink-662 text-white selection:bg-brand-361 selection:text-white">
       <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-25">
         <svg
           className="absolute -top-40 -left-40 h-[1200px] w-[1400px]"
@@ -390,7 +390,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
         >
           <div className="flex flex-col lg:col-span-6 xl:col-span-7 min-h-[220px] sm:min-h-[250px] justify-center">
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl transition-all duration-300">
-              <span className="text-[#FF6500]">{heroContent.headlineOrange}</span>
+              <span className="text-brand-305">{heroContent.headlineOrange}</span>
               <span className="text-white">{heroContent.headlineWhite}</span>
             </h1>
 
@@ -399,8 +399,8 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
             </p>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="inline-flex items-center gap-2.5 rounded-xl border border-slate-700/60 bg-[#1E3A46]/70 px-4 py-2.5 shadow-sm backdrop-blur-sm">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E95312]/20 text-[#E95312]">
+              <div className="inline-flex items-center gap-2.5 rounded-xl border border-slate-700/60 bg-ink-668/70 px-4 py-2.5 shadow-sm backdrop-blur-sm">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-361/20 text-brand-361">
                   <Zap className="h-3.5 w-3.5 fill-current" />
                 </div>
                 <span className="text-xs font-medium text-slate-200 sm:text-sm">
@@ -408,8 +408,8 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
                 </span>
               </div>
 
-              <div className="inline-flex items-center gap-2.5 rounded-xl border border-slate-700/60 bg-[#1E3A46]/70 px-4 py-2.5 shadow-sm backdrop-blur-sm">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E95312]/20 text-[#E95312]">
+              <div className="inline-flex items-center gap-2.5 rounded-xl border border-slate-700/60 bg-ink-668/70 px-4 py-2.5 shadow-sm backdrop-blur-sm">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-361/20 text-brand-361">
                   <ShieldCheck className="h-3.5 w-3.5" />
                 </div>
                 <span className="text-xs font-medium text-slate-200 sm:text-sm">
@@ -420,7 +420,7 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
           </div>
 
           <div className="flex justify-center lg:col-span-6 xl:col-span-5">
-            <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-700/60 bg-[#25414C] p-3.5 shadow-2xl transition-all duration-300 hover:border-slate-600 sm:p-4">
+            <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-700/60 bg-ink-642 p-3.5 shadow-2xl transition-all duration-300 hover:border-slate-600 sm:p-4">
               <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-slate-900 shadow-inner">
                 <Image
                   src={heroContent.image}
@@ -441,9 +441,9 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
                 </div>
 
                 <div className="flex items-end gap-1 pl-3">
-                  <span className="h-5 w-1.5 rounded-full bg-[#E95312]" />
-                  <span className="h-3.5 w-1.5 rounded-full bg-[#64748B]" />
-                  <span className="h-2 w-1.5 rounded-full bg-[#475569]" />
+                  <span className="h-5 w-1.5 rounded-full bg-brand-361" />
+                  <span className="h-3.5 w-1.5 rounded-full bg-info-446" />
+                  <span className="h-2 w-1.5 rounded-full bg-ink-554" />
                 </div>
               </div>
             </div>
@@ -483,36 +483,36 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
       </main>
 
       {isSuccessModalOpen && pendingPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102A36]/75 p-4 backdrop-blur-sm">
-          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-[28px] bg-white text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-729/75 p-4 backdrop-blur-sm">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-[28px] bg-surface text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="border-b border-slate-100 px-6 pb-7 pt-8 text-center sm:px-9 sm:pt-10 [@media(max-height:800px)]:pb-5 [@media(max-height:800px)]:pt-6">
-              <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#E6F7ED] text-[#009447] ring-8 ring-[#F2FBF6]">
+              <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-tone-54 text-success-417 ring-8 ring-tone-20">
                 <CheckCircle2 className="h-10 w-10 stroke-[2.4]" />
               </div>
-              <span className="mt-5 inline-flex rounded-full bg-[#E8F7EE] px-3 py-1 text-[11px] font-bold tracking-wide text-[#008A46]">PAYMENT CONFIRMED</span>
-              <h3 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#102A36]">Payment successful</h3>
+              <span className="mt-5 inline-flex rounded-full bg-tone-50 px-3 py-1 text-[11px] font-bold tracking-wide text-success-445">PAYMENT CONFIRMED</span>
+              <h3 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-ink-729">Payment successful</h3>
               <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">Your {pendingPayment.slug} transaction has been completed. The service will be delivered shortly.</p>
             </div>
 
             <div className="space-y-6 px-6 py-7 sm:px-9 sm:py-8 [@media(max-height:800px)]:space-y-4 [@media(max-height:800px)]:py-5">
-              <div className="rounded-2xl bg-[#EAF7FC] px-5 py-4 text-center">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#55707D]">Total paid</p>
-                <p className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[#204657]">{formatNaira(pendingPayment.quote.totalMinor)}</p>
+              <div className="rounded-2xl bg-tone-37 px-5 py-4 text-center">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-info-471">Total paid</p>
+                <p className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-ink-626">{formatNaira(pendingPayment.quote.totalMinor)}</p>
                 <p className="mt-1 text-xs text-slate-500">including {formatNaira(pendingPayment.quote.feeMinor)} service fee</p>
               </div>
 
               <div>
-                <div className="mb-3 flex items-center justify-between"><h4 className="text-sm font-semibold text-[#304A57]">Receipt details</h4><span className="text-xs text-slate-400">{pendingPayment.providerName}</span></div>
+                <div className="mb-3 flex items-center justify-between"><h4 className="text-sm font-semibold text-ink-607">Receipt details</h4><span className="text-xs text-slate-400">{pendingPayment.providerName}</span></div>
                 <dl className="divide-y divide-slate-100 rounded-xl border border-slate-100 px-4">
                   <div className="flex items-center justify-between gap-5 py-3.5 text-sm"><dt className="text-slate-500">Recipient</dt><dd className="text-right font-semibold text-slate-700">{pendingPayment.recipientNumber}</dd></div>
                   <div className="flex items-center justify-between gap-5 py-3.5 text-sm"><dt className="text-slate-500">Service</dt><dd className="font-semibold capitalize text-slate-700">{pendingPayment.slug}</dd></div>
-                  <div className="flex items-center justify-between gap-5 py-3.5 text-sm"><dt className="text-slate-500">Transaction reference</dt><dd className="max-w-[190px] break-all text-right font-mono text-xs font-semibold text-[#204657]">{transactionRef}</dd></div>
+                  <div className="flex items-center justify-between gap-5 py-3.5 text-sm"><dt className="text-slate-500">Transaction reference</dt><dd className="max-w-[190px] break-all text-right font-mono text-xs font-semibold text-ink-626">{transactionRef}</dd></div>
                 </dl>
               </div>
 
               <div className="space-y-3 pt-1">
-                <button type="button" onClick={() => { handleReset(); finishService(); }} className="w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#E95312]/20 transition hover:bg-[#E04B14] active:scale-[0.98]">Make another payment</button>
-                <button type="button" onClick={() => { setIsSuccessModalOpen(false); finishService('/'); }} className="block w-full rounded-xl border border-slate-200 py-3 text-center text-sm font-semibold text-[#304A57] transition hover:bg-slate-50 active:scale-[0.98]">Return to marketplace</button>
+                <button type="button" onClick={() => { handleReset(); finishService(); }} className="w-full rounded-xl bg-brand-305 py-3.5 text-sm font-semibold text-on-brand shadow-lg shadow-brand-361/20 transition hover:bg-brand-385 active:scale-[0.98]">Make another payment</button>
+                <button type="button" onClick={() => { setIsSuccessModalOpen(false); finishService('/'); }} className="block w-full rounded-xl border border-slate-200 py-3 text-center text-sm font-semibold text-ink-607 transition hover:bg-slate-50 active:scale-[0.98]">Return to marketplace</button>
               </div>
             </div>
           </div>

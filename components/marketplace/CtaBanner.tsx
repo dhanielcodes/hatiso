@@ -13,9 +13,9 @@ export default function CtaBanner({
   secondaryButtonHref = "/contact",
 }: CtaBannerProps) {
   return (
-    <section className="relative bg-[#1B3C4A] px-4 py-20 sm:px-8 lg:px-14">
+    <section className="relative bg-ink-662 px-4 py-20 sm:px-8 lg:px-14">
       <div className="mx-auto max-w-7xl">
-        <div className="relative overflow-hidden rounded-[32px] bg-[#344E5A] px-6 py-16 sm:px-12 sm:py-20 lg:py-24 text-center shadow-2xl border border-white/5">
+        <div className="relative overflow-hidden rounded-[32px] bg-ink-592 px-6 py-16 sm:px-12 sm:py-20 lg:py-24 text-center shadow-2xl border border-white/5">
           {/* Decorative Topographic / Wave Contours */}
           <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
             {/* Left wavy contours */}
@@ -67,13 +67,13 @@ export default function CtaBanner({
             <div className="pt-6 sm:pt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
               <Link
                 href="/auth/register"
-                className="inline-flex items-center justify-center rounded-xl bg-[#E15F09] px-7 py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#E95312]/20 transition-all duration-150 hover:bg-[#E84D15] active:scale-[0.98]"
+                className="inline-flex items-center justify-center rounded-xl bg-brand-359 px-7 py-3.5 text-xs sm:text-sm font-bold text-on-brand shadow-lg shadow-brand-361/20 transition-all duration-150 hover:bg-brand-370 active:scale-[0.98]"
               >
                 Create a free account
               </Link>
               <Link
                 href={secondaryButtonHref}
-                className="inline-flex items-center justify-center rounded-xl bg-white px-7 py-3.5 text-xs sm:text-sm font-bold text-[#102A36] shadow-md transition-all duration-150 hover:bg-slate-100 active:scale-[0.98]"
+                className="inline-flex items-center justify-center rounded-xl bg-surface px-7 py-3.5 text-xs sm:text-sm font-bold text-ink-729 shadow-md transition-all duration-150 hover:bg-slate-100 active:scale-[0.98]"
               >
                 {secondaryButtonText}
               </Link>

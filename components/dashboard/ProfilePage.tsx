@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import { Formik, Form, type FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import { Bell, Check, ChevronRight, Lock, Pencil, UserPlus, User } from 'lucide-react';
+import { Bell, Check, ChevronRight, Lock, Palette, Pencil, UserPlus, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNotificationSettings, useUpdateNotificationSettings } from '@/lib/queries/useNotifications';
 import { useCurrentUser, useResetPassword, useUpdateProfile } from '@/lib/queries/useAuth';
@@ -11,9 +11,10 @@ import type { CurrentUserProfile } from '@/lib/api/auth';
 import type { NotificationChannel } from '@/lib/api/notifications';
 import { Button, PasswordField, SubmitButton, TextAreaField, TextField } from '@/components/forms';
 import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
+import { THEMES, setTheme, useTheme } from '@/lib/theme/theme';
 
 /* ─── Types ────────────────────────────────────────────────────── */
-type TabId = 'personal' | 'notifications' | 'privacy';
+type TabId = 'personal' | 'notifications' | 'appearance' | 'privacy';
 type Channel = NotificationChannel;
 
 type MenuItem = {
@@ -33,6 +34,7 @@ type ProfileFields = {
 const MENU: MenuItem[] = [
     { id: 'personal', label: 'Personal Details', icon: User },
     { id: 'notifications', label: 'Notification Settings', icon: Bell },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'privacy', label: 'Reset Password', icon: Lock },
 ];
 
@@ -127,15 +129,15 @@ function PersonalDetails() {
     if (isLoading) {
         return (
             <div>
-                <h2 className="text-xl font-medium text-[#243B4A]">Personal Details</h2>
+                <h2 className="text-xl font-medium text-ink-660">Personal Details</h2>
                 <SkeletonGroup label="Loading your details">
-                    <div className="mt-8 flex items-center gap-5 rounded-2xl bg-[#F6F6F7] px-6 py-5">
+                    <div className="mt-8 flex items-center gap-5 rounded-2xl bg-tone-29 px-6 py-5">
                         <Skeleton className="h-[65px] w-[65px] shrink-0 rounded-full" />
                         <Skeleton strong className="h-5 w-40" />
                     </div>
-                    <div className="mt-6 rounded-2xl border border-[#F0EDEA] bg-[#F9F9FA] px-6 pb-6 pt-5">
+                    <div className="mt-6 rounded-2xl border border-tone-70 bg-tone-18 px-6 pb-6 pt-5">
                         {Array.from({ length: 4 }, (_, index) => (
-                            <div key={index} className={`space-y-2 px-3 py-5 ${index > 0 ? 'border-t border-[#E6E3E0]' : ''}`}>
+                            <div key={index} className={`space-y-2 px-3 py-5 ${index > 0 ? 'border-t border-tone-98' : ''}`}>
                                 <Skeleton className="h-3.5 w-24" />
                                 <Skeleton strong className="h-5 w-48" />
                             </div>
@@ -149,8 +151,8 @@ function PersonalDetails() {
     if (isError && !user) {
         return (
             <div>
-                <h2 className="text-xl font-medium text-[#243B4A]">Personal Details</h2>
-                <p className="mt-8 text-sm text-[#E22E41]" role="alert">Couldn&apos;t load your details.</p>
+                <h2 className="text-xl font-medium text-ink-660">Personal Details</h2>
+                <p className="mt-8 text-sm text-danger-404" role="alert">Couldn&apos;t load your details.</p>
                 <Button variant="secondary" size="sm" onClick={() => refetch()} className="mt-4">
                     Try again
                 </Button>
@@ -160,27 +162,27 @@ function PersonalDetails() {
 
     return (
         <div>
-            <h2 className="text-xl font-medium text-[#243B4A]">Personal Details</h2>
+            <h2 className="text-xl font-medium text-ink-660">Personal Details</h2>
 
             {/* Profile summary */}
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#F6F6F7] px-6 py-5">
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-tone-29 px-6 py-5">
                 <div className="flex items-center gap-5">
-                    <span className="flex h-[65px] w-[65px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E3E5E8]">
+                    <span className="flex h-[65px] w-[65px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-tone-93">
                         {user?.avatarUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
                         ) : (
-                            <UserPlus className="h-6 w-6 text-[#20232A]" />
+                            <UserPlus className="h-6 w-6 text-tone-744" />
                         )}
                     </span>
-                    <p className="text-lg font-medium text-[#3B4150]">{shownName}</p>
+                    <p className="text-lg font-medium text-tone-624">{shownName}</p>
                 </div>
             </div>
 
             {/* Details */}
             <Formik<ProfileFields> initialValues={details} validationSchema={profileSchema} enableReinitialize onSubmit={save}>
                 {({ resetForm }) => (
-                    <Form noValidate className="mt-6 rounded-2xl border border-[#F0EDEA] bg-[#F9F9FA] px-6 pb-6 pt-5">
+                    <Form noValidate className="mt-6 rounded-2xl border border-tone-70 bg-tone-18 px-6 pb-6 pt-5">
                         <div className="flex items-center justify-end gap-2">
                             {isEditing ? (
                                 <>
@@ -208,7 +210,7 @@ function PersonalDetails() {
 
                         <div className="mt-1">
                             {editable.map((field, index) => (
-                                <div key={field.key} className={`px-3 py-5 ${index > 0 ? 'border-t border-[#E6E3E0]' : ''}`}>
+                                <div key={field.key} className={`px-3 py-5 ${index > 0 ? 'border-t border-tone-98' : ''}`}>
                                     {isEditing ? (
                                         field.multiline ? (
                                             <TextAreaField
@@ -231,8 +233,8 @@ function PersonalDetails() {
                                         )
                                     ) : (
                                         <>
-                                            <p className="text-sm text-[#52617A]">{field.label}</p>
-                                            <p className="mt-1.5 text-base font-medium text-[#20232A]">{details[field.key] || '—'}</p>
+                                            <p className="text-sm text-ink-510">{field.label}</p>
+                                            <p className="mt-1.5 text-base font-medium text-tone-744">{details[field.key] || '—'}</p>
                                         </>
                                     )}
                                 </div>
@@ -273,11 +275,11 @@ function NotificationSettings() {
 
     return (
         <div className="max-w-[690px]">
-            <h2 className="text-xl font-medium text-[#243B4A]">Notification Settings</h2>
-            <div className="mt-5 grid gap-6 border-t border-[#EEEAE6] py-6 md:grid-cols-[1fr_1fr]">
+            <h2 className="text-xl font-medium text-ink-660">Notification Settings</h2>
+            <div className="mt-5 grid gap-6 border-t border-tone-78 py-6 md:grid-cols-[1fr_1fr]">
                 <div>
-                    <h3 className="text-base font-medium text-[#243B4A]">Purchase Alerts</h3>
-                    <p className="mt-2 max-w-[300px] text-sm text-[#7A7F8A]">
+                    <h3 className="text-base font-medium text-ink-660">Purchase Alerts</h3>
+                    <p className="mt-2 max-w-[300px] text-sm text-tone-405">
                         Choose how you want to be notified about your purchases.
                     </p>
                 </div>
@@ -295,7 +297,7 @@ function NotificationSettings() {
                         ))}
                     </SkeletonGroup>
                 ) : isError ? (
-                    <p className="text-sm text-[#E22E41]">Couldn&apos;t load your notification settings.</p>
+                    <p className="text-sm text-danger-404">Couldn&apos;t load your notification settings.</p>
                 ) : (
                     <div role="radiogroup" aria-label="Purchase alert channel" className="space-y-5">
                         {CHANNEL_OPTIONS.map((opt) => {
@@ -312,23 +314,89 @@ function NotificationSettings() {
                                     className="flex w-full items-start gap-4 text-left disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <span
-                                        className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 ${checked ? 'border-[#E95312]' : 'border-[#B8BFC8]'
+                                        className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 ${checked ? 'border-brand-361' : 'border-tone-198'
                                             }`}
                                     >
-                                        {checked && <span className="h-2 w-2 rounded-full bg-[#E95312]" />}
+                                        {checked && <span className="h-2 w-2 rounded-full bg-brand-361" />}
                                     </span>
                                     <span>
-                                        <span className="block text-sm font-medium text-[#20232A]">{opt.label}</span>
-                                        <span className="mt-1 block max-w-[260px] text-xs leading-relaxed text-[#8A8F99]">
+                                        <span className="block text-sm font-medium text-tone-744">{opt.label}</span>
+                                        <span className="mt-1 block max-w-[260px] text-xs leading-relaxed text-tone-351">
                                             {enabled ? opt.description : `${opt.label} isn't verified on your account yet.`}
                                         </span>
                                     </span>
                                 </button>
                             );
                         })}
-                        <p className="text-xs text-[#8A8F99]">Push notifications aren&apos;t available yet.</p>
+                        <p className="text-xs text-tone-351">Push notifications aren&apos;t available yet.</p>
                     </div>
                 )}
+            </div>
+        </div>
+    );
+}
+
+/* ─── Tab: Appearance (colour theme) ───────────────────────────── */
+function Appearance() {
+    const active = useTheme();
+
+    return (
+        <div className="max-w-[900px]">
+            <h2 className="text-xl font-medium text-ink-660">Appearance</h2>
+            <div className="mt-5 space-y-5 border-t border-tone-78 py-6">
+                <div>
+                    <h3 className="text-base font-medium text-ink-660">Theme</h3>
+                    <p className="mt-2 max-w-[520px] text-sm text-tone-405">
+                        Choose the colours for your dashboard. The change applies straight away and is saved on this device. The public Hatiso pages keep the standard look.
+                    </p>
+                </div>
+
+                <div role="radiogroup" aria-label="Colour theme" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {THEMES.map((theme) => {
+                        const checked = active === theme.id;
+                        // Preview swatches: sidebar, accent, page background, border, card.
+                        const [surface, accent, background, line, card] = theme.swatches;
+                        return (
+                            <button
+                                key={theme.id}
+                                type="button"
+                                role="radio"
+                                aria-checked={checked}
+                                onClick={() => {
+                                    if (checked) return;
+                                    setTheme(theme.id);
+                                    toast.success(`${theme.name} theme applied.`);
+                                }}
+                                className={`group rounded-xl border-2 p-2 text-left transition ${checked ? 'border-brand-361' : 'border-tone-88 hover:border-tone-190'}`}
+                            >
+                                {/* Mini preview, drawn in the theme's own colours whichever theme is active. */}
+                                <span aria-hidden="true" className="flex h-24 overflow-hidden rounded-lg border" style={{ borderColor: line, backgroundColor: background }}>
+                                    <span className="flex w-1/4 flex-col gap-1.5 p-2" style={{ backgroundColor: surface }}>
+                                        <span className="h-1.5 w-full rounded-full" style={{ backgroundColor: accent }} />
+                                        <span className="h-1.5 w-3/4 rounded-full bg-white/30" />
+                                        <span className="h-1.5 w-2/3 rounded-full bg-white/30" />
+                                    </span>
+                                    <span className="flex flex-1 flex-col gap-2 p-2.5">
+                                        <span className="h-2 w-1/2 rounded-full" style={{ backgroundColor: surface }} />
+                                        <span className="flex-1 rounded-md border" style={{ borderColor: line, backgroundColor: card }} />
+                                        <span className="h-3 w-1/3 rounded" style={{ backgroundColor: accent }} />
+                                    </span>
+                                </span>
+                                <span className="mt-3 flex items-start gap-3 px-1 pb-1">
+                                    <span
+                                        className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 ${checked ? 'border-brand-361' : 'border-tone-198'}`}
+                                    >
+                                        {checked && <span className="h-2 w-2 rounded-full bg-brand-361" />}
+                                    </span>
+                                    <span>
+                                        <span className="block text-sm font-medium text-tone-744">{theme.name}</span>
+                                        <span className="mt-1 block text-xs leading-relaxed text-tone-351">{theme.description}</span>
+                                    </span>
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
@@ -359,8 +427,8 @@ function PrivacySecurity() {
 
                 return (
                     <Form className="max-w-[560px]" noValidate>
-                        <h2 className="text-xl font-medium text-[#243B4A]">Change Password</h2>
-                        <div className="mt-5 border-t border-[#EEEAE6]" />
+                        <h2 className="text-xl font-medium text-ink-660">Change Password</h2>
+                        <div className="mt-5 border-t border-tone-78" />
 
                         <div className="mt-7 space-y-5">
                             <PasswordField name="current" label="Current Password" required variant="dashboard" autoComplete="current-password" />
@@ -371,18 +439,18 @@ function PrivacySecurity() {
                         {/* Strength meter */}
                         <div className="mt-7 grid grid-cols-3 gap-3" aria-hidden="true">
                             {PASSWORD_RULES.map((rule, i) => (
-                                <div key={rule.id} className={`h-[3px] rounded-full ${i < passedCount ? 'bg-[#5BAA5F]' : 'bg-[#E3E0DD]'}`} />
+                                <div key={rule.id} className={`h-[3px] rounded-full ${i < passedCount ? 'bg-success-331' : 'bg-tone-102'}`} />
                             ))}
                         </div>
 
-                        <p className="mt-5 text-base text-[#52617A]" aria-live="polite">
+                        <p className="mt-5 text-base text-ink-510" aria-live="polite">
                             {isStrong ? 'Strong password.' : 'Weak password. Must contain;'}
                         </p>
                         <ul className="mt-4 space-y-3">
                             {results.map((rule) => (
-                                <li key={rule.id} className="flex items-center gap-3 text-base text-[#52617A]">
+                                <li key={rule.id} className="flex items-center gap-3 text-base text-ink-510">
                                     <span
-                                        className={`flex h-[22px] w-[22px] items-center justify-center rounded-full ${rule.passed ? 'bg-[#5BAA5F]' : 'bg-[#E3E0DD]'}`}
+                                        className={`flex h-[22px] w-[22px] items-center justify-center rounded-full ${rule.passed ? 'bg-success-331' : 'bg-tone-102'}`}
                                     >
                                         <Check className="h-3 w-3 text-white" strokeWidth={3} />
                                     </span>
@@ -391,7 +459,7 @@ function PrivacySecurity() {
                             ))}
                         </ul>
 
-                        <div className="mt-6 flex justify-end border-t border-[#EEEAE6] pt-6">
+                        <div className="mt-6 flex justify-end border-t border-tone-78 pt-6">
                             <SubmitButton variant="primary" size="lg" loadingLabel="Updating…">
                                 Reset Password
                             </SubmitButton>
@@ -407,23 +475,23 @@ function PrivacySecurity() {
 export default function AccountPage() {
     const [tab, setTab] = useState<TabId>('personal');
     return (
-        <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
+        <div className="min-h-full bg-tone-12 text-tone-760">
             {/* ── Page header ── */}
-            <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Your account</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">
+            <section className="border-b border-tone-80 px-5 py-7 sm:px-8">
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-361">Your account</p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-tone-744 sm:text-3xl">
                     Your details, privacy and security.
                 </h2>
-                <p className="mt-2 text-sm text-[#777486] sm:text-base">
+                <p className="mt-2 text-sm text-tone-432 sm:text-base">
                     Keep your information current and choose how Hatiso protects you.
                 </p>
             </section>
 
             <main className="px-5 py-6 sm:px-8 lg:py-8">
-                <div className="grid gap-8 rounded-lg bg-white p-5 sm:p-5 lg:min-h-[826px] lg:grid-cols-[280px_1fr]">
+                <div className="grid gap-8 rounded-lg bg-surface p-5 sm:p-5 lg:min-h-[826px] lg:grid-cols-[280px_1fr]">
                     {/* ── Side menu ── */}
-                    <aside className="h-fit self-start rounded-xl border border-[#EBE6E1] bg-white px-3.5 pb-8 pt-7" aria-label="Account menu">
-                        <p className="px-3 text-xs font-medium uppercase text-[#52617A]">Select menu</p>
+                    <aside className="h-fit self-start rounded-xl border border-tone-88 bg-surface px-3.5 pb-8 pt-7" aria-label="Account menu">
+                        <p className="px-3 text-xs font-medium uppercase text-ink-510">Select menu</p>
                         <div role="tablist" aria-orientation="vertical" className="mt-3 space-y-1">
                             {MENU.map((item) => {
                                 const Icon = item.icon;
@@ -437,13 +505,13 @@ export default function AccountPage() {
                                         aria-selected={active}
                                         aria-controls={`panel-${item.id}`}
                                         onClick={() => setTab(item.id)}
-                                        className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-[15px] transition ${active ? 'bg-[#F3F4F6] font-medium text-[#20232A]' : 'text-[#52617A] hover:bg-slate-50'
+                                        className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-[15px] transition ${active ? 'bg-tone-41 font-medium text-tone-744' : 'text-ink-510 hover:bg-slate-50'
                                             }`}
                                     >
                                         <Icon className="h-[18px] w-[18px] shrink-0" />
                                         <span className="flex-1">{item.label}</span>
                                         {active && (
-                                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#243B4A]">
+                                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-ink-660">
                                                 <ChevronRight className="h-3 w-3 text-white" strokeWidth={3} />
                                             </span>
                                         )}
@@ -464,6 +532,7 @@ export default function AccountPage() {
                             <PersonalDetails />
                         )}
                         {tab === 'notifications' && <NotificationSettings />}
+                        {tab === 'appearance' && <Appearance />}
                         {tab === 'privacy' && (
                             <PrivacySecurity />
                         )}

@@ -23,7 +23,7 @@ import {
 } from '@/lib/auth/verification';
 
 const BTN =
-  'w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
+  'w-full rounded-xl bg-brand-305 py-3.5 text-sm font-semibold text-on-brand shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-brand-249 active:scale-[0.99] disabled:opacity-50';
 
 const lookupSchema = Yup.object({
   identifier: Yup.string()
@@ -44,8 +44,8 @@ function ResumeLookup() {
   return (
     <>
       <div className="mb-6 text-center">
-        <p className="text-xs font-bold uppercase tracking-widest text-[#E95312]">STEP 3</p>
-        <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">Account Verification</h1>
+        <p className="text-xs font-bold uppercase tracking-widest text-brand-361">STEP 3</p>
+        <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-tone-822">Account Verification</h1>
         <p className="mt-1.5 text-[13px] text-slate-500">
           Started signing up but didn&apos;t verify? Enter the email or phone number you used and we&apos;ll send you a new code.
         </p>
@@ -105,11 +105,11 @@ function ResumeLookup() {
 
       <p className="mt-6 text-center text-[13px] text-slate-500">
         Already verified?{' '}
-        <Link href="/auth/login" className="font-semibold text-[#E95312] hover:text-[#E84D15]">
+        <Link href="/auth/login" className="font-semibold text-brand-361 hover:text-brand-370">
           Sign In
         </Link>
         {' · '}
-        <Link href="/auth/register" className="font-semibold text-[#E95312] hover:text-[#E84D15]">
+        <Link href="/auth/register" className="font-semibold text-brand-361 hover:text-brand-370">
           Create an account
         </Link>
       </p>
@@ -128,10 +128,10 @@ export default function VerifyPage() {
   const context = useMemo(() => parseVerificationContext(raw), [raw]);
 
   return (
-    <div className="grid min-h-screen bg-[#F7F4EF] lg:grid-cols-2">
+    <div className="grid min-h-screen bg-tone-35 lg:grid-cols-2">
       <AuthBrandPanel />
 
-      <main className="flex min-h-screen flex-col bg-[#F7F4EF] px-5 py-6 sm:px-10 lg:px-16 xl:px-20">
+      <main className="flex min-h-screen flex-col bg-tone-35 px-5 py-6 sm:px-10 lg:px-16 xl:px-20">
         <div className="flex flex-1 flex-col items-center justify-center py-4">
           <div className="w-full max-w-[460px]">
             <StepIndicator currentStep={3} />

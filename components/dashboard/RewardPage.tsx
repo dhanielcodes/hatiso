@@ -17,7 +17,7 @@ type HistoryRow = {
 };
 
 /* ─── Constants ────────────────────────────────────────────────── */
-const CARD = 'rounded-xl border border-[#EBE6E1] bg-white';
+const CARD = 'rounded-xl border border-tone-88 bg-surface';
 
 /* ─── Dummy data ───────────────────────────────────────────────── */
 const MEMBER = {
@@ -95,9 +95,9 @@ const COLUMNS = [
 ];
 
 const STATUS_STYLES: Record<HistoryRow['status'], { pill: string; dot: string }> = {
-    Success: { pill: 'bg-[#E7F5EE] text-[#2E9A4F]', dot: 'bg-[#2E9A4F]' },
-    Pending: { pill: 'bg-[#FFF4DB] text-[#B7791F]', dot: 'bg-[#B7791F]' },
-    Failed: { pill: 'bg-[#FDE8EA] text-[#E22E41]', dot: 'bg-[#E22E41]' },
+    Success: { pill: 'bg-tone-58 text-success-392', dot: 'bg-success-392' },
+    Pending: { pill: 'bg-tone-34 text-warning-374', dot: 'bg-warning-374' },
+    Failed: { pill: 'bg-tone-71 text-danger-404', dot: 'bg-danger-404' },
 };
 
 /* ─── Small presentational pieces ──────────────────────────────── */
@@ -197,20 +197,20 @@ export default function RewardPage() {
     const showingTo = Math.min(startIndex + pageSize, filteredRows.length);
 
     return (
-        <div className="min-h-full bg-[#FFFAF7] text-[#18202A]">
+        <div className="min-h-full bg-tone-12 text-tone-760">
             {/* ── Page header ── */}
 
-            <section className="border-b border-[#F0E9E5] px-5 py-7 sm:px-8">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#E95312]">Rewards</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#20232A] sm:text-3xl">Good habits deserve <span className="text-[#FF6500]">good rewards.</span></h2>
-                <p className="mt-2 text-sm text-[#777486] sm:text-base">Earn points whenever you pay, refer friends, and complete simple challenges.</p>
+            <section className="border-b border-tone-80 px-5 py-7 sm:px-8">
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-361">Rewards</p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-tone-744 sm:text-3xl">Good habits deserve <span className="text-brand-305">good rewards.</span></h2>
+                <p className="mt-2 text-sm text-tone-432 sm:text-base">Earn points whenever you pay, refer friends, and complete simple challenges.</p>
             </section>
 
             <main className="mx-auto space-y-6 px-5 py-6 sm:px-8 lg:py-7">
                 {/* ── Points hero ── */}
-                <section className="relative overflow-hidden rounded-2xl bg-[#243B4A] px-6 py-8 text-white sm:px-8">
+                <section className="relative overflow-hidden rounded-2xl bg-ink-660 px-6 py-8 text-white sm:px-8">
                     <div className="relative z-10 max-w-md">
-                        <span className="inline-block rounded-full bg-[#FBE9B7] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#8A5A00]">
+                        <span className="inline-block rounded-full bg-warning-64 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-warning-492">
                             {MEMBER.tier}
                         </span>
                         <p className="mt-6 text-xs text-white/60">Available points</p>
@@ -226,7 +226,7 @@ export default function RewardPage() {
                             aria-valuemax={100}
                             aria-label={`Progress to ${MEMBER.nextTier}`}
                         >
-                            <div className="h-full rounded-full bg-[#E95312]" style={{ width: `${MEMBER.progressPercent}%` }} />
+                            <div className="h-full rounded-full bg-brand-361" style={{ width: `${MEMBER.progressPercent}%` }} />
                         </div>
                     </div>
                     <div className="pointer-events-none absolute bottom-0 right-4 top-0 hidden w-[340px] items-center sm:flex lg:right-12">
@@ -237,41 +237,41 @@ export default function RewardPage() {
                 {/* ── Tier + referral ── */}
                 <section className="grid gap-5 lg:grid-cols-2">
                     <article className={`${CARD} p-5 sm:p-6`}>
-                        <h2 className="text-base font-semibold text-[#20232A]">Tier</h2>
-                        <p className="mt-1.5 text-sm text-[#7A7F8A]">See for every stage of growth</p>
+                        <h2 className="text-base font-semibold text-tone-744">Tier</h2>
+                        <p className="mt-1.5 text-sm text-tone-405">See for every stage of growth</p>
 
                         <ol className="relative mt-12 grid grid-cols-4 gap-2 pb-2">
-                            <div className="absolute left-[12.5%] right-[12.5%] top-[14px] border-t border-dashed border-[#D9D3CE]" aria-hidden="true" />
+                            <div className="absolute left-[12.5%] right-[12.5%] top-[14px] border-t border-dashed border-tone-130" aria-hidden="true" />
                             {TIERS.map((tier) => (
                                 <li key={tier.name} className="relative flex flex-col items-center text-center">
                                     <span
                                         className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full ${tier.state === 'done'
-                                            ? 'bg-[#2E7D4F]'
+                                            ? 'bg-success-471'
                                             : tier.state === 'current'
-                                                ? 'bg-[#D9622B]'
-                                                : 'bg-[#F7E1D5]'
+                                                ? 'bg-brand-365'
+                                                : 'bg-tone-91'
                                             }`}
                                     >
                                         <Check className={`h-4 w-4 ${tier.state === 'locked' ? 'text-white/80' : 'text-white'}`} strokeWidth={3} />
                                     </span>
-                                    <span className="mt-5 text-lg font-medium text-[#20232A]">{tier.name}</span>
-                                    <span className="mt-1 text-sm text-[#7A7F8A]">{tier.note}</span>
+                                    <span className="mt-5 text-lg font-medium text-tone-744">{tier.name}</span>
+                                    <span className="mt-1 text-sm text-tone-405">{tier.note}</span>
                                 </li>
                             ))}
                         </ol>
                     </article>
 
                     <article className={`${CARD} p-5 sm:p-6`}>
-                        <h2 className="text-base font-semibold text-[#20232A]">Refer a friend</h2>
-                        <p className="mt-1.5 text-sm text-[#7A7F8A]">Get 1,000 points when their first bill is paid.</p>
+                        <h2 className="text-base font-semibold text-tone-744">Refer a friend</h2>
+                        <p className="mt-1.5 text-sm text-tone-405">Get 1,000 points when their first bill is paid.</p>
 
-                        <div className="mt-8 flex items-center justify-between rounded-lg border border-dashed border-[#E95312] bg-[#FFF7F2] px-4 py-4">
-                            <span className="text-sm font-medium tracking-wide text-[#20232A]">{MEMBER.referralCode}</span>
+                        <div className="mt-8 flex items-center justify-between rounded-lg border border-dashed border-brand-361 bg-tone-19 px-4 py-4">
+                            <span className="text-sm font-medium tracking-wide text-tone-744">{MEMBER.referralCode}</span>
                             <button
                                 type="button"
                                 onClick={copyCode}
                                 aria-label="Copy referral code"
-                                className="text-[#E95312] transition hover:opacity-70"
+                                className="text-brand-361 transition hover:opacity-70"
                             >
                                 {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
                             </button>
@@ -280,7 +280,7 @@ export default function RewardPage() {
                         <button
                             type="button"
                             onClick={shareInvite}
-                            className="mt-4 w-full rounded-lg bg-[#EE7230] py-3.5 text-sm font-semibold text-white transition hover:bg-[#D9622B]"
+                            className="mt-4 w-full rounded-lg bg-brand-311 py-3.5 text-sm font-semibold text-on-brand transition hover:bg-brand-365"
                         >
                             Share invite
                         </button>
@@ -289,25 +289,25 @@ export default function RewardPage() {
 
                 {/* ── Redeem your points ── */}
                 <section>
-                    <h2 className="text-base font-semibold text-[#20232A]">Redeem your points</h2>
+                    <h2 className="text-base font-semibold text-tone-744">Redeem your points</h2>
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                         {REDEEM_OFFERS.map((offer) => {
                             const canRedeem = MEMBER.points >= offer.points;
                             return (
                                 <article key={offer.id} className={`${CARD} flex items-center gap-4 p-3`}>
-                                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#FBE3D5]">
-                                        <Smartphone className="h-5 w-5 text-[#E2733F]" />
+                                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-tone-84">
+                                        <Smartphone className="h-5 w-5 text-brand-326" />
                                     </span>
                                     <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-semibold text-[#20232A]">{offer.title}</p>
-                                        <p className="mt-1 text-xs text-[#7A7F8A]">{offer.points} Points</p>
+                                        <p className="truncate text-sm font-semibold text-tone-744">{offer.title}</p>
+                                        <p className="mt-1 text-xs text-tone-405">{offer.points} Points</p>
                                     </div>
                                     <button
                                         type="button"
                                         disabled={!canRedeem}
-                                        className="flex items-center gap-1.5 pr-2 text-xs font-medium text-[#E95312] transition hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="flex items-center gap-1.5 pr-2 text-xs font-medium text-brand-361 transition hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40"
                                     >
-                                        Redeem <ChevronRight className="h-4 w-4 text-[#807A7B]" />
+                                        Redeem <ChevronRight className="h-4 w-4 text-tone-415" />
                                     </button>
                                 </article>
                             );
@@ -317,12 +317,12 @@ export default function RewardPage() {
 
                 {/* ── Reward history ── */}
                 <section className={`${CARD} p-5 sm:p-6`}>
-                    <h2 className="text-lg font-semibold text-[#20232A]">Reward History</h2>
+                    <h2 className="text-lg font-semibold text-tone-744">Reward History</h2>
 
                     <div className="mt-6 flex flex-wrap items-center gap-3">
                         <label className="relative flex min-w-[220px] flex-1 items-center">
                             <span className="sr-only">Search services or provider</span>
-                            <Search className="pointer-events-none absolute left-4 h-4 w-4 text-[#52617A]" />
+                            <Search className="pointer-events-none absolute left-4 h-4 w-4 text-ink-510" />
                             <input
                                 type="search"
                                 value={query}
@@ -331,11 +331,11 @@ export default function RewardPage() {
                                     setPage(1);
                                 }}
                                 placeholder="Search services or provider"
-                                className="h-11 w-full rounded-lg border border-[#E6E3E0] bg-white pl-11 pr-4 text-sm text-[#343238] outline-none placeholder:text-[#A29B9C] focus:border-[#E95312]"
+                                className="h-11 w-full rounded-lg border border-tone-98 bg-surface pl-11 pr-4 text-sm text-tone-678 outline-none placeholder:text-tone-304 focus:border-brand-361"
                             />
                         </label>
 
-                        <div className="flex items-center gap-2 border-l border-[#E6E3E0] pl-3">
+                        <div className="flex items-center gap-2 border-l border-tone-98 pl-3">
                             {(['Earned', 'Redeemed'] as HistoryTab[]).map((name) => (
                                 <button
                                     key={name}
@@ -346,8 +346,8 @@ export default function RewardPage() {
                                     }}
                                     aria-pressed={tab === name}
                                     className={`rounded-full border px-5 py-2.5 text-sm font-medium transition ${tab === name
-                                        ? 'border-[#243B4A] bg-[#243B4A] text-white'
-                                        : 'border-[#DED8D4] bg-white text-[#343238] hover:bg-slate-50'
+                                        ? 'border-ink-660 bg-ink-660 text-white'
+                                        : 'border-tone-114 bg-surface text-tone-678 hover:bg-slate-50'
                                         }`}
                                 >
                                     {name}
@@ -356,10 +356,10 @@ export default function RewardPage() {
                         </div>
                     </div>
 
-                    <div className="mt-6 overflow-x-auto rounded-lg border border-[#F1EDE9]">
+                    <div className="mt-6 overflow-x-auto rounded-lg border border-tone-69">
                         <table className="w-full min-w-[900px] text-left">
                             <thead>
-                                <tr className="bg-[#FAF7F4] text-[11px] font-medium uppercase text-[#52617A]">
+                                <tr className="bg-tone-25 text-[11px] font-medium uppercase text-ink-510">
                                     {COLUMNS.map((col) => (
                                         <th key={col.label} scope="col" className="whitespace-nowrap px-4 py-4 font-medium">
                                             <span className="inline-flex items-center gap-1.5">
@@ -370,11 +370,11 @@ export default function RewardPage() {
                                     ))}
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-[#F1EDE9]">
+                            <tbody className="divide-y divide-tone-69">
                                 {visibleRows.map((row) => {
                                     const status = STATUS_STYLES[row.status];
                                     return (
-                                        <tr key={row.reference} className="text-sm text-[#52617A]">
+                                        <tr key={row.reference} className="text-sm text-ink-510">
                                             <td className="px-4 py-[18px]">{row.reference}</td>
                                             <td className="px-4 py-[18px]">
                                                 <span className="flex items-center gap-3">
@@ -382,9 +382,9 @@ export default function RewardPage() {
                                                     <span className="whitespace-nowrap">{row.provider}</span>
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-[18px] font-medium text-[#20232A]">{row.contact}</td>
+                                            <td className="px-4 py-[18px] font-medium text-tone-744">{row.contact}</td>
                                             <td className="whitespace-nowrap px-4 py-[18px]">{row.date}</td>
-                                            <td className="px-4 py-[18px] font-semibold text-[#20232A]">{row.amount}</td>
+                                            <td className="px-4 py-[18px] font-semibold text-tone-744">{row.amount}</td>
                                             <td className="whitespace-nowrap px-4 py-[18px]">{row.points}</td>
                                             <td className="px-4 py-[18px]">
                                                 <span className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-medium ${status.pill}`}>
@@ -406,7 +406,7 @@ export default function RewardPage() {
                         </table>
 
                         {/* Pagination */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#F1EDE9] px-5 py-6 text-sm text-[#52617A]">
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-tone-69 px-5 py-6 text-sm text-ink-510">
                             <span>
                                 Showing {showingFrom}-{showingTo} of {filteredRows.length} entries
                             </span>
@@ -421,7 +421,7 @@ export default function RewardPage() {
                                                 setPageSize(Number(event.target.value));
                                                 setPage(1);
                                             }}
-                                            className="appearance-none rounded-md border border-[#E6E3E0] bg-white py-1.5 pl-3 pr-7 text-xs text-[#343238] outline-none"
+                                            className="appearance-none rounded-md border border-tone-98 bg-surface py-1.5 pl-3 pr-7 text-xs text-tone-678 outline-none"
                                         >
                                             {PAGE_SIZES.map((size) => (
                                                 <option key={size} value={size}>
@@ -440,17 +440,17 @@ export default function RewardPage() {
                                         onClick={() => setPage(Math.max(1, currentPage - 1))}
                                         disabled={currentPage === 1}
                                         aria-label="Previous page"
-                                        className="flex h-7 w-7 items-center justify-center rounded-md border border-[#E6E3E0] bg-white transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="flex h-7 w-7 items-center justify-center rounded-md border border-tone-98 bg-surface transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                                     >
                                         <ChevronLeft className="h-4 w-4" />
                                     </button>
-                                    <span className="min-w-4 text-center text-xs font-semibold text-[#20232A]">{currentPage}</span>
+                                    <span className="min-w-4 text-center text-xs font-semibold text-tone-744">{currentPage}</span>
                                     <button
                                         type="button"
                                         onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
                                         disabled={currentPage === totalPages}
                                         aria-label="Next page"
-                                        className="flex h-7 w-7 items-center justify-center rounded-md border border-[#E6E3E0] bg-white transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="flex h-7 w-7 items-center justify-center rounded-md border border-tone-98 bg-surface transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                                     >
                                         <ChevronRight className="h-4 w-4" />
                                     </button>

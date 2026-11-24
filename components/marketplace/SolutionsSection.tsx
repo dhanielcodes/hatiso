@@ -106,18 +106,18 @@ export default function SolutionsSection() {
   return (
     <section
       id="solutions"
-      className="relative bg-white px-4 py-20 sm:px-8 lg:px-20 xl:px-28 text-slate-900 overflow-hidden lg:overflow-visible"
+      className="relative bg-surface px-4 py-20 sm:px-8 lg:px-20 xl:px-28 text-slate-900 overflow-hidden lg:overflow-visible"
     >
       <div className="mx-auto max-w-7xl">
         {/* Segmented Control Pill: [ Personal | Business ] */}
         <div className="mb-12 flex items-center justify-start">
-          <div className="inline-flex items-center rounded-xl bg-[#F0F2F5] p-1 shadow-inner">
+          <div className="inline-flex items-center rounded-xl bg-tone-55 p-1 shadow-inner">
             <button
               onClick={() => handleTabChange("personal")}
               className={`rounded-lg px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${
                 activeTab === "personal"
-                  ? "bg-white text-[#102A36] shadow-sm"
-                  : "text-slate-500 hover:text-[#102A36]"
+                  ? "bg-surface text-ink-729 shadow-sm"
+                  : "text-slate-500 hover:text-ink-729"
               }`}
             >
               Personal
@@ -126,8 +126,8 @@ export default function SolutionsSection() {
               onClick={() => handleTabChange("business")}
               className={`rounded-lg px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${
                 activeTab === "business"
-                  ? "bg-white text-[#102A36] shadow-sm"
-                  : "text-slate-500 hover:text-[#102A36]"
+                  ? "bg-surface text-ink-729 shadow-sm"
+                  : "text-slate-500 hover:text-ink-729"
               }`}
             >
               Business
@@ -145,7 +145,7 @@ export default function SolutionsSection() {
             id="personal-card"
             onMouseEnter={() => setIsHoveredIndividual(true)}
             onMouseLeave={() => setIsHoveredIndividual(false)}
-            className="relative my-8 lg:my-14 rounded-3xl bg-[#F0F2F5] p-8 sm:p-12 lg:px-14 lg:py-16 min-h-[480px] sm:min-h-[500px] lg:min-h-[520px] flex items-center overflow-visible transition-all duration-500"
+            className="relative my-8 lg:my-14 rounded-3xl bg-tone-55 p-8 sm:p-12 lg:px-14 lg:py-16 min-h-[480px] sm:min-h-[500px] lg:min-h-[520px] flex items-center overflow-visible transition-all duration-500"
           >
             {INDIVIDUAL_SLIDES.map((slide, index) => {
               const isActive = individualSlide === index;
@@ -179,10 +179,10 @@ export default function SolutionsSection() {
 
                       {/* Text on Right */}
                       <div className="space-y-5 lg:col-span-6 lg:pl-6">
-                        <span className="inline-block text-sm sm:text-base font-bold text-[#E95312]">
+                        <span className="inline-block text-sm sm:text-base font-bold text-brand-361">
                           {slide.badge}
                         </span>
-                        <h2 className="text-3xl font-black tracking-tight text-[#102A36] sm:text-4xl lg:text-5xl leading-[1.12]">
+                        <h2 className="text-3xl font-black tracking-tight text-ink-729 sm:text-4xl lg:text-5xl leading-[1.12]">
                           {slide.title.map((line, i) => (
                             <React.Fragment key={i}>
                               {line}
@@ -196,7 +196,7 @@ export default function SolutionsSection() {
                         <div className="pt-2">
                           <Link
                             href={slide.buttonHref}
-                            className="inline-flex items-center justify-center rounded-xl bg-[#102A36] px-6 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-150 hover:bg-[#183946] active:scale-[0.98]"
+                            className="inline-flex items-center justify-center rounded-xl bg-ink-729 px-6 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-150 hover:bg-ink-674 active:scale-[0.98]"
                           >
                             {slide.buttonText}
                           </Link>
@@ -208,10 +208,10 @@ export default function SolutionsSection() {
                       {/* SLIDE 0 (Pay for what you need): Text on Left, DRAMATIC VERTICAL POP OUT on Right */}
                       {/* Text on Left */}
                       <div className="space-y-5 lg:col-span-7">
-                        <span className="inline-block text-sm sm:text-base font-bold text-[#E95312]">
+                        <span className="inline-block text-sm sm:text-base font-bold text-brand-361">
                           {slide.badge}
                         </span>
-                        <h2 className="text-3xl font-black tracking-tight text-[#102A36] sm:text-4xl lg:text-5xl leading-[1.12]">
+                        <h2 className="text-3xl font-black tracking-tight text-ink-729 sm:text-4xl lg:text-5xl leading-[1.12]">
                           {slide.title.map((line, i) => (
                             <React.Fragment key={i}>
                               {line}
@@ -225,7 +225,7 @@ export default function SolutionsSection() {
                         <div className="pt-2">
                           <Link
                             href={slide.buttonHref}
-                            className="inline-flex items-center justify-center rounded-xl bg-[#102A36] px-6 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-150 hover:bg-[#183946] active:scale-[0.98]"
+                            className="inline-flex items-center justify-center rounded-xl bg-ink-729 px-6 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-150 hover:bg-ink-674 active:scale-[0.98]"
                           >
                             {slide.buttonText}
                           </Link>
@@ -236,7 +236,7 @@ export default function SolutionsSection() {
                       <div className="relative flex justify-center lg:col-span-5 lg:justify-end">
                         {/* Floating Mini Transactions Card */}
                         {slide.hasTransactionsGauge && (
-                          <div className="absolute top-6 -left-8 sm:top-10 sm:-left-14 lg:top-14 lg:-left-20 z-0 hidden sm:block w-36 rounded-2xl bg-white p-3.5 shadow-xl border border-slate-100/90">
+                          <div className="absolute top-6 -left-8 sm:top-10 sm:-left-14 lg:top-14 lg:-left-20 z-0 hidden sm:block w-36 rounded-2xl bg-surface p-3.5 shadow-xl border border-slate-100/90">
                             <div className="mb-1.5 flex items-center justify-between text-[7px] font-bold text-slate-400 uppercase tracking-wider">
                               <span>Transactions</span>
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -319,7 +319,7 @@ export default function SolutionsSection() {
                   aria-label={`Go to individual slide ${i + 1}`}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
                     individualSlide === i
-                      ? "w-6 bg-[#E95312]"
+                      ? "w-6 bg-brand-361"
                       : "w-2 bg-slate-300 hover:bg-slate-400"
                   }`}
                 />
@@ -334,7 +334,7 @@ export default function SolutionsSection() {
             id="business-card"
             onMouseEnter={() => setIsHoveredBusiness(true)}
             onMouseLeave={() => setIsHoveredBusiness(false)}
-            className="relative my-8 lg:my-14 rounded-3xl bg-[#F0F2F5] p-8 sm:p-12 lg:px-14 lg:py-16 min-h-[480px] sm:min-h-[500px] lg:min-h-[520px] flex items-center overflow-visible transition-all duration-500"
+            className="relative my-8 lg:my-14 rounded-3xl bg-tone-55 p-8 sm:p-12 lg:px-14 lg:py-16 min-h-[480px] sm:min-h-[500px] lg:min-h-[520px] flex items-center overflow-visible transition-all duration-500"
           >
             {BUSINESS_SLIDES.map((slide, index) => {
               const isActive = businessSlide === index;
@@ -368,10 +368,10 @@ export default function SolutionsSection() {
 
                       {/* Text on Right */}
                       <div className="space-y-5 lg:col-span-5 lg:pl-6">
-                        <span className="inline-block text-sm sm:text-base font-bold text-[#E95312]">
+                        <span className="inline-block text-sm sm:text-base font-bold text-brand-361">
                           {slide.badge}
                         </span>
-                        <h2 className="text-3xl font-black tracking-tight text-[#102A36] sm:text-4xl lg:text-5xl leading-[1.12]">
+                        <h2 className="text-3xl font-black tracking-tight text-ink-729 sm:text-4xl lg:text-5xl leading-[1.12]">
                           {slide.title.map((line, i) => (
                             <React.Fragment key={i}>
                               {line}
@@ -385,7 +385,7 @@ export default function SolutionsSection() {
                         <div className="pt-2">
                           <Link
                             href={slide.buttonHref}
-                            className="inline-flex items-center justify-center rounded-xl bg-[#102A36] px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-150 hover:bg-[#183946] active:scale-[0.98]"
+                            className="inline-flex items-center justify-center rounded-xl bg-ink-729 px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-150 hover:bg-ink-674 active:scale-[0.98]"
                           >
                             {slide.buttonText}
                           </Link>
@@ -397,10 +397,10 @@ export default function SolutionsSection() {
                       {/* SLIDE 0 (Put your services in front): DRAMATIC POP OUT ON RIGHT (extending top, bottom, and BEYOND RIGHT EDGE) */}
                       {/* Text on Left */}
                       <div className="space-y-5 lg:col-span-5">
-                        <span className="inline-block text-sm sm:text-base font-bold text-[#E95312]">
+                        <span className="inline-block text-sm sm:text-base font-bold text-brand-361">
                           {slide.badge}
                         </span>
-                        <h2 className="text-3xl font-black tracking-tight text-[#102A36] sm:text-4xl lg:text-5xl leading-[1.12]">
+                        <h2 className="text-3xl font-black tracking-tight text-ink-729 sm:text-4xl lg:text-5xl leading-[1.12]">
                           {slide.title.map((line, i) => (
                             <React.Fragment key={i}>
                               {line}
@@ -414,7 +414,7 @@ export default function SolutionsSection() {
                         <div className="pt-2">
                           <Link
                             href={slide.buttonHref}
-                            className="inline-flex items-center justify-center rounded-xl bg-[#102A36] px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-150 hover:bg-[#183946] active:scale-[0.98]"
+                            className="inline-flex items-center justify-center rounded-xl bg-ink-729 px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition-all duration-150 hover:bg-ink-674 active:scale-[0.98]"
                           >
                             {slide.buttonText}
                           </Link>
@@ -449,7 +449,7 @@ export default function SolutionsSection() {
                   aria-label={`Go to business slide ${i + 1}`}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
                     businessSlide === i
-                      ? "w-6 bg-[#E95312]"
+                      ? "w-6 bg-brand-361"
                       : "w-2 bg-slate-300 hover:bg-slate-400"
                   }`}
                 />

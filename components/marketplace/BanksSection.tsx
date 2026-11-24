@@ -37,17 +37,17 @@ export default function BanksSection() {
   return (
     <section
       id="banks-section"
-      className="relative bg-white px-4 py-24 sm:px-8 lg:px-14 text-slate-900"
+      className="relative bg-surface px-4 py-24 sm:px-8 lg:px-14 text-slate-900"
     >
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
         <div className="mb-12 text-center space-y-3">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#E95312]">
+          <span className="text-xs font-bold uppercase tracking-wider text-brand-361">
             Banks
           </span>
-          <h2 className="text-3xl font-black tracking-tight text-[#0F2833] sm:text-4xl lg:text-5xl">
+          <h2 className="text-3xl font-black tracking-tight text-ink-737 sm:text-4xl lg:text-5xl">
             Bank the way you already do,
-            <span className="block mt-1 font-extrabold text-[#0F2833]">
+            <span className="block mt-1 font-extrabold text-ink-737">
               just in one place
             </span>
           </h2>
@@ -63,7 +63,7 @@ export default function BanksSection() {
             <button
               type="button"
               onClick={() => refetch()}
-              className="ml-2 font-bold text-[#E95312] hover:underline"
+              className="ml-2 font-bold text-brand-361 hover:underline"
             >
               Try again
             </button>
@@ -89,10 +89,10 @@ export default function BanksSection() {
                 key={bank.id}
                 onClick={() => setSelectedBank(bank)}
                 type="button"
-                className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs text-left transition-shadow duration-200 hover:shadow-md hover:border-slate-300 h-[200px] sm:h-[220px]"
+                className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-surface shadow-xs text-left transition-shadow duration-200 hover:shadow-md hover:border-slate-300 h-[200px] sm:h-[220px]"
               >
                 {/* Logo taking full space of card */}
-                <div className="relative flex-1 w-full bg-white p-5 flex items-center justify-center">
+                <div className="relative flex-1 w-full bg-surface p-5 flex items-center justify-center">
                   {bank.logoUrl ? (
                     <BankLogo bank={bank} className="h-full w-full p-2" />
                   ) : (
@@ -106,10 +106,10 @@ export default function BanksSection() {
 
                 {/* Bottom opaque bar with Bank Name and Arrow */}
                 <div className="w-full bg-slate-50/95 border-t border-slate-100 px-3.5 py-2.5 flex items-center justify-between backdrop-blur-xs">
-                  <span className="text-xs sm:text-[13px] font-bold text-[#0F2833] truncate">
+                  <span className="text-xs sm:text-[13px] font-bold text-ink-737 truncate">
                     {bank.name}
                   </span>
-                  <div className="flex-shrink-0 ml-1 text-[#E95312]">
+                  <div className="flex-shrink-0 ml-1 text-brand-361">
                     <ArrowUpRight className="h-4 w-4 stroke-[2.2]" />
                   </div>
                 </div>
@@ -122,7 +122,7 @@ export default function BanksSection() {
         <div className="mt-10 flex justify-center">
           <Link
             href="/banks"
-            className="group inline-flex items-center gap-2 rounded-xl bg-[#102A36] px-6 py-3.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:bg-[#183946] active:scale-95"
+            className="group inline-flex items-center gap-2 rounded-xl bg-ink-729 px-6 py-3.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:bg-ink-674 active:scale-95"
           >
             <span>See all Banks</span>
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -137,10 +137,10 @@ export default function BanksSection() {
           onClick={(e) => e.target === e.currentTarget && setSelectedBank(null)}
         >
           {/* Card */}
-          <div className="w-full max-w-sm rounded-3xl bg-white px-6 pt-8 pb-5 shadow-2xl text-slate-900 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-surface px-6 pt-8 pb-5 shadow-2xl text-slate-900 animate-in fade-in zoom-in-95 duration-200">
             {/* Bank logo — left-aligned */}
             <div className="flex mb-5">
-              <div className="flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-[#F4F7F9] p-2.5 border border-slate-100">
+              <div className="flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-tone-28 p-2.5 border border-slate-100">
                 <BankLogo
                   bank={selectedBank}
                   className="h-full w-full"
@@ -150,7 +150,7 @@ export default function BanksSection() {
             </div>
 
             {/* Title */}
-            <h3 className="text-xl font-bold text-[#0F2833] mb-2">
+            <h3 className="text-xl font-bold text-ink-737 mb-2">
               Continue to {selectedBank.name}
             </h3>
 
@@ -170,7 +170,7 @@ export default function BanksSection() {
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-0.5">
                   Secure Destination
                 </p>
-                <p className="text-sm font-bold text-[#0F2833] truncate">
+                <p className="text-sm font-bold text-ink-737 truncate">
                   {selectedBank.name} Banking
                 </p>
                 <p className="text-xs font-semibold text-emerald-500 mt-0.5">
@@ -186,14 +186,14 @@ export default function BanksSection() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setSelectedBank(null)}
-                className="w-full rounded-xl bg-[#FF6500] py-3.5 text-center text-sm font-bold text-white hover:bg-[#E84D15] active:scale-[0.98] transition-all duration-150"
+                className="w-full rounded-xl bg-brand-305 py-3.5 text-center text-sm font-bold text-on-brand hover:bg-brand-370 active:scale-[0.98] transition-all duration-150"
               >
                 Continue to bank
               </a>
               <button
                 type="button"
                 onClick={() => setSelectedBank(null)}
-                className="w-full rounded-xl border border-slate-200 py-3.5 text-sm font-semibold text-[#0F2833] hover:bg-slate-50 active:scale-[0.98] transition-all duration-150"
+                className="w-full rounded-xl border border-slate-200 py-3.5 text-sm font-semibold text-ink-737 hover:bg-slate-50 active:scale-[0.98] transition-all duration-150"
               >
                 Cancel
               </button>

@@ -8,7 +8,7 @@ export type FieldVariant = 'light' | 'dark' | 'auth' | 'dashboard';
 
 const DASHBOARD_BORDER = (hasError?: boolean, within = false) => {
   const f = within ? 'focus-within' : 'focus';
-  return hasError ? `border-rose-400 ${f}:border-rose-500` : `border-[#E6E3E0] ${f}:border-[#E95312]`;
+  return hasError ? `border-rose-400 ${f}:border-rose-500` : `border-tone-98 ${f}:border-brand-361`;
 };
 
 export function fieldLabelClass(variant: FieldVariant = 'light') {
@@ -16,10 +16,10 @@ export function fieldLabelClass(variant: FieldVariant = 'light') {
     return 'mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300';
   }
   if (variant === 'auth') {
-    return 'mb-1.5 block text-[13px] font-medium text-[#1C1C1C]';
+    return 'mb-1.5 block text-[13px] font-medium text-tone-774';
   }
   if (variant === 'dashboard') {
-    return 'mb-2 block text-sm font-medium text-[#52617A]';
+    return 'mb-2 block text-sm font-medium text-ink-510';
   }
   return 'mb-2 block text-xs font-semibold text-slate-700';
 }
@@ -34,10 +34,10 @@ export function fieldControlClass(
   if (variant === 'dark') {
     return [
       base,
-      'bg-[#0F222A] text-white placeholder-slate-500',
+      'bg-tone-761 text-white placeholder-slate-500',
       opts?.hasError
         ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500'
-        : 'border-slate-600 focus:border-[#E95312] focus:ring-[#E95312]',
+        : 'border-slate-600 focus:border-brand-361 focus:ring-brand-361',
       opts?.withIcon ? 'pr-11' : '',
     ]
       .filter(Boolean)
@@ -46,7 +46,7 @@ export function fieldControlClass(
 
   if (variant === 'dashboard') {
     return [
-      'w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm text-[#20232A] placeholder:text-[#A3A8B1] outline-none transition disabled:cursor-not-allowed disabled:opacity-60',
+      'w-full rounded-lg border bg-surface px-3.5 py-2.5 text-sm text-tone-744 placeholder:text-tone-270 outline-none transition disabled:cursor-not-allowed disabled:opacity-60',
       DASHBOARD_BORDER(opts?.hasError),
       opts?.withIcon ? 'pr-11' : '',
     ]
@@ -56,10 +56,10 @@ export function fieldControlClass(
 
   if (variant === 'auth') {
     return [
-      'w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 transition focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60 bg-white',
+      'w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 transition focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60 bg-surface',
       opts?.hasError
         ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500'
-        : 'border-[#E8E4DE] focus:border-[#E95312] focus:ring-[#E95312]',
+        : 'border-tone-95 focus:border-brand-361 focus:ring-brand-361',
       opts?.withIcon ? 'pr-11' : '',
     ]
       .filter(Boolean)
@@ -68,10 +68,10 @@ export function fieldControlClass(
 
   return [
     base,
-    'bg-[#F8FAFC] font-medium text-slate-900 placeholder-slate-400 focus:bg-white',
+    'bg-tone-17 font-medium text-slate-900 placeholder-slate-400 focus:bg-surface',
     opts?.hasError
       ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500'
-      : 'border-slate-200/80 focus:border-[#FF5A1F] focus:ring-[#FF5A1F]',
+      : 'border-slate-200/80 focus:border-brand-318 focus:ring-brand-318',
     opts?.withIcon ? 'pr-11' : '',
   ]
     .filter(Boolean)
@@ -88,35 +88,35 @@ export function fieldShellClass(
   if (variant === 'dark') {
     return [
       base,
-      'bg-[#0F222A]',
+      'bg-tone-761',
       opts?.hasError
         ? 'border-rose-500 focus-within:border-rose-500 focus-within:ring-rose-500'
-        : 'border-slate-600 focus-within:border-[#E95312] focus-within:ring-[#E95312]',
+        : 'border-slate-600 focus-within:border-brand-361 focus-within:ring-brand-361',
     ].join(' ');
   }
 
   if (variant === 'dashboard') {
     return [
-      'relative flex w-full items-center rounded-lg border bg-white px-3.5 py-2.5 transition',
+      'relative flex w-full items-center rounded-lg border bg-surface px-3.5 py-2.5 transition',
       DASHBOARD_BORDER(opts?.hasError, true),
     ].join(' ');
   }
 
   if (variant === 'auth') {
     return [
-      'relative flex w-full items-center rounded-xl border bg-white px-4 py-3.5 transition focus-within:ring-1',
+      'relative flex w-full items-center rounded-xl border bg-surface px-4 py-3.5 transition focus-within:ring-1',
       opts?.hasError
         ? 'border-rose-400 focus-within:border-rose-500 focus-within:ring-rose-500'
-        : 'border-[#E8E4DE] focus-within:border-[#E95312] focus-within:ring-[#E95312]',
+        : 'border-tone-95 focus-within:border-brand-361 focus-within:ring-brand-361',
     ].join(' ');
   }
 
   return [
     base,
-    'bg-white',
+    'bg-surface',
     opts?.hasError
       ? 'border-rose-400 focus-within:border-rose-500 focus-within:ring-rose-500'
-      : 'border-slate-200 focus-within:border-[#E95312] focus-within:ring-2 focus-within:ring-[#E95312]/20',
+      : 'border-slate-200 focus-within:border-brand-361 focus-within:ring-2 focus-within:ring-brand-361/20',
   ].join(' ');
 }
 
@@ -134,8 +134,8 @@ export function fieldHintClass(variant: FieldVariant = 'light') {
 
 export function checkboxClass(variant: FieldVariant = 'light') {
   return variant === 'dark'
-    ? 'rounded border-slate-600 bg-[#0F222A] text-[#E95312] focus:ring-[#E95312]'
-    : 'h-4 w-4 rounded border-slate-300 text-[#E95312] focus:ring-[#E95312]';
+    ? 'rounded border-slate-600 bg-tone-761 text-brand-361 focus:ring-brand-361'
+    : 'h-4 w-4 rounded border-slate-300 text-brand-361 focus:ring-brand-361';
 }
 
 /* ─── Buttons ──────────────────────────────────────────────────── */
@@ -143,9 +143,9 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-[#EE7230] font-semibold text-white hover:bg-[#D9622B]',
-  secondary: 'border border-[#E6E3E0] bg-white font-medium text-[#20232A] hover:bg-slate-50',
-  ghost: 'font-medium text-[#E95312] hover:opacity-70',
+  primary: 'bg-brand-311 font-semibold text-on-brand hover:bg-brand-365',
+  secondary: 'border border-tone-98 bg-surface font-medium text-tone-744 hover:bg-slate-50',
+  ghost: 'font-medium text-brand-361 hover:opacity-70',
 };
 
 const BUTTON_SIZES: Record<ButtonSize, string> = {

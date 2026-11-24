@@ -70,8 +70,8 @@ export default function HeroSection() {
   return (
     <section className="relative overflow-hidden px-4 pt-4 pb-12 sm:px-8 lg:px-14">
       {/* Background ambient lighting */}
-      <div className="pointer-events-none absolute top-1/4 right-1/4 -z-10 h-96 w-96 rounded-full bg-[#22D3EE]/8 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-10 -z-10 h-80 w-80 rounded-full bg-[#E95312]/8 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/4 right-1/4 -z-10 h-96 w-96 rounded-full bg-info-203/8 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-10 -z-10 h-80 w-80 rounded-full bg-brand-361/8 blur-3xl" />
 
       <div className="mx-auto max-w-7xl">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
@@ -79,7 +79,7 @@ export default function HeroSection() {
           <div className="flex flex-col space-y-6 lg:col-span-6 xl:col-span-6">
             <div className="space-y-2">
               <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
-                <span className="block text-[#FF6500] drop-shadow-sm">
+                <span className="block text-brand-305 drop-shadow-sm">
                   One platform.
                 </span>
                 <span className="block font-extrabold text-white">
@@ -103,10 +103,10 @@ export default function HeroSection() {
             {/* Carousel Viewport with Side Fade/Blur Masks */}
             <div className="relative flex h-[500px] w-full max-w-[560px] items-center justify-center overflow-hidden sm:h-[540px]">
               {/* Left Side Blur & Fade Overlay Mask */}
-              <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-30 w-16 bg-gradient-to-r from-[#1B3C4A] via-[#1B3C4A]/70 to-transparent sm:w-24" />
+              <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-30 w-16 bg-gradient-to-r from-ink-662 via-ink-662/70 to-transparent sm:w-24" />
 
               {/* Right Side Blur & Fade Overlay Mask */}
-              <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-30 w-16 bg-gradient-to-l from-[#1B3C4A] via-[#1B3C4A]/70 to-transparent sm:w-24" />
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-30 w-16 bg-gradient-to-l from-ink-662 via-ink-662/70 to-transparent sm:w-24" />
 
               {/* Carousel Slides Container */}
               {CAROUSEL_SLIDES.map((slide, index) => {
@@ -152,7 +152,7 @@ export default function HeroSection() {
                     onClick={() => {
                       if (!isCenter) setActiveIndex(index);
                     }}
-                    className={`absolute top-4 flex h-[460px] w-[260px] flex-col justify-between overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-[#183946] via-[#1B3C4A] to-[#0E222A] p-6 transition-all duration-700 ease-out sm:h-[490px] sm:w-[280px] ${transformClass} ${opacityClass}`}
+                    className={`absolute top-4 flex h-[460px] w-[260px] flex-col justify-between overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-ink-674 via-ink-662 to-tone-762 p-6 transition-all duration-700 ease-out sm:h-[490px] sm:w-[280px] ${transformClass} ${opacityClass}`}
                     style={{
                       filter: styleFilters,
                       boxShadow: 'none', // Strictly NO shadow on cards as requested
@@ -208,8 +208,8 @@ export default function HeroSection() {
                             </div>
 
                             {/* Orange Network Badge on the right edge */}
-                            <div className="absolute right-3 top-24 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-[#E95312] text-white">
-                              <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                            <div className="absolute right-3 top-24 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-brand-361 text-on-brand">
+                              <div className="h-1.5 w-1.5 rounded-full bg-surface" />
                             </div>
 
                             {/* Bottom Left: Woman with curly hair */}
@@ -242,7 +242,7 @@ export default function HeroSection() {
                             className="h-full w-full object-cover object-top"
                           />
                           {/* Bottom Gradient Fade into card body */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#1B3C4A] via-[#1B3C4A]/40 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-ink-662 via-ink-662/40 to-transparent" />
                         </div>
                       )}
 
@@ -255,7 +255,7 @@ export default function HeroSection() {
                           </div>
 
                           {/* Floating light Transfer Money widget */}
-                          <div className="relative mx-auto my-auto w-full rounded-xl bg-[#DCE7EB] p-3 text-slate-800">
+                          <div className="relative mx-auto my-auto w-full rounded-xl bg-tone-94 p-3 text-slate-800">
                             <h4 className="text-center text-xs font-bold text-slate-900">
                               Transfer money
                             </h4>
@@ -264,7 +264,7 @@ export default function HeroSection() {
                             </p>
 
                             {/* Amount Input 1 */}
-                            <div className="mt-2.5 flex items-center justify-between rounded-md bg-white px-2 py-1.5 border border-slate-200">
+                            <div className="mt-2.5 flex items-center justify-between rounded-md bg-surface px-2 py-1.5 border border-slate-200">
                               <span className="text-xs font-bold text-slate-900">2,000</span>
                               <div className="flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-700">
                                 <span>🇳🇬 NGN</span>
@@ -282,7 +282,7 @@ export default function HeroSection() {
                             <p className="text-[9px] text-slate-500">Your recipient will receive</p>
 
                             {/* Amount Input 2 */}
-                            <div className="mt-1 flex items-center justify-between rounded-md bg-white px-2 py-1.5 border border-slate-200">
+                            <div className="mt-1 flex items-center justify-between rounded-md bg-surface px-2 py-1.5 border border-slate-200">
                               <span className="text-xs font-bold text-slate-900">1,500</span>
                               <div className="flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-700">
                                 <span>🇳🇬 NGN</span>
@@ -291,8 +291,8 @@ export default function HeroSection() {
                             </div>
 
                             {/* Orange badge on right edge */}
-                            <div className="absolute -right-2 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full bg-[#E95312] text-white">
-                              <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                            <div className="absolute -right-2 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full bg-brand-361 text-on-brand">
+                              <div className="h-1.5 w-1.5 rounded-full bg-surface" />
                             </div>
                           </div>
                         </div>
@@ -307,7 +307,7 @@ export default function HeroSection() {
                           <div className="relative flex w-full items-center justify-between px-1">
                             {/* Left Phone Wireframe */}
                             <div className="flex h-20 w-11 flex-col rounded-lg border border-white/30 bg-white/10 p-1 backdrop-blur-sm">
-                              <div className="h-1.5 w-4 rounded-full bg-white/40 mb-1" />
+                              <div className="h-1.5 w-4 rounded-full bg-surface/40 mb-1" />
                               <div className="h-3 w-full rounded bg-white/20 mb-1" />
                               <div className="space-y-0.5">
                                 <div className="h-1 w-full rounded bg-white/20" />
@@ -319,7 +319,7 @@ export default function HeroSection() {
                             <div className="h-0.5 flex-1 bg-white/30" />
 
                             {/* Center Atiso Secure Vault */}
-                            <div className="relative flex h-14 w-14 items-center justify-center rounded-xl border border-cyan-400/40 bg-[#0E2530] p-2">
+                            <div className="relative flex h-14 w-14 items-center justify-center rounded-xl border border-cyan-400/40 bg-ink-749 p-2">
                               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-300">
                                 <Shield className="h-5 w-5" />
                               </div>

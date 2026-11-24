@@ -122,6 +122,7 @@ Only run one `next dev` per checkout. A second one in the same folder won't star
 │   │   ├── digitalServices.ts  # Categories, catalogue, orders, payments
 │   │   ├── notifications.ts    # Notifications + notification settings
 │   │   └── orders.ts           # Order history
+│   ├── theme/theme.ts          # Colour themes: THEMES, useTheme, setTheme (see "Styling")
 │   ├── queries/                # ⭐ React Query hooks, one file per lib/api module (useAuth.ts ↔ auth.ts, …)
 │   ├── store/                  # Zustand stores (authStore, uiStore, marketplaceStore)
 │   ├── auth/session.ts         # Token/cookie persistence helpers
@@ -586,11 +587,25 @@ The React Query defaults in `app/providers.tsx` are: retry once, no refetch on w
 
 - **Tailwind CSS v4**, configured through `app/globals.css`, with utility classes in JSX.
 - **Font: Outfit** (the brand typeface from the Hatiso colour palette), loaded with `next/font/google` in `app/layout.tsx` as the `--font-outfit` variable, which `--font-sans` in `app/globals.css` points to. It's a variable font, so any weight from 100 to 900 works.
-- **Brand colours used throughout:**
-  - Orange `#E95312` / `#EE7230` / `#FF6500`
-  - Navy `#243B4A` / `#20232A`
-  - Muted text `#52617A` / `#7A7F8A`
-  - Borders `#E6E3E0`
+- **Colours are theme tokens, never raw hex.** Every colour is a Tailwind colour defined in `app/theme.css` (imported by `globals.css`), so the app can switch themes:
+  - Write `bg-brand-361`, `text-tone-744`, `border-tone-98/60`, not `bg-[#E95312]`. Names are `<family>-<step>`: `brand` (orange accent), `ink` (teal/navy surfaces), `tone` (neutrals), `success`, `danger`, `warning`, `info`, `spot`. The step runs from 0 (white) to 1000 (black), like Tailwind shades.
+  - The most-used ones: accent `brand-361` (#E95312) and `brand-305` (#FF6500), dark surface `ink-662` (#1B3C4A), headings `tone-744` (#20232A), muted text `ink-510` (#52617A) and `tone-405` (#7A7F8A), borders `tone-98` (#E6E3E0).
+  - New colour: add a token to the `@theme` block in `theme.css` with its Classic value, and add its Hatiso value to the `[data-theme="hatiso"]` block (use only the brand palette there).
+  - Use `bg-surface` for cards and panels, not `bg-white`. It's white in every theme except Dark. `text-tone-1000` is black, light in Dark.
+  - Third-party logo colours (`BillerLogo`: MTN, Glo, Airtel…) are tokens too, but no theme overrides them.
+  - On a button filled with an accent colour, use `text-on-brand` for the label, not `text-white`. It stays white, except in Hatiso on dark surfaces, where the button turns Cloud and the label turns Carbon.
+  - Slate greys and the few Tailwind orange/cyan classes are re-pointed for Hatiso in `globals.css`.
+- **Themes** (Profile → **Appearance**), defined in `lib/theme/theme.ts`. They only change the signed-in dashboard (`/dashboard/*`). The landing, marketing and auth pages always use Classic.
+  - **Classic** (the default): the original teal-and-orange look, identical to before themes existed.
+  - **Hatiso Monochrome**: the brand palette from Hatiso Brand Essentials. Carbon is the accent and dark surface, Graphite is used for hover and secondary surfaces, Cloud for light backgrounds, the supporting greys for text and borders, and the brand status colours for success, error and warning. Inside dark areas (any element with a dark `ink`/`tone` background), accents turn Cloud so they stay visible.
+  - **Dark**: Classic flipped to dark backgrounds with light text. Page backgrounds, cards (`surface`), borders and text change lightness on a curve that keeps borders visible. The orange accent stays the same, pale tints become dark tints of the same hue, and status colours are brightened so they read on dark. Panels that are already dark in Classic (sidebar, banners: any element with a dark `ink`/`tone` background) keep their Classic colours. Slate, `red-50`/`rose-50` and `color-scheme` are switched too.
+  - **Ocean** (blue), **Forest** (green) and **Plum** (violet): Classic with the accent (`brand-*`) and surface (`ink-*`) colours shifted to a new hue. Lightness and saturation stay the same, so contrast matches Classic. Warm neutral tints follow the surface hue; status and info colours don't change.
+  - The choice is saved per browser in `localStorage` (`hatiso_theme`) and applied as `<html data-theme>`:
+    - On a full page load under `/dashboard`, the inline script in `app/layout.tsx` (`THEME_INIT_SCRIPT`) sets it before the first paint, so there's no flash.
+    - On client-side navigation, `useDashboardTheme()` in `app/dashboard/layout.tsx` applies the saved theme when the dashboard opens and puts Classic back when the user leaves it.
+    - Other open dashboard tabs follow along.
+  - `useTheme()` returns the active theme. Canvas charts can't read CSS variables, so `SpendingChart` and the Analytics heatmap pick colours per theme (hand-picked for Classic and Hatiso, read from the accent tokens with `themeColor()` for the hue themes). Categorical chart colours (one per service) and bank brand colours don't change.
+  - Adding a theme: add it to `THEMES` (id, name, description, preview swatches) and add a `[data-theme="<id>"]` block of token values in `theme.css`. The hue-theme blocks at the end of `theme.css` were generated by rotating the Classic `brand-*`/`ink-*` values in OKLCH, which is the quickest way to make another one.
 - **Form and button styles live in `components/forms/styles.ts`** (`fieldControlClass`, `fieldLabelClass`, `buttonClass`, …). Use these rather than copying class strings.
 - **Charts** are Chart.js wrappers in `components/dashboard/DashboardCharts.tsx`:
   - `SpendingChart`: line/area chart.

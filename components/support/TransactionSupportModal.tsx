@@ -48,21 +48,21 @@ export default function TransactionSupportModal({ open, onClose, transactionRefe
         aria-modal="true"
         aria-labelledby="txn-support-title"
         onClick={(event) => event.stopPropagation()}
-        className="flex max-h-[92dvh] w-full max-w-[560px] flex-col rounded-t-2xl bg-white shadow-xl sm:rounded-2xl"
+        className="flex max-h-[92dvh] w-full max-w-[560px] flex-col rounded-t-2xl bg-surface shadow-xl sm:rounded-2xl"
       >
-        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[#EEEAE6] px-6 py-5">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-tone-78 px-6 py-5">
           <div className="min-w-0">
-            <h2 id="txn-support-title" className="text-lg font-semibold text-[#20232A]">
+            <h2 id="txn-support-title" className="text-lg font-semibold text-tone-744">
               Get help with this transaction
             </h2>
-            {summary && <p className="mt-1 truncate text-sm text-[#7A7F8A]">{summary}</p>}
+            {summary && <p className="mt-1 truncate text-sm text-tone-405">{summary}</p>}
           </div>
           <button
             ref={closeRef}
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-md p-1 text-[#243B4A] transition hover:bg-slate-100"
+            className="rounded-md p-1 text-ink-660 transition hover:bg-slate-100"
           >
             <X className="h-5 w-5" />
           </button>

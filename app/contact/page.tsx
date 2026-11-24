@@ -21,8 +21,8 @@ export default function ContactPage() {
   const [submittedName, setSubmittedName] = useState('');
 
   return (
-    <div className="min-h-screen bg-[#1B3C4A] text-white selection:bg-[#E95312] selection:text-white flex flex-col justify-between">
-      <div className="relative overflow-hidden bg-[#1B3C4A]">
+    <div className="min-h-screen bg-ink-662 text-white selection:bg-brand-361 selection:text-white flex flex-col justify-between">
+      <div className="relative overflow-hidden bg-ink-662">
         <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-20">
           <svg
             className="absolute -top-32 -left-32 h-[800px] w-[1100px]"
@@ -47,7 +47,7 @@ export default function ContactPage() {
         <Navbar />
 
         <div className="relative z-10 mx-auto max-w-4xl px-4 pt-8 pb-16 text-center sm:px-6 sm:pt-12 sm:pb-20">
-          <p className="text-3xl font-bold text-[#E95312] lg:text-6xl">Reach out</p>
+          <p className="text-3xl font-bold text-brand-361 lg:text-6xl">Reach out</p>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
             Let&apos;s build with you
           </h1>
@@ -57,17 +57,17 @@ export default function ContactPage() {
         </div>
       </div>
 
-      <section className="relative z-10 w-full bg-white py-16 text-slate-900 sm:py-20 lg:py-24">
+      <section className="relative z-10 w-full bg-surface py-16 text-slate-900 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-8 lg:px-14">
           <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-6 xl:col-span-6">
-              <div className="w-full max-w-[500px] rounded-3xl border border-slate-200/60 bg-[#EEF2F5] px-6 pt-10 pb-20 shadow-xs sm:px-10 sm:pt-12 sm:pb-28">
+              <div className="w-full max-w-[500px] rounded-3xl border border-slate-200/60 bg-tone-56 px-6 pt-10 pb-20 shadow-xs sm:px-10 sm:pt-12 sm:pb-28">
                 <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl mb-8">
                   Contact our team
                 </h2>
 
                 {isSubmitted ? (
-                  <div className="my-8 rounded-2xl bg-white p-8 text-center shadow-xs">
+                  <div className="my-8 rounded-2xl bg-surface p-8 text-center shadow-xs">
                     <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                       <CheckCircle2 className="h-8 w-8 stroke-[2.5]" />
                     </div>
@@ -81,7 +81,7 @@ export default function ContactPage() {
                     <button
                       type="button"
                       onClick={() => setIsSubmitted(false)}
-                      className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-[#FF5A1F] px-5 py-2.5 text-xs font-bold text-white shadow transition hover:bg-[#E04B14]"
+                      className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-brand-318 px-5 py-2.5 text-xs font-bold text-on-brand shadow transition hover:bg-brand-385"
                     >
                       <span>Send Another Message</span>
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -128,7 +128,7 @@ export default function ContactPage() {
 
                       <div className="pt-2">
                         <SubmitButton
-                          className="w-full rounded-xl bg-[#FF5A1F] py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#E04B14] hover:shadow-lg active:scale-[0.99] disabled:opacity-50"
+                          className="w-full rounded-xl bg-brand-318 py-3.5 text-center text-sm font-bold text-on-brand shadow-md transition-all duration-200 hover:bg-brand-385 hover:shadow-lg active:scale-[0.99] disabled:opacity-50"
                           loadingLabel="Sending Message..."
                         >
                           Send Message
@@ -147,7 +147,7 @@ export default function ContactPage() {
                 </p>
                 <a
                   href="mailto:Xnett@untitledUI.com"
-                  className="mt-1.5 block text-base font-bold text-slate-900 underline underline-offset-4 decoration-slate-400 transition-colors hover:text-[#FF5A1F] hover:decoration-[#FF5A1F]"
+                  className="mt-1.5 block text-base font-bold text-slate-900 underline underline-offset-4 decoration-slate-400 transition-colors hover:text-brand-318 hover:decoration-brand-318"
                 >
                   Xnett@untitledUI.com
                 </a>
@@ -160,7 +160,7 @@ export default function ContactPage() {
                 </p>
                 <a
                   href="mailto:Support@untitledUI.com"
-                  className="mt-1.5 block text-base font-bold text-slate-900 underline underline-offset-4 decoration-slate-400 transition-colors hover:text-[#FF5A1F] hover:decoration-[#FF5A1F]"
+                  className="mt-1.5 block text-base font-bold text-slate-900 underline underline-offset-4 decoration-slate-400 transition-colors hover:text-brand-318 hover:decoration-brand-318"
                 >
                   Support@untitledUI.com
                 </a>
@@ -173,7 +173,7 @@ export default function ContactPage() {
                 </p>
                 <a
                   href="tel:091358489339"
-                  className="mt-1.5 block text-base font-bold text-slate-900 underline underline-offset-4 decoration-slate-400 transition-colors hover:text-[#FF5A1F] hover:decoration-[#FF5A1F]"
+                  className="mt-1.5 block text-base font-bold text-slate-900 underline underline-offset-4 decoration-slate-400 transition-colors hover:text-brand-318 hover:decoration-brand-318"
                 >
                   09 1358 4893 39
                 </a>
@@ -190,7 +190,7 @@ export default function ContactPage() {
                     href="https://maps.google.com/?q=Lagos,+Nigeria"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-base font-bold text-slate-900 underline underline-offset-4 decoration-slate-400 transition-colors hover:text-[#FF5A1F] hover:decoration-[#FF5A1F]"
+                    className="text-base font-bold text-slate-900 underline underline-offset-4 decoration-slate-400 transition-colors hover:text-brand-318 hover:decoration-brand-318"
                   >
                     Lagos, Nigeria
                   </a>
@@ -201,7 +201,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <div className="bg-[#1B3C4A]">
+      <div className="bg-ink-662">
         <CtaBanner secondaryButtonText="Sign in" secondaryButtonHref="/auth/login" />
         <Footer />
       </div>

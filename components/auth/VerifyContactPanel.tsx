@@ -6,7 +6,7 @@ import { RESEND_WAIT_SECONDS, saveVerificationContext, type VerificationContext 
 import OtpInput from './OtpInput';
 
 const BTN =
-  'w-full rounded-xl bg-[#FF6500] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-[#FF8A4C] active:scale-[0.99] disabled:opacity-50';
+  'w-full rounded-xl bg-brand-305 py-3.5 text-sm font-semibold text-on-brand shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-brand-249 active:scale-[0.99] disabled:opacity-50';
 
 function errorMessage(error: unknown, fallback: string) {
   return typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string' ? error.message : fallback;
@@ -94,8 +94,8 @@ export default function VerifyContactPanel({ context, onVerified, footer, eyebro
   return (
     <>
       <div className="mb-8 text-center">
-        {eyebrow && <p className="text-xs font-bold uppercase tracking-widest text-[#E95312]">{eyebrow}</p>}
-        <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-[#111111]">Account Verification</h1>
+        {eyebrow && <p className="text-xs font-bold uppercase tracking-widest text-brand-361">{eyebrow}</p>}
+        <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-tone-822">Account Verification</h1>
         <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500">
           An OTP (One-Time Password) has been sent {isEmail ? 'to' : 'by SMS to'}{' '}
           <span className="font-semibold text-slate-800">{context.contact || `your ${channel}`}</span>.
@@ -151,7 +151,7 @@ export default function VerifyContactPanel({ context, onVerified, footer, eyebro
               type="button"
               disabled={resend.isPending}
               onClick={handleResend}
-              className="font-semibold text-[#E95312] hover:text-[#E84D15] disabled:opacity-50"
+              className="font-semibold text-brand-361 hover:text-brand-370 disabled:opacity-50"
             >
               {resend.isPending ? 'Sending...' : 'Click to resend code'}
             </button>

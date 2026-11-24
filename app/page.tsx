@@ -15,7 +15,7 @@ export const metadata = {
 
 export default function MarketplacePage() {
   return (
-    <div className="min-h-screen bg-[#1B3C4A] text-white flex flex-col justify-between selection:bg-[#E95312] selection:text-white">
+    <div className="min-h-screen bg-ink-662 text-white flex flex-col justify-between selection:bg-brand-361 selection:text-white">
       {/* Top Navigation */}
       <Navbar />
 

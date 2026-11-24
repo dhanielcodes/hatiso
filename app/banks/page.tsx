@@ -125,11 +125,11 @@ export default function BanksPage() {
     selectedStatuses.length > 0;
 
   return (
-    <div className="min-h-screen bg-[#1B3C4A] text-white selection:bg-[#E95312] selection:text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-ink-662 text-white selection:bg-brand-361 selection:text-white flex flex-col justify-between">
       {/* ========================================================= */}
       {/* 1. TOP HERO SECTION (Dark Brand Theme)                    */}
       {/* ========================================================= */}
-      <div className="relative overflow-hidden bg-[#1B3C4A] pb-16 sm:pb-20">
+      <div className="relative overflow-hidden bg-ink-662 pb-16 sm:pb-20">
         <Navbar />
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 xl:px-0 pt-6">
@@ -137,7 +137,7 @@ export default function BanksPage() {
             {/* Left Column: Heading & Description */}
             <div className="flex flex-col lg:col-span-7">
               <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-                <span className="text-[#E95312]">Every bank.</span>
+                <span className="text-brand-361">Every bank.</span>
                 <span className="block text-white mt-1">
                   One place to choose from.
                 </span>
@@ -155,33 +155,33 @@ export default function BanksPage() {
             <div className="flex justify-center lg:col-span-5 lg:justify-end">
               <div className="grid grid-cols-3 gap-3 w-full max-w-[280px]">
                 {/* Tile 1: Lock/Shield (Orange) */}
-                <div className="aspect-square rounded-2xl bg-[#B95828] border border-orange-400/30 flex items-center justify-center p-3.5 shadow-md">
-                  <ShieldCheck className="h-8 w-8 text-[#1B3C4A] stroke-[2.2]" />
+                <div className="aspect-square rounded-2xl bg-brand-428 border border-orange-400/30 flex items-center justify-center p-3.5 shadow-md">
+                  <ShieldCheck className="h-8 w-8 text-ink-662 stroke-[2.2]" />
                 </div>
 
                 {/* Tile 2: Bank Pillars (Orange) */}
-                <div className="aspect-square rounded-2xl bg-[#B95828] border border-orange-400/30 flex items-center justify-center p-3.5 shadow-md">
-                  <Building2 className="h-8 w-8 text-[#1B3C4A] stroke-[2.2]" />
+                <div className="aspect-square rounded-2xl bg-brand-428 border border-orange-400/30 flex items-center justify-center p-3.5 shadow-md">
+                  <Building2 className="h-8 w-8 text-ink-662 stroke-[2.2]" />
                 </div>
 
                 {/* Tile 3: Statement/Menu (Dark Outline) */}
-                <div className="aspect-square rounded-2xl bg-[#1A3744] border border-white/20 flex items-center justify-center p-3.5 shadow-sm">
+                <div className="aspect-square rounded-2xl bg-ink-680 border border-white/20 flex items-center justify-center p-3.5 shadow-sm">
                   <Menu className="h-8 w-8 text-white stroke-[2.2]" />
                 </div>
 
                 {/* Tile 4: Document (Dark Outline) */}
-                <div className="aspect-square rounded-2xl bg-[#1A3744] border border-white/20 flex items-center justify-center p-3.5 shadow-sm">
+                <div className="aspect-square rounded-2xl bg-ink-680 border border-white/20 flex items-center justify-center p-3.5 shadow-sm">
                   <FileText className="h-8 w-8 text-white stroke-[2.2]" />
                 </div>
 
                 {/* Tile 5: Credit Card (Orange) */}
-                <div className="aspect-square rounded-2xl bg-[#B95828] border border-orange-400/30 flex items-center justify-center p-3.5 shadow-md">
-                  <CreditCard className="h-8 w-8 text-[#1B3C4A] stroke-[2.2]" />
+                <div className="aspect-square rounded-2xl bg-brand-428 border border-orange-400/30 flex items-center justify-center p-3.5 shadow-md">
+                  <CreditCard className="h-8 w-8 text-ink-662 stroke-[2.2]" />
                 </div>
 
                 {/* Tile 6: Exchange Arrows (Orange) */}
-                <div className="aspect-square rounded-2xl bg-[#B95828] border border-orange-400/30 flex items-center justify-center p-3.5 shadow-md">
-                  <ArrowLeftRight className="h-8 w-8 text-[#1B3C4A] stroke-[2.2]" />
+                <div className="aspect-square rounded-2xl bg-brand-428 border border-orange-400/30 flex items-center justify-center p-3.5 shadow-md">
+                  <ArrowLeftRight className="h-8 w-8 text-ink-662 stroke-[2.2]" />
                 </div>
               </div>
             </div>
@@ -192,7 +192,7 @@ export default function BanksPage() {
       {/* ========================================================= */}
       {/* 2. CHOOSE A BANK SECTION (Pure Crisp White Section)        */}
       {/* ========================================================= */}
-      <section className="relative z-10 w-full bg-white py-14 sm:py-20 text-slate-900 flex-1">
+      <section className="relative z-10 w-full bg-surface py-14 sm:py-20 text-slate-900 flex-1">
         <div className="mx-auto max-w-7xl px-4 xl:px-0">
           {/* Section Header */}
           <div className="mb-10">
@@ -209,7 +209,7 @@ export default function BanksPage() {
             {/* ---------------------------------------------------- */}
             {/* LEFT COLUMN: Filter Sidebar                          */}
             {/* ---------------------------------------------------- */}
-            <aside className="lg:col-span-4 xl:col-span-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-6">
+            <aside className="lg:col-span-4 xl:col-span-3 rounded-2xl border border-slate-200 bg-surface p-5 shadow-xs space-y-6">
               {/* Header with Clear button */}
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <span className="text-sm font-bold text-slate-900">
@@ -219,7 +219,7 @@ export default function BanksPage() {
                   <button
                     type="button"
                     onClick={clearAllFilters}
-                    className="text-xs font-semibold text-[#E95312] hover:underline"
+                    className="text-xs font-semibold text-brand-361 hover:underline"
                   >
                     Clear all
                   </button>
@@ -233,7 +233,7 @@ export default function BanksPage() {
                 </h3>
 
                 {/* Search Input */}
-                <div className="relative mb-3 flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus-within:border-[#E95312] focus-within:ring-1 focus-within:ring-[#E95312]">
+                <div className="relative mb-3 flex items-center rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs focus-within:border-brand-361 focus-within:ring-1 focus-within:ring-brand-361">
                   <Search className="mr-2 h-3.5 w-3.5 text-slate-400" />
                   <input
                     type="text"
@@ -261,13 +261,13 @@ export default function BanksPage() {
                       return (
                         <label
                           key={bName}
-                          className="flex items-center gap-2.5 cursor-pointer select-none py-0.5 hover:text-[#E95312] transition-colors"
+                          className="flex items-center gap-2.5 cursor-pointer select-none py-0.5 hover:text-brand-361 transition-colors"
                         >
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => toggleBank(bName)}
-                            className="h-4 w-4 rounded border-slate-300 text-[#E95312] focus:ring-[#E95312]"
+                            className="h-4 w-4 rounded border-slate-300 text-brand-361 focus:ring-brand-361"
                           />
                           <span className="font-medium text-slate-700">
                             {bName}
@@ -290,13 +290,13 @@ export default function BanksPage() {
                     return (
                       <label
                         key={srv}
-                        className="flex items-center gap-2.5 cursor-pointer select-none py-0.5 hover:text-[#E95312] transition-colors"
+                        className="flex items-center gap-2.5 cursor-pointer select-none py-0.5 hover:text-brand-361 transition-colors"
                       >
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleService(srv)}
-                          className="h-4 w-4 rounded border-slate-300 text-[#E95312] focus:ring-[#E95312]"
+                          className="h-4 w-4 rounded border-slate-300 text-brand-361 focus:ring-brand-361"
                         />
                         <span className="font-medium text-slate-700">
                           {srv}
@@ -332,7 +332,7 @@ export default function BanksPage() {
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => toggleStatus(status)}
-                            className="h-4 w-4 rounded border-slate-300 text-[#E95312] focus:ring-[#E95312]"
+                            className="h-4 w-4 rounded border-slate-300 text-brand-361 focus:ring-brand-361"
                           />
                           <span className="font-medium text-slate-700">
                             {status}
@@ -381,7 +381,7 @@ export default function BanksPage() {
                   <button
                     type="button"
                     onClick={() => refetch()}
-                    className="mt-4 rounded-xl bg-[#E95312] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#E04B14]"
+                    className="mt-4 rounded-xl bg-brand-361 px-4 py-2 text-xs font-bold text-on-brand shadow-xs transition hover:bg-brand-385"
                   >
                     Try again
                   </button>
@@ -398,7 +398,7 @@ export default function BanksPage() {
                   <button
                     type="button"
                     onClick={clearAllFilters}
-                    className="mt-4 rounded-xl bg-[#E95312] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#E04B14]"
+                    className="mt-4 rounded-xl bg-brand-361 px-4 py-2 text-xs font-bold text-on-brand shadow-xs transition hover:bg-brand-385"
                   >
                     Reset all filters
                   </button>
@@ -413,12 +413,12 @@ export default function BanksPage() {
                       <div
                         key={`${bank.id}-${index}`}
                         onClick={() => setSelectedBankModal(bank)}
-                        className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs cursor-pointer transition-shadow duration-200 hover:shadow-md hover:border-slate-300"
+                        className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-surface shadow-xs cursor-pointer transition-shadow duration-200 hover:shadow-md hover:border-slate-300"
                       >
                         {/* Top Area: Logo taking full space + Status badge */}
-                        <div className="relative h-44 w-full bg-white p-5 flex items-center justify-center">
+                        <div className="relative h-44 w-full bg-surface p-5 flex items-center justify-center">
                           {/* Status Badge floating at top-left */}
-                          <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-xs border border-slate-200/80 backdrop-blur-sm">
+                          <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-surface/95 px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-xs border border-slate-200/80 backdrop-blur-sm">
                             <span
                               className={`h-1.5 w-1.5 rounded-full ${dotColor}`}
                             />
@@ -445,17 +445,17 @@ export default function BanksPage() {
                           <h4 className="text-sm font-bold text-slate-900 tracking-tight truncate">
                             {bank.name}
                           </h4>
-                          <div className="flex-shrink-0 ml-1.5 text-[#FF5A1F]">
+                          <div className="flex-shrink-0 ml-1.5 text-brand-318">
                             <ArrowUpRight className="h-4 w-4 stroke-[2.2]" />
                           </div>
                         </div>
 
                         {/* Bottom Area: Service Supported Pills */}
-                        <div className="px-4 py-3 bg-white border-t border-slate-100 flex flex-wrap gap-1.5">
+                        <div className="px-4 py-3 bg-surface border-t border-slate-100 flex flex-wrap gap-1.5">
                           {channelLabels(bank).map((srv) => (
                             <span
                               key={srv}
-                              className="rounded-lg bg-[#F8ECE5] px-2.5 py-1 text-[11px] font-medium text-slate-800"
+                              className="rounded-lg bg-tone-66 px-2.5 py-1 text-[11px] font-medium text-slate-800"
                             >
                               {srv}
                             </span>
@@ -476,7 +476,7 @@ export default function BanksPage() {
       {/* ========================================================= */}
       {selectedBankModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-surface p-6 text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-2.5">
                 <BankLogo
@@ -503,7 +503,7 @@ export default function BanksPage() {
                 You&apos;ll continue to its own secure banking service.
               </p>
 
-              <div className="rounded-xl bg-[#EEF7FB] p-3.5 space-y-2">
+              <div className="rounded-xl bg-tone-32 p-3.5 space-y-2">
                 <div className="flex justify-between">
                   <span className="font-semibold text-slate-500">
                     Gateway Status:
@@ -532,7 +532,7 @@ export default function BanksPage() {
                   {channelLabels(selectedBankModal).map((s) => (
                     <span
                       key={s}
-                      className="rounded-md bg-[#FDF2EC] px-2 py-0.5 text-[11px] font-medium text-slate-800"
+                      className="rounded-md bg-tone-36 px-2 py-0.5 text-[11px] font-medium text-slate-800"
                     >
                       {s}
                     </span>
@@ -546,7 +546,7 @@ export default function BanksPage() {
                 href={bankWebsite(selectedBankModal)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E95312] py-3 text-center text-xs sm:text-sm font-bold text-white shadow transition hover:bg-[#E04B14]"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-361 py-3 text-center text-xs sm:text-sm font-bold text-on-brand shadow transition hover:bg-brand-385"
               >
                 <span>Visit Bank&apos;s Official Website</span>
                 <ExternalLink className="h-4 w-4" />
