@@ -3,25 +3,25 @@
 import { useLayoutEffect, useSyncExternalStore } from 'react';
 
 /**
- * App colour themes. The colours live in app/theme.css: Classic is the default set of tokens,
+ * App colour themes. The colours live in app/theme.css: Classic is the base set of tokens,
  * and every other theme overrides them under `html[data-theme="<id>"]`.
- * Themes only apply inside the signed-in dashboard (THEMED_PATH); the landing, marketing and auth
- * pages always use Classic. The choice is stored in this browser only (localStorage) and applied
+ * Themes only apply inside the signed-in dashboard (THEMED_PATH), which uses Hatiso Monochrome
+ * until the user picks another; the landing, marketing and auth pages always use Classic. The choice is stored in this browser only (localStorage) and applied
  * before first paint by the inline script in app/layout.tsx (THEME_INIT_SCRIPT) on a full page load,
  * and by useDashboardTheme() when the dashboard is reached by client-side navigation.
  */
 export const THEMES = [
   {
-    id: 'classic',
-    name: 'Classic',
-    description: 'The original Hatiso look: deep teal surfaces with orange highlights.',
-    swatches: ['#1B3C4A', '#E95312', '#FFFAF7', '#E6E3E0', '#FFFFFF'],
-  },
-  {
     id: 'hatiso',
     name: 'Hatiso Monochrome',
     description: 'The Hatiso brand palette: Carbon, Graphite, Cloud and Silver.',
     swatches: ['#12151A', '#23272F', '#F1F2F4', '#B8BCC2', '#FFFFFF'],
+  },
+  {
+    id: 'classic',
+    name: 'Classic',
+    description: 'The original Hatiso look: deep teal surfaces with orange highlights.',
+    swatches: ['#1B3C4A', '#E95312', '#FFFAF7', '#E6E3E0', '#FFFFFF'],
   },
   {
     id: 'ocean',
@@ -51,7 +51,10 @@ export const THEMES = [
 
 export type ThemeId = (typeof THEMES)[number]['id'];
 
-export const DEFAULT_THEME: ThemeId = 'classic';
+/** The look of every page outside the dashboard (and what the server renders). */
+export const BASE_THEME: ThemeId = 'classic';
+/** The dashboard's theme until the user chooses one in Appearance. */
+export const DEFAULT_THEME: ThemeId = 'hatiso';
 export const THEME_STORAGE_KEY = 'hatiso_theme';
 /** Only routes under this prefix are themed. */
 export const THEMED_PATH = '/dashboard';
@@ -62,11 +65,13 @@ const isThemeId = (value: unknown): value is ThemeId => THEMES.some((t) => t.id 
 /** Runs in <head> before the page paints, so a saved theme never flashes the default first. */
 export const THEME_INIT_SCRIPT = `(function(){try{if(location.pathname.indexOf(${JSON.stringify(THEMED_PATH)})!==0)return;var t=localStorage.getItem(${JSON.stringify(
   THEME_STORAGE_KEY,
-)});if(${JSON.stringify(THEMES.map((t) => t.id))}.indexOf(t)>-1)document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`;
+)});document.documentElement.setAttribute("data-theme",${JSON.stringify(THEMES.map((t) => t.id))}.indexOf(t)>-1?t:${JSON.stringify(
+  DEFAULT_THEME,
+)})}catch(e){}})()`;
 
 function readTheme(): ThemeId {
   const value = document.documentElement.getAttribute('data-theme');
-  return isThemeId(value) ? value : DEFAULT_THEME;
+  return isThemeId(value) ? value : BASE_THEME;
 }
 
 function storedTheme(): ThemeId {
@@ -100,7 +105,7 @@ export function setTheme(theme: ThemeId) {
 export function useDashboardTheme() {
   useLayoutEffect(() => {
     applyTheme(storedTheme());
-    return () => applyTheme(DEFAULT_THEME);
+    return () => applyTheme(BASE_THEME);
   }, []);
 }
 
@@ -120,7 +125,7 @@ function subscribe(onChange: () => void) {
 
 /** The active theme; re-renders when it changes (here or in another tab). */
 export function useTheme(): ThemeId {
-  return useSyncExternalStore(subscribe, readTheme, () => DEFAULT_THEME);
+  return useSyncExternalStore(subscribe, readTheme, () => BASE_THEME);
 }
 
 /** Resolves a theme colour token (e.g. `brand-361`) to its current value, for canvas charts that can't use CSS. */

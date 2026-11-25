@@ -11,7 +11,7 @@ import type { CurrentUserProfile } from '@/lib/api/auth';
 import type { NotificationChannel } from '@/lib/api/notifications';
 import { Button, PasswordField, SubmitButton, TextAreaField, TextField } from '@/components/forms';
 import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
-import { THEMES, setTheme, useTheme } from '@/lib/theme/theme';
+import { DEFAULT_THEME, THEMES, setTheme, useTheme } from '@/lib/theme/theme';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 type TabId = 'personal' | 'notifications' | 'appearance' | 'privacy';
@@ -389,7 +389,12 @@ function Appearance() {
                                         {checked && <span className="h-2 w-2 rounded-full bg-brand-361" />}
                                     </span>
                                     <span>
-                                        <span className="block text-sm font-medium text-tone-744">{theme.name}</span>
+                                        <span className="flex items-center gap-2 text-sm font-medium text-tone-744">
+                                            {theme.name}
+                                            {theme.id === DEFAULT_THEME && (
+                                                <span className="rounded-full bg-tone-69 px-2 py-0.5 text-[10px] font-medium text-tone-405">Default</span>
+                                            )}
+                                        </span>
                                         <span className="mt-1 block text-xs leading-relaxed text-tone-351">{theme.description}</span>
                                     </span>
                                 </span>
