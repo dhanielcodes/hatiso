@@ -13,6 +13,7 @@ This README is for frontend developers joining the project. It covers how to run
 - [Folder structure](#folder-structure)
 - [Routing and authentication](#routing-and-authentication)
 - [Unfinished sign-ups (verification resume)](#unfinished-sign-ups-verification-resume)
+- [Dashboard overview](#dashboard-overview)
 - [Digital services](#digital-services)
 - [Banks](#banks)
 - [Support](#support)
@@ -107,7 +108,7 @@ Only run one `next dev` per checkout. A second one in the same folder won't star
 ├── components/
 │   ├── forms/                  # ⭐ Shared Formik fields, buttons and styles (see "Forms")
 │   ├── ui/Skeleton.tsx         # ⭐ Shared loading skeletons (see "Loading states")
-│   ├── dashboard/              # Dashboard page bodies (ProfilePage, SupportPage, …) + sidebar, charts
+│   ├── dashboard/              # Dashboard page bodies (ProfilePage, SupportPage, …) + sidebar, charts, PromoCarousel
 │   ├── services/               # Service checkout pieces (payment form, selectors, Paystack)
 │   ├── support/                # Support enquiry form, transaction support modal, display helpers
 │   ├── marketplace/            # Public site sections (Navbar, Hero, Footer, …)
@@ -191,6 +192,26 @@ Someone who started signing up but never verified their email or phone is sent b
 - **Errors.** `ApiError` now carries `code` (the backend's `data.error`) and `data` (the raw `data` object). The axios interceptor never toasts `verification_required`, and it skips the toast for any request sent with `{ skipErrorToast: true }`. Register and resume-verification use that option because the page shows those errors itself.
 
 ---
+
+## Dashboard overview
+
+`app/dashboard/page.tsx` follows the dashboard design:
+- **Header:** the date as "Wednesday, 25th November 2026", then "Welcome Back, <first name>". The top bar shows a grey avatar with a person icon when the user has no photo.
+- **Hero:** the photo sits in a blob frame with floating service icons. The design's photo (a couple) isn't in the repo yet; set `HERO_IMAGE` at the top of the page when it arrives.
+- **Offers carousel** (`components/dashboard/PromoCarousel.tsx`): three slides (5× points on data, ₦500 cash back, refer & earn) in orange, green and blue.
+  - It cross-fades every 6s and pauses on hover or focus. It doesn't auto-rotate for users who prefer reduced motion.
+  - The dots pick a slide. Slide copy, links and colours live in its `SLIDES` array.
+- **Metrics:** labels and comparisons follow the selected period, e.g. "Spent this week" with "+ 12.4% from Last week". Transactions show the count difference ("+ 3 more"), and success rate shows "↑ 2.1%" (percentage points).
+- **Spending overview:**
+  - A green or red change pill shows "vs Last 7 days".
+  - `SpendingChart` runs with `variant="overview"`: lower-case compact axis ("4m"), vertical gridlines only, and a card tooltip with the full date and amount.
+  - Analytics still uses the default variant.
+- **Digital Services usage:** a pie with callout labels (`ServiceUsageChart` with `callouts`). Names and colours per service are in `SERVICE_META`.
+- **Recent Transaction:** the last 5. Each row shows:
+  - A provider logo: network images for MTN, Airtel, Glo and 9mobile, and a brand-colour badge for DStv, GOtv, SportyBet and others (`PROVIDERS`).
+  - The recipient (falls back to the product name), with "Service - Provider" underneath.
+  - A SUCCESS, PENDING or FAILED pill.
+- **Reward points:** that card is commented out in the page and stays that way until rewards are ready.
 
 ## Digital services
 

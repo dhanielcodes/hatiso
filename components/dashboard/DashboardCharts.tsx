@@ -198,15 +198,15 @@ function calloutPlugin(color: string, lineColor: string): Plugin<'pie' | 'doughn
       const labels = (chart.data.labels ?? []) as string[];
       const values = chart.data.datasets[0].data as number[];
       ctx.save();
-      ctx.font = '400 13px var(--font-outfit), system-ui, sans-serif';
+      ctx.font = `400 13px ${getComputedStyle(chart.canvas).fontFamily || 'system-ui, sans-serif'}`;
       meta.data.forEach((element, index) => {
         if (!values[index]) return;
         const arc = element as unknown as { x: number; y: number; startAngle: number; endAngle: number; outerRadius: number };
         const mid = (arc.startAngle + arc.endAngle) / 2;
         const right = Math.cos(mid) >= 0;
         const edge = { x: arc.x + Math.cos(mid) * arc.outerRadius, y: arc.y + Math.sin(mid) * arc.outerRadius };
-        const elbow = { x: arc.x + Math.cos(mid) * (arc.outerRadius + 14), y: arc.y + Math.sin(mid) * (arc.outerRadius + 14) };
-        const end = { x: elbow.x + (right ? 22 : -22), y: elbow.y };
+        const elbow = { x: arc.x + Math.cos(mid) * (arc.outerRadius + 10), y: arc.y + Math.sin(mid) * (arc.outerRadius + 10) };
+        const end = { x: elbow.x + (right ? 12 : -12), y: elbow.y };
         ctx.strokeStyle = lineColor;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -218,7 +218,7 @@ function calloutPlugin(color: string, lineColor: string): Plugin<'pie' | 'doughn
         ctx.textAlign = right ? 'left' : 'right';
         const textX = end.x + (right ? 4 : -4);
         ctx.fillText(labels[index], textX, end.y - 4);
-        ctx.fillText(`(${Math.round(values[index])}%)`, textX + (right ? 0 : 0), end.y + 13);
+        ctx.fillText(`(${Math.round(values[index])}%)`, textX, end.y + 14);
       });
       ctx.restore();
     },
@@ -262,7 +262,7 @@ export function ServiceUsageChart({ data, donut = false, callouts = false }: { d
             responsive: true,
             maintainAspectRatio: false,
             // Room around the pie for the callout labels.
-            layout: callouts ? { padding: { top: 34, bottom: 34, left: 92, right: 92 } } : undefined,
+            layout: callouts ? { padding: { top: 30, bottom: 30, left: 100, right: 100 } } : undefined,
             plugins: { legend: { display: false }, tooltip },
           },
           plugins: callouts ? [calloutPlugin(themeColor('tone-405', '#7A7F8A'), themeColor('tone-114', '#DED8D4'))] : [],

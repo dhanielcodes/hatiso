@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import {
-  ArrowRight,
   ArrowUpRight,
   CalendarDays,
   ChevronDown,
@@ -20,6 +19,7 @@ import {
   ServiceUsageChart,
   SpendingChart,
 } from "@/components/dashboard/DashboardCharts";
+import PromoCarousel from "@/components/dashboard/PromoCarousel";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useDashboard } from "@/lib/queries/useDashboard";
 import {
@@ -58,26 +58,21 @@ function serviceName(serviceType: string) {
   );
 }
 
-// Provider logos for the recent-transactions list, matched on the product code/name.
-const PROVIDERS: Array<{ match: RegExp; name: string; logo: string }> = [
+// Provider logos for the recent-transactions list, matched on the product code/name. Only the network
+// logos exist as images; other providers get a badge in their brand colour (third-party colours, not themed).
+type Provider = { match: RegExp; name: string; logo?: string; badge?: { label: string; bg: string } };
+const PROVIDERS: Provider[] = [
   { match: /mtn/, name: "MTN Nigeria", logo: "/images/biller_mtn_hq.png" },
   { match: /airtel/, name: "Airtel", logo: "/images/biller_airtel_hq.png" },
   { match: /glo/, name: "Glo", logo: "/images/biller_glo_hq.png" },
   { match: /9mobile|etisalat/, name: "9mobile", logo: "/images/biller_9mobile_hq.png" },
-  { match: /dstv/, name: "DSTV", logo: "/images/tv_dstv.png" },
-  { match: /gotv/, name: "GOtv", logo: "/images/tv_gotv.png" },
-  { match: /showmax/, name: "Showmax", logo: "/images/tv_showmax.png" },
-  { match: /startimes/, name: "StarTimes", logo: "/images/tv_startimes.png" },
-  { match: /bet9ja/, name: "Bet9ja", logo: "/images/betting_bet9ja.png" },
-  { match: /sporty/, name: "SportyBet", logo: "/images/betting_sportybet.png" },
-  { match: /betway/, name: "Betway", logo: "/images/betting_betway.png" },
-  { match: /kingbet/, name: "KingBet", logo: "/images/betting_kingbet.png" },
-  { match: /merrybet/, name: "MerryBet", logo: "/images/betting_merrybet.png" },
-  { match: /ekedc|eko/, name: "Eko Electric", logo: "/images/elec_ekedc.png" },
-  { match: /ibedc|ibadan/, name: "Ibadan Electric", logo: "/images/elec_ibedc.png" },
-  { match: /ikeja|ie\b/, name: "Ikeja Electric", logo: "/images/elec_ikeja.png" },
-  { match: /jos|jed/, name: "Jos Electric", logo: "/images/elec_jos.png" },
-  { match: /kaduna/, name: "Kaduna Electric", logo: "/images/elec_kaduna.png" },
+  { match: /dstv/, name: "DSTV", badge: { label: "DStv", bg: "#1F5AA6" } },
+  { match: /gotv/, name: "GOtv", badge: { label: "GOtv", bg: "#2E9A4F" } },
+  { match: /startimes/, name: "StarTimes", badge: { label: "ST", bg: "#F57128" } },
+  { match: /showmax/, name: "Showmax", badge: { label: "SM", bg: "#1C1C1C" } },
+  { match: /sporty/, name: "SportyBet", badge: { label: "S", bg: "#E4202D" } },
+  { match: /bet9ja/, name: "Bet9ja", badge: { label: "B9", bg: "#008A46" } },
+  { match: /betway/, name: "Betway", badge: { label: "BW", bg: "#1C1C1C" } },
 ];
 
 function providerFor(productCode: string, productName: string) {
@@ -191,16 +186,26 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function ProviderLogo({ logo, label }: { logo?: string; label: string }) {
-  if (logo) {
+function ProviderLogo({ provider, label }: { provider?: Provider; label: string }) {
+  if (provider?.logo) {
     return (
       <Image
-        src={logo}
+        src={provider.logo}
         alt=""
         width={56}
         height={56}
         className="h-14 w-14 shrink-0 rounded-full object-cover"
       />
+    );
+  }
+  if (provider?.badge) {
+    return (
+      <div
+        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-base font-bold italic text-white shadow-sm"
+        style={{ backgroundColor: provider.badge.bg }}
+      >
+        {provider.badge.label}
+      </div>
     );
   }
   return (
@@ -351,7 +356,7 @@ export default function DashboardPage() {
         <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
           <div className="relative min-h-[247px] overflow-hidden rounded-xl bg-ink-626 px-7 py-8 text-white sm:px-7">
             {/* Photo in a soft blob shape with floating service icons (design). */}
-            <div className="absolute right-[6%] top-1/2 hidden h-[190px] w-[270px] -translate-y-1/2 md:block lg:w-[300px]">
+            <div className="absolute right-[5%] top-1/2 hidden h-[180px] w-[250px] -translate-y-1/2 md:block xl:right-[6%] 2xl:w-[290px]">
               <div className="absolute inset-0 overflow-hidden rounded-[44%_56%_40%_60%/58%_46%_54%_42%]">
                 <Image
                   src={HERO_IMAGE}
@@ -372,7 +377,7 @@ export default function DashboardPage() {
                 <Tv className="h-5 w-5" />
               </span>
             </div>
-            <div className="relative z-10 max-w-[400px]">
+            <div className="relative z-10 max-w-[400px] md:max-w-[calc(95%-270px)] 2xl:max-w-[400px]">
               <span className="inline-flex rounded-full bg-white/20 px-3 py-1.5 text-[10px] font-semibold tracking-wide">
                 ALL YOUR BILLS. ONE PLACE.
               </span>
@@ -386,39 +391,7 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-          <article className="relative min-h-[247px] overflow-hidden rounded-xl bg-brand-61 p-6 sm:p-7">
-            <span className="inline-flex rounded-full bg-brand-109 px-3 py-1.5 text-[10px] font-semibold text-brand-333">
-              THIS WEEK
-            </span>
-            <h2 className="mt-4 max-w-[215px] text-[21px] font-semibold leading-[1.35] tracking-[-0.01em] text-tone-744">
-              Get 5× points on every data bundle
-            </h2>
-            <p className="mt-3 max-w-[180px] text-[13px] leading-4 text-tone-388">
-              More data, more rewards.
-              <br />
-              Ends Sunday.
-            </p>
-            <Link
-              href="/dashboard/services"
-              className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brand-333"
-            >
-              Buy Data <ArrowRight className="h-4 w-4" />
-            </Link>
-            {/* Slide indicator from the design (one promo for now). */}
-            <div aria-hidden="true" className="absolute bottom-3.5 left-6 flex items-center gap-1 sm:left-7">
-              <span className="h-1.5 w-4 rounded-full bg-brand-333" />
-              <span className="h-1.5 w-1.5 rounded-full bg-tone-114" />
-              <span className="h-1.5 w-1.5 rounded-full bg-tone-114" />
-            </div>
-            <div className="absolute right-4 top-1/2 flex h-[120px] w-[120px] -translate-y-1/2 rotate-[18deg] items-center justify-center rounded-full border-[7px] border-brand-241 bg-brand-303 text-center text-on-brand shadow-[0_6px_18px_rgba(217,98,43,0.35)]">
-              <span className="text-[34px] font-semibold italic leading-none">
-                5x
-                <small className="mt-2 block text-[11px] font-medium not-italic tracking-[0.12em]">
-                  POINTS
-                </small>
-              </span>
-            </div>
-          </article>
+          <PromoCarousel />
         </section>
 
         <section>
@@ -592,7 +565,7 @@ export default function DashboardPage() {
           </article>
           <article className="rounded-xl border border-tone-98 bg-surface p-5 sm:p-6">
             <h2 className="text-xl font-medium text-tone-744">Digital Services usage</h2>
-            <div className="relative mx-auto mt-2 h-[270px] max-w-[360px]">
+            <div className="relative mx-auto mt-2 h-[290px] max-w-[400px]">
               {isLoading ? (
                 <ChartSkeleton shape="donut" label="Loading service usage" />
               ) : usageData.length ? (
@@ -645,7 +618,7 @@ export default function DashboardPage() {
                       key={transaction.txnRef}
                       className="flex items-center gap-4 py-5 first:pt-3"
                     >
-                      <ProviderLogo logo={provider?.logo} label={transaction.productName} />
+                      <ProviderLogo provider={provider} label={transaction.productName} />
                       <div className="min-w-0 flex-1">
                         {/* Design shows the recipient (phone/meter/smartcard); fall back to the product name. */}
                         <p className="truncate text-lg font-medium leading-6 text-tone-744">
