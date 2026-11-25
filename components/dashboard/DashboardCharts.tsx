@@ -13,7 +13,9 @@ import {
   PieController,
   PointElement,
   Tooltip,
+  type Plugin,
   type TooltipItem,
+  type TooltipModel,
 } from 'chart.js';
 import { themeColor, useTheme, withAlpha, type ThemeId } from '@/lib/theme/theme';
 
@@ -45,10 +47,51 @@ function spendingColors(theme: ThemeId): SpendingColors {
   return { ...CLASSIC_SPENDING, line, fill: [withAlpha(fill, 0.52), withAlpha(fill, 0.02)], tooltipBody: themeColor('ink-709', CLASSIC_SPENDING.tooltipBody) };
 }
 
-type SpendingDatum = { label: string; amountMinor: number };
+/** `title` is the tooltip heading (e.g. "Tuesday, Mar 21, 2026"); defaults to the axis label. */
+type SpendingDatum = { label: string; amountMinor: number; title?: string };
 type UsageDatum = { name: string; value: number; color: string };
 
-export function SpendingChart({ data }: { data: SpendingDatum[] }) {
+const nairaFormat = (value: number) => `₦${value.toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
+// "4m", "250k": the overview axis drops the currency sign and uses lower-case units.
+const compactAxis = (value: number) =>
+  value.toLocaleString('en-NG', { notation: 'compact', maximumFractionDigits: 1 }).toLowerCase();
+
+/**
+ * Card-style tooltip for the dashboard overview: the date on top and a pill with
+ * "₦ spending ₦100,251". Drawn as HTML next to the canvas (Chart.js "external" tooltip).
+ */
+function overviewTooltip(context: { chart: Chart; tooltip: TooltipModel<'line'> }, data: SpendingDatum[]) {
+  const { chart, tooltip } = context;
+  const host = chart.canvas.parentElement;
+  if (!host) return;
+  let el = host.querySelector<HTMLDivElement>('[data-chart-tooltip]');
+  if (!el) {
+    el = document.createElement('div');
+    el.dataset.chartTooltip = '';
+    el.setAttribute('role', 'presentation');
+    el.className =
+      'pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+14px)] whitespace-nowrap rounded-xl bg-surface px-3 pb-3 pt-2.5 text-center shadow-[0_10px_30px_rgba(16,42,54,0.12)] transition-opacity duration-150';
+    el.innerHTML =
+      '<p data-title class="text-[11px] text-tone-405"></p>' +
+      '<p class="mt-2 flex items-center gap-2 rounded-lg bg-tone-35 px-2.5 py-1.5 text-[11px] text-tone-432">' +
+      '<span class="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-brand-333 text-[9px] font-semibold text-on-brand">₦</span>' +
+      'spending <span data-value class="text-[13px] font-semibold text-tone-744"></span></p>';
+    host.appendChild(el);
+  }
+  if (tooltip.opacity === 0 || !tooltip.dataPoints?.length) {
+    el.style.opacity = '0';
+    return;
+  }
+  const point = tooltip.dataPoints[0];
+  const datum = data[point.dataIndex];
+  el.querySelector('[data-title]')!.textContent = datum?.title ?? datum?.label ?? '';
+  el.querySelector('[data-value]')!.textContent = nairaFormat(Number(point.raw));
+  el.style.opacity = '1';
+  el.style.left = `${tooltip.caretX}px`;
+  el.style.top = `${tooltip.caretY}px`;
+}
+
+export function SpendingChart({ data, variant = 'default' }: { data: SpendingDatum[]; variant?: 'default' | 'overview' }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
 
@@ -56,6 +99,7 @@ export function SpendingChart({ data }: { data: SpendingDatum[] }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const colors = spendingColors(theme);
+    const overview = variant === 'overview';
 
     const chart = new Chart(canvas, {
       type: 'line',
@@ -75,8 +119,10 @@ export function SpendingChart({ data }: { data: SpendingDatum[] }) {
             fill: true,
             tension: 0.42,
             pointRadius: 0,
-            pointHoverRadius: 5,
+            pointHoverRadius: overview ? 6 : 5,
             pointHoverBackgroundColor: colors.line,
+            pointHoverBorderColor: overview ? withAlpha(colors.line, 0.25) : undefined,
+            pointHoverBorderWidth: overview ? 6 : undefined,
           },
         ],
       },
@@ -86,7 +132,9 @@ export function SpendingChart({ data }: { data: SpendingDatum[] }) {
         interaction: { intersect: false, mode: 'index' },
         plugins: {
           legend: { display: false },
-          tooltip: {
+          tooltip: overview
+            ? { enabled: false, external: (context) => overviewTooltip(context, data) }
+            : {
             displayColors: false,
             backgroundColor: '#FFFFFF',
             bodyColor: colors.tooltipBody,
@@ -96,24 +144,38 @@ export function SpendingChart({ data }: { data: SpendingDatum[] }) {
             bodyFont: { size: 14, weight: 'bold' },
             callbacks: {
               title: (items: Array<{ label: string }>) => `${items[0].label} spending`,
-              label: (item: TooltipItem<'line'>) => `₦${Number(item.raw).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`,
+              label: (item: TooltipItem<'line'>) => nairaFormat(Number(item.raw)),
             },
           },
         },
-        scales: {
-          x: { grid: { display: false }, border: { display: false }, ticks: { color: colors.tick, font: { size: 12 }, padding: 12 } },
-          y: {
-            beginAtZero: true,
-            ticks: { color: colors.tick, font: { size: 12 }, callback: (value: string | number) => `₦${Number(value).toLocaleString('en-NG', { notation: 'compact', maximumFractionDigits: 1 })}` },
-            grid: { color: colors.grid, drawTicks: false },
-            border: { display: false },
-          },
-        },
+        scales: overview
+          ? {
+              // Design: light vertical gridlines, no horizontal ones, a thin frame on the left and bottom.
+              x: { grid: { color: colors.grid, drawTicks: false }, border: { color: colors.fill[0] }, ticks: { color: colors.tick, font: { size: 12 }, padding: 14 } },
+              y: {
+                beginAtZero: true,
+                ticks: { color: colors.tick, font: { size: 13 }, padding: 12, maxTicksLimit: 5, callback: (value: string | number) => compactAxis(Number(value)) },
+                grid: { display: false },
+                border: { color: colors.fill[0] },
+              },
+            }
+          : {
+              x: { grid: { display: false }, border: { display: false }, ticks: { color: colors.tick, font: { size: 12 }, padding: 12 } },
+              y: {
+                beginAtZero: true,
+                ticks: { color: colors.tick, font: { size: 12 }, callback: (value: string | number) => `₦${Number(value).toLocaleString('en-NG', { notation: 'compact', maximumFractionDigits: 1 })}` },
+                grid: { color: colors.grid, drawTicks: false },
+                border: { display: false },
+              },
+            },
       },
     });
 
-    return () => chart.destroy();
-  }, [data, theme]);
+    return () => {
+      chart.destroy();
+      canvas.parentElement?.querySelector('[data-chart-tooltip]')?.remove();
+    };
+  }, [data, theme, variant]);
 
   return <canvas ref={canvasRef} aria-label="Monthly spending chart" role="img" />;
 }
@@ -123,8 +185,49 @@ export function SpendingChart({ data }: { data: SpendingDatum[] }) {
  * `donut` draws a ring with rounded, slightly separated segments (analytics design);
  * otherwise a plain pie.
  */
-export function ServiceUsageChart({ data, donut = false }: { data: UsageDatum[]; donut?: boolean }) {
+/**
+ * Pie callouts (dashboard design): each slice gets a leader line out to its name and "(51%)".
+ * Labels go left or right of the pie depending on which side the slice is on.
+ */
+function calloutPlugin(color: string, lineColor: string): Plugin<'pie' | 'doughnut'> {
+  return {
+    id: 'callouts',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      const labels = (chart.data.labels ?? []) as string[];
+      const values = chart.data.datasets[0].data as number[];
+      ctx.save();
+      ctx.font = '400 13px var(--font-outfit), system-ui, sans-serif';
+      meta.data.forEach((element, index) => {
+        if (!values[index]) return;
+        const arc = element as unknown as { x: number; y: number; startAngle: number; endAngle: number; outerRadius: number };
+        const mid = (arc.startAngle + arc.endAngle) / 2;
+        const right = Math.cos(mid) >= 0;
+        const edge = { x: arc.x + Math.cos(mid) * arc.outerRadius, y: arc.y + Math.sin(mid) * arc.outerRadius };
+        const elbow = { x: arc.x + Math.cos(mid) * (arc.outerRadius + 14), y: arc.y + Math.sin(mid) * (arc.outerRadius + 14) };
+        const end = { x: elbow.x + (right ? 22 : -22), y: elbow.y };
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(edge.x, edge.y);
+        ctx.lineTo(elbow.x, elbow.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.textAlign = right ? 'left' : 'right';
+        const textX = end.x + (right ? 4 : -4);
+        ctx.fillText(labels[index], textX, end.y - 4);
+        ctx.fillText(`(${Math.round(values[index])}%)`, textX + (right ? 0 : 0), end.y + 13);
+      });
+      ctx.restore();
+    },
+  };
+}
+
+export function ServiceUsageChart({ data, donut = false, callouts = false }: { data: UsageDatum[]; donut?: boolean; callouts?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const theme = useTheme();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -158,12 +261,15 @@ export function ServiceUsageChart({ data, donut = false }: { data: UsageDatum[];
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            // Room around the pie for the callout labels.
+            layout: callouts ? { padding: { top: 34, bottom: 34, left: 92, right: 92 } } : undefined,
             plugins: { legend: { display: false }, tooltip },
           },
+          plugins: callouts ? [calloutPlugin(themeColor('tone-405', '#7A7F8A'), themeColor('tone-114', '#DED8D4'))] : [],
         });
 
     return () => chart.destroy();
-  }, [data, donut]);
+  }, [data, donut, callouts, theme]);
 
   return <canvas ref={canvasRef} aria-label="Digital services usage chart" role="img" />;
 }

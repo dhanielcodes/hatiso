@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Bell, ChevronDown, LayoutPanelTop, Menu } from 'lucide-react';
+import { Bell, ChevronDown, LayoutPanelTop, Menu, UserRound } from 'lucide-react';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -83,11 +83,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             </Link>
             <Link href="/dashboard/profile">
               <div className="hidden items-center gap-3 sm:flex">
-                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-brand-361 text-sm font-semibold text-on-brand">
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-tone-69 text-tone-744">
                   {user?.avatar ? (
                     <img src={user.avatar} alt="Profile photo" className="h-full w-full object-cover" />
                   ) : (
-                    displayName.slice(0, 1)
+                    <UserRound className="h-5 w-5 fill-current" aria-hidden="true" />
                   )}
                 </div>
                 <div>

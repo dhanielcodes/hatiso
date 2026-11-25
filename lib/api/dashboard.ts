@@ -46,6 +46,8 @@ export interface DashboardData {
     createdAt: string;
     provider: string;
     demo: boolean;
+    /** Phone, meter or smartcard number, when the API sends it. */
+    recipient?: string;
   }>;
   rewards: { available: boolean; points: number | null };
   containsDemoData: boolean;

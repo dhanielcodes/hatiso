@@ -5,12 +5,16 @@ import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import {
   ArrowRight,
+  ArrowUpRight,
   CalendarDays,
   ChevronDown,
   ChevronRight,
-  Gift,
+  Gift, // Gift, Sparkles and Trophy are used by the commented-out Reward points card.
+  Lightbulb,
+  ReceiptText,
   Sparkles,
   Trophy,
+  Tv,
 } from "lucide-react";
 import {
   ServiceUsageChart,
@@ -27,14 +31,67 @@ import {
 import type { DashboardBucket } from "@/lib/api/dashboard";
 import moment from "moment";
 
-const usageColors = [
-  "#F45A08",
-  "#FFA76D",
-  "#2E75BC",
-  "#6A4D9B",
-  "#204555",
-  "#C54E92",
+// Hero photo. The design's photo (a couple in a blob frame) isn't in the repo yet; swap the file here.
+const HERO_IMAGE = "/images/bills_hero.png";
+
+// Name and colour per serviceType, as in the dashboard design. Unknown types get a palette colour.
+const SERVICE_META: Record<string, { name: string; color: string }> = {
+  AIRTIME: { name: "Airtime", color: "#DA5F2A" },
+  DATA: { name: "Data", color: "#F4AE85" },
+  ELECTRICITY: { name: "Electricity", color: "#3A78C2" },
+  TV: { name: "Cable TV", color: "#6A4D9B" },
+  CABLE_TV: { name: "Cable TV", color: "#6A4D9B" },
+  BETTING: { name: "Betting", color: "#243B4A" },
+  INTERNET: { name: "Internet", color: "#0EA5A4" },
+  EDUCATION: { name: "Education", color: "#C54E92" },
+  INSURANCE: { name: "Insurance", color: "#8B5CF6" },
+};
+const FALLBACK_COLORS = ["#6B7280", "#EC4899", "#14B8A6", "#A16207"];
+
+function serviceName(serviceType: string) {
+  return (
+    SERVICE_META[serviceType]?.name ??
+    serviceType
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase())
+  );
+}
+
+// Provider logos for the recent-transactions list, matched on the product code/name.
+const PROVIDERS: Array<{ match: RegExp; name: string; logo: string }> = [
+  { match: /mtn/, name: "MTN Nigeria", logo: "/images/biller_mtn_hq.png" },
+  { match: /airtel/, name: "Airtel", logo: "/images/biller_airtel_hq.png" },
+  { match: /glo/, name: "Glo", logo: "/images/biller_glo_hq.png" },
+  { match: /9mobile|etisalat/, name: "9mobile", logo: "/images/biller_9mobile_hq.png" },
+  { match: /dstv/, name: "DSTV", logo: "/images/tv_dstv.png" },
+  { match: /gotv/, name: "GOtv", logo: "/images/tv_gotv.png" },
+  { match: /showmax/, name: "Showmax", logo: "/images/tv_showmax.png" },
+  { match: /startimes/, name: "StarTimes", logo: "/images/tv_startimes.png" },
+  { match: /bet9ja/, name: "Bet9ja", logo: "/images/betting_bet9ja.png" },
+  { match: /sporty/, name: "SportyBet", logo: "/images/betting_sportybet.png" },
+  { match: /betway/, name: "Betway", logo: "/images/betting_betway.png" },
+  { match: /kingbet/, name: "KingBet", logo: "/images/betting_kingbet.png" },
+  { match: /merrybet/, name: "MerryBet", logo: "/images/betting_merrybet.png" },
+  { match: /ekedc|eko/, name: "Eko Electric", logo: "/images/elec_ekedc.png" },
+  { match: /ibedc|ibadan/, name: "Ibadan Electric", logo: "/images/elec_ibedc.png" },
+  { match: /ikeja|ie\b/, name: "Ikeja Electric", logo: "/images/elec_ikeja.png" },
+  { match: /jos|jed/, name: "Jos Electric", logo: "/images/elec_jos.png" },
+  { match: /kaduna/, name: "Kaduna Electric", logo: "/images/elec_kaduna.png" },
 ];
+
+function providerFor(productCode: string, productName: string) {
+  const key = `${productCode} ${productName}`.toLowerCase();
+  return PROVIDERS.find((provider) => provider.match.test(key));
+}
+
+// Comparison wording per period: "from Last week", "vs Last 7 days".
+const PERIOD_COPY: Record<string, { spent: string; previous: string }> = {
+  "Last 7 days": { spent: "Spent this week", previous: "Last week" },
+  "Last 30 days": { spent: "Spent this month", previous: "Last month" },
+  "Last 6 months": { spent: "Spent in 6 months", previous: "the 6 months before" },
+};
+const CUSTOM_COPY = { spent: "Spent this period", previous: "the period before" };
 
 function toDateString(date: Date) {
   const year = date.getFullYear();
@@ -61,24 +118,33 @@ function formatNaira(amountMinor: number | null | undefined) {
   return `₦${((amountMinor ?? 0) / 100).toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
 }
 
-// "+12.3%" / "-4.0%" / "—" when the value is missing
-function formatChange(value: number | null | undefined, unit = "%") {
-  if (!isNum(value)) return "—";
-  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}${unit}`;
-}
-
 // "98.5%" / "—" when the value is missing
 function formatFixed(value: number | null | undefined, digits = 1, unit = "") {
   return isNum(value) ? `${value.toFixed(digits)}${unit}` : "—";
 }
 
 function formatRange(from: string, to: string) {
-  const formatter = new Intl.DateTimeFormat("en-NG", {
+  // "Jan 5, 2026 – Jan 11, 2026", as in the design.
+  const formatter = new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
   return `${formatter.format(new Date(`${from}T00:00:00`))} – ${formatter.format(new Date(`${to}T00:00:00`))}`;
+}
+
+// Tooltip heading: "Tuesday, Mar 21, 2026" for a day, "Week of Mar 21, 2026", or "March 2026".
+function formatBucketTitle(from: string, bucket: DashboardBucket) {
+  const date = new Date(`${from}T00:00:00`);
+  if (bucket === "MONTH")
+    return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date);
+  const day = new Intl.DateTimeFormat("en-US", {
+    weekday: bucket === "DAY" ? "long" : undefined,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+  return bucket === "WEEK" ? `Week of ${day}` : day;
 }
 
 function formatBucketLabel(from: string, bucket: DashboardBucket) {
@@ -102,20 +168,45 @@ function bucketForRange(from: string, to: string): DashboardBucket {
   return "DAY";
 }
 
+const SUCCESS_STATUSES = new Set(["SUCCESSFUL", "FULFILLED", "SUCCESS", "COMPLETED"]);
+const PENDING_STATUSES = new Set(["PENDING", "INITIATED", "PROCESSING", "AWAITING_PAYMENT", "IN_PROGRESS"]);
+
+// SUCCESS / PENDING / FAILED pill, as in the design.
 function StatusBadge({ status }: { status: string }) {
+  const kind = SUCCESS_STATUSES.has(status) ? "success" : PENDING_STATUSES.has(status) ? "pending" : "failed";
   const tone =
-    status === "SUCCESSFUL" || status === "FULFILLED"
+    kind === "success"
       ? "bg-tone-58 text-success-445"
-      : status === "PENDING" || status === "INITIATED"
-        ? "bg-warning-35 text-brand-383"
+      : kind === "pending"
+        ? "bg-tone-39 text-brand-333"
         : "bg-tone-73 text-danger-404";
+  const label = kind === "success" ? "Success" : kind === "pending" ? "Pending" : status === "FAILED" ? "Failed" : status.replace(/_/g, " ");
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${tone}`}
+      className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide ${tone}`}
     >
-      <span className="h-1 w-1 rounded-full bg-current" />
-      {status.replace(/_/g, " ")}
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      {label}
     </span>
+  );
+}
+
+function ProviderLogo({ logo, label }: { logo?: string; label: string }) {
+  if (logo) {
+    return (
+      <Image
+        src={logo}
+        alt=""
+        width={56}
+        height={56}
+        className="h-14 w-14 shrink-0 rounded-full object-cover"
+      />
+    );
+  }
+  return (
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-tone-37 text-sm font-bold text-ink-626">
+      {label.slice(0, 2).toUpperCase()}
+    </div>
   );
 }
 
@@ -150,7 +241,7 @@ export default function DashboardPage() {
     };
   }, [customRange, period, today]);
   const { data, isLoading, isError } = useDashboard(
-    { from, to, bucket, recentLimit: 10 },
+    { from, to, bucket, recentLimit: 5 },
     Boolean(today),
     user?.name,
   );
@@ -173,32 +264,44 @@ export default function DashboardPage() {
     setIsRangePickerOpen(false);
   };
 
+  const copy = PERIOD_COPY[period] ?? CUSTOM_COPY;
+  const comparison = `from ${copy.previous}`;
   const metrics = data
     ? (() => {
         const { spending, transactions, successRate } = data.summary;
+        const countChange = isNum(transactions.count) && isNum(transactions.previousCount)
+          ? transactions.count - transactions.previousCount
+          : null;
         return [
           {
-            label: "Spent this period",
+            label: copy.spent,
             value: formatNaira(spending.amountMinor),
-            change: formatChange(spending.changePercent),
-            detail: "vs previous period",
+            // "+ 12.4%"
+            change: isNum(spending.changePercent)
+              ? `${spending.changePercent >= 0 ? "+" : "-"} ${Math.abs(spending.changePercent).toFixed(1)}%`
+              : "—",
+            detail: comparison,
             positive:
               !isNum(spending.changePercent) || spending.changePercent >= 0,
           },
           {
             label: "Transactions",
             value: (transactions.count ?? 0).toLocaleString(),
-            change: formatChange(transactions.changePercent),
-            detail: "vs previous period",
-            positive:
-              !isNum(transactions.changePercent) ||
-              transactions.changePercent >= 0,
+            // "+ 3 more" / "- 2 fewer"
+            change: isNum(countChange)
+              ? `${countChange >= 0 ? "+" : "-"} ${Math.abs(countChange).toLocaleString()} ${countChange >= 0 ? "more" : "fewer"}`
+              : "—",
+            detail: comparison,
+            positive: !isNum(countChange) || countChange >= 0,
           },
           {
             label: "Success rate",
             value: formatFixed(successRate.percent, 1, "%"),
-            change: formatChange(successRate.changePercentagePoints, " pts"),
-            detail: "vs previous period",
+            // "↑ 2.1%" (percentage points)
+            change: isNum(successRate.changePercentagePoints)
+              ? `${successRate.changePercentagePoints >= 0 ? "↑" : "↓"} ${Math.abs(successRate.changePercentagePoints).toFixed(1)}%`
+              : "—",
+            detail: comparison,
             positive:
               !isNum(successRate.changePercentagePoints) ||
               successRate.changePercentagePoints >= 0,
@@ -210,7 +313,7 @@ export default function DashboardPage() {
                 ? data.rewards.points.toLocaleString()
                 : "—",
             change: data.rewards.available ? "Available" : "Not available",
-            detail: "",
+            detail: data.rewards.available ? "to redeem" : "",
             positive: true,
           },
         ];
@@ -218,81 +321,99 @@ export default function DashboardPage() {
     : [];
   const spendingData = (data?.spendingOverview ?? []).map((item) => ({
     label: formatBucketLabel(item.from, bucket),
+    title: formatBucketTitle(item.from, bucket),
     amountMinor: item.amountMinor ?? 0,
   }));
   const usageData = (data?.digitalServicesUsage ?? []).map((item, index) => ({
-    name: item.serviceType.replace(/_/g, " "),
+    name: serviceName(item.serviceType),
     value: item.percentage ?? 0,
-    color: usageColors[index % usageColors.length],
+    color:
+      SERVICE_META[item.serviceType]?.color ??
+      FALLBACK_COLORS[index % FALLBACK_COLORS.length],
   }));
+  const spendingChange = data?.summary.spending.changePercent;
 
   return (
     <div className="min-h-full bg-tone-12 text-tone-760">
       <section className="border-b border-tone-75 px-5 py-5 sm:px-8 sm:py-6">
-        <p className="text-sm font-medium text-brand-325">
-          {moment(today).format("DD MMMM YYYY")}
+        <p className="text-[13px] text-brand-325">
+          {today ? moment(today).format("dddd, Do MMMM YYYY") : "\u00a0"}
         </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-[-0.04em] sm:text-[26px]">
-          Welcome back, {displayName} 👋
+        <h1 className="mt-3 text-2xl font-medium tracking-[-0.02em] text-tone-744 sm:text-[25px]">
+          Welcome Back, {displayName} 👋
         </h1>
-        <p className="mt-1 text-[15px] text-tone-426">
-          Here&apos;s a clear look at your spending this period.
+        <p className="mt-2 text-[15px] text-tone-426">
+          Here&apos;s a clear look at your spending this month.
         </p>
       </section>
 
       <main className="mx-auto space-y-5 px-5 py-6 sm:px-8 lg:py-7">
         <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
-          <div className="relative min-h-[247px] overflow-hidden rounded-xl bg-ink-626 px-7 py-8 text-white sm:px-9">
-            <div className="absolute inset-y-0 right-0 w-[49%] opacity-95">
-              <Image
-                src="/images/bills_hero.png"
-                alt="Pay bills from home"
-                fill
-                sizes="(max-width: 768px) 0px, 42vw"
-                className="object-cover object-center mix-blend-luminosity"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-ink-626 via-ink-626/55 to-transparent" />
+          <div className="relative min-h-[247px] overflow-hidden rounded-xl bg-ink-626 px-7 py-8 text-white sm:px-7">
+            {/* Photo in a soft blob shape with floating service icons (design). */}
+            <div className="absolute right-[6%] top-1/2 hidden h-[190px] w-[270px] -translate-y-1/2 md:block lg:w-[300px]">
+              <div className="absolute inset-0 overflow-hidden rounded-[44%_56%_40%_60%/58%_46%_54%_42%]">
+                <Image
+                  src={HERO_IMAGE}
+                  alt="Paying a bill from a phone at home"
+                  fill
+                  sizes="300px"
+                  className="object-cover object-top"
+                  priority
+                />
+              </div>
+              <span className="absolute -left-3 top-6 flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 text-brand-333 shadow-md">
+                <ReceiptText className="h-4 w-4" />
+              </span>
+              <span className="absolute -right-4 top-10 flex h-7 w-7 items-center justify-center rounded-full bg-brand-333/25 text-brand-249">
+                <Lightbulb className="h-3.5 w-3.5" />
+              </span>
+              <span className="absolute -bottom-1 right-6 flex h-11 w-11 items-center justify-center rounded-full bg-surface text-brand-333 shadow-lg">
+                <Tv className="h-5 w-5" />
+              </span>
             </div>
-            <div className="relative z-10 max-w-[430px]">
+            <div className="relative z-10 max-w-[400px]">
               <span className="inline-flex rounded-full bg-white/20 px-3 py-1.5 text-[10px] font-semibold tracking-wide">
                 ALL YOUR BILLS. ONE PLACE.
               </span>
-              <h2 className="mt-7 text-[29px] font-semibold leading-[1.17] tracking-[-0.04em] sm:text-[34px]">
+              <h2 className="mt-7 text-[29px] font-semibold leading-[1.17] tracking-[-0.02em] sm:text-[33px]">
                 Let&apos;s get your{" "}
                 <span className="text-brand-305">bills out of the way.</span>
               </h2>
-              <p className="mt-4 max-w-[390px] text-[13px] leading-5 text-tone-86">
+              <p className="mt-5 max-w-[390px] text-[13px] leading-5 text-tone-86">
                 Skip the stress and the back and forth. Pay electricity,
                 airtime, TV and more in one safe place, anytime you like.
               </p>
-            </div>
-            <div className="absolute bottom-8 right-8 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-surface text-brand-333 shadow-lg">
-              <Gift className="h-5 w-5" />
             </div>
           </div>
           <article className="relative min-h-[247px] overflow-hidden rounded-xl bg-brand-61 p-6 sm:p-7">
             <span className="inline-flex rounded-full bg-brand-109 px-3 py-1.5 text-[10px] font-semibold text-brand-333">
               THIS WEEK
             </span>
-            <h2 className="mt-5 max-w-[250px] text-[23px] font-semibold leading-[1.24] tracking-[-0.03em]">
+            <h2 className="mt-4 max-w-[215px] text-[21px] font-semibold leading-[1.35] tracking-[-0.01em] text-tone-744">
               Get 5× points on every data bundle
             </h2>
-            <p className="mt-2 max-w-[180px] text-[13px] leading-4 text-tone-388">
+            <p className="mt-3 max-w-[180px] text-[13px] leading-4 text-tone-388">
               More data, more rewards.
               <br />
               Ends Sunday.
             </p>
             <Link
               href="/dashboard/services"
-              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-brand-333"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brand-333"
             >
               Buy Data <ArrowRight className="h-4 w-4" />
             </Link>
-            <div className="absolute right-7 top-1/2 flex h-32 w-32 -translate-y-1/2 rotate-12 items-center justify-center rounded-full border-[8px] border-brand-241 bg-brand-303 text-center text-on-brand shadow-sm">
-              <span className="text-3xl font-semibold leading-none">
-                5×
-                <small className="mt-1 block text-[11px] font-medium tracking-wide">
+            {/* Slide indicator from the design (one promo for now). */}
+            <div aria-hidden="true" className="absolute bottom-3.5 left-6 flex items-center gap-1 sm:left-7">
+              <span className="h-1.5 w-4 rounded-full bg-brand-333" />
+              <span className="h-1.5 w-1.5 rounded-full bg-tone-114" />
+              <span className="h-1.5 w-1.5 rounded-full bg-tone-114" />
+            </div>
+            <div className="absolute right-4 top-1/2 flex h-[120px] w-[120px] -translate-y-1/2 rotate-[18deg] items-center justify-center rounded-full border-[7px] border-brand-241 bg-brand-303 text-center text-on-brand shadow-[0_6px_18px_rgba(217,98,43,0.35)]">
+              <span className="text-[34px] font-semibold italic leading-none">
+                5x
+                <small className="mt-2 block text-[11px] font-medium not-italic tracking-[0.12em]">
                   POINTS
                 </small>
               </span>
@@ -302,7 +423,7 @@ export default function DashboardPage() {
 
         <section>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-medium text-tone-404">Metrics</h2>
+            <h2 className="text-lg text-tone-405">Metrics</h2>
             <div className="flex flex-wrap gap-2">
               <label className="relative">
                 <span className="sr-only">Select period</span>
@@ -402,16 +523,16 @@ export default function DashboardPage() {
                     className="rounded-xl border border-tone-98 bg-surface px-5 py-6"
                   >
                     <p className="text-[15px] text-ink-510">{metric.label}</p>
-                    <p className="mt-3 text-[27px] font-medium tracking-[-0.04em] text-ink-622">
+                    <p className="mt-3 text-[26px] tracking-[-0.02em] text-ink-622">
                       {metric.value}
                     </p>
-                    <p className="mt-2 text-sm">
+                    <p className="mt-2 text-[15px]">
                       <span
-                        className={`font-medium ${metric.positive ? "text-success-417" : "text-danger-404"}`}
+                        className={metric.positive ? "text-success-417" : "text-danger-404"}
                       >
                         {metric.change}
                       </span>
-                      <span className="text-tone-304"> {metric.detail}</span>
+                      {metric.detail && <span className="text-tone-304"> {metric.detail}</span>}
                     </p>
                   </article>
                 ))}
@@ -426,9 +547,7 @@ export default function DashboardPage() {
         <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
           <article className="rounded-xl border border-tone-98 bg-surface p-5 sm:p-6">
             <div>
-              <h2 className="text-xl font-medium text-ink-504">
-                Spending overview
-              </h2>
+              <h2 className="text-xl text-ink-504">Spending overview</h2>
               {isLoading ? (
                 <>
                   <Skeleton strong className="mt-2 h-8 w-40" />
@@ -436,24 +555,34 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <>
-                  <p className="mt-2 text-[26px] font-semibold tracking-[-0.04em] text-tone-744">
+                  <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-tone-744">
                     {data
                       ? formatNaira(data.summary.spending.amountMinor)
                       : "—"}
                   </p>
-                  <p className="mt-1 text-xs text-tone-321">
-                    {data
-                      ? `${formatChange(data.summary.spending.changePercent)} vs previous period`
-                      : "—"}
-                  </p>
+                  {data && (
+                    <p className="mt-2 flex items-center gap-2.5 text-xs text-tone-321">
+                      {isNum(spendingChange) && (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium ${spendingChange >= 0 ? "bg-tone-57 text-success-392" : "bg-tone-73 text-danger-404"}`}
+                        >
+                          {Math.abs(spendingChange).toFixed(0)}%
+                          <ArrowUpRight
+                            className={`h-3 w-3 ${spendingChange < 0 ? "rotate-90" : ""}`}
+                          />
+                        </span>
+                      )}
+                      vs {period === "Custom range" ? "previous period" : period}
+                    </p>
+                  )}
                 </>
               )}
             </div>
-            <div className="mt-6 h-[270px] sm:h-[310px]">
+            <div className="relative mt-6 h-[300px] sm:h-[350px]">
               {isLoading ? (
                 <ChartSkeleton shape="bars" label="Loading spending overview" />
               ) : spendingData.length ? (
-                <SpendingChart data={spendingData} />
+                <SpendingChart data={spendingData} variant="overview" />
               ) : (
                 <p className="pt-24 text-center text-sm text-slate-500">
                   No spending data for this period.
@@ -462,31 +591,31 @@ export default function DashboardPage() {
             </div>
           </article>
           <article className="rounded-xl border border-tone-98 bg-surface p-5 sm:p-6">
-            <h2 className="text-xl font-medium">Digital Services usage</h2>
-            <div className="relative mx-auto mt-4 h-[240px] max-w-[310px]">
+            <h2 className="text-xl font-medium text-tone-744">Digital Services usage</h2>
+            <div className="relative mx-auto mt-2 h-[270px] max-w-[360px]">
               {isLoading ? (
                 <ChartSkeleton shape="donut" label="Loading service usage" />
               ) : usageData.length ? (
-                <ServiceUsageChart data={usageData} />
+                <ServiceUsageChart data={usageData} callouts />
               ) : (
                 <p className="pt-24 text-center text-sm text-slate-500">
                   No service usage yet.
                 </p>
               )}
             </div>
-            <div className="mt-2 space-y-2.5">
+            <div className="mt-4 space-y-3">
               {usageData.map((service) => (
                 <div
                   key={service.name}
                   className="flex items-center gap-3 text-sm"
                 >
                   <span
-                    className="h-5 w-5 rounded"
+                    className="h-[18px] w-[18px] rounded"
                     style={{ backgroundColor: service.color }}
                   />
-                  <span className="flex-1">{service.name}</span>
+                  <span className="flex-1 text-tone-744">{service.name}</span>
                   <span className="text-info-454">
-                    {formatFixed(service.value, 1, "%")}
+                    {formatFixed(service.value, 0, "%")}
                   </span>
                 </div>
               ))}
@@ -497,45 +626,44 @@ export default function DashboardPage() {
         <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
           <article className="rounded-xl border border-tone-98 bg-surface p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-semibold">Recent transactions</h2>
+              <h2 className="text-xl font-medium text-tone-744">Recent Transaction</h2>
               <Link
                 href="/dashboard/transactions"
-                className="inline-flex items-center gap-2 text-sm font-medium text-brand-333"
+                className="inline-flex items-center gap-2 text-[17px] text-brand-333"
               >
-                View all transactions <ChevronRight className="h-4 w-4" />
+                View all transaction <ChevronRight className="h-4 w-4" />
               </Link>
             </div>
             <div className="mt-5 divide-y divide-tone-92">
               {isLoading ? (
                 <ListSkeleton rows={3} label="Loading recent transactions" />
               ) : data?.recentTransactions.length ? (
-                data.recentTransactions.map((transaction) => (
-                  <div
-                    key={transaction.txnRef}
-                    className="flex items-center gap-3 py-4 first:pt-2"
-                  >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-tone-37 text-xs font-bold text-ink-626">
-                      {transaction.productName.slice(0, 2).toUpperCase()}
+                data.recentTransactions.slice(0, 5).map((transaction) => {
+                  const provider = providerFor(transaction.productCode, transaction.productName);
+                  return (
+                    <div
+                      key={transaction.txnRef}
+                      className="flex items-center gap-4 py-5 first:pt-3"
+                    >
+                      <ProviderLogo logo={provider?.logo} label={transaction.productName} />
+                      <div className="min-w-0 flex-1">
+                        {/* Design shows the recipient (phone/meter/smartcard); fall back to the product name. */}
+                        <p className="truncate text-lg font-medium leading-6 text-tone-744">
+                          {transaction.recipient || transaction.productName}
+                        </p>
+                        <p className="mt-1 truncate text-[15px] text-tone-405">
+                          {serviceName(transaction.serviceType)} - {provider?.name ?? transaction.productName}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4">
+                        <span className="text-lg font-semibold text-ink-604">
+                          {formatNaira(transaction.totalMinor)}
+                        </span>
+                        <StatusBadge status={transaction.fulfilmentStatus} />
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-lg font-medium leading-5">
-                        {transaction.productName}
-                      </p>
-                      <p className="mt-1 truncate text-sm text-tone-355">
-                        {new Intl.DateTimeFormat("en-NG", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        }).format(new Date(transaction.createdAt))}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4">
-                      <span className="font-semibold text-ink-604">
-                        {formatNaira(transaction.totalMinor)}
-                      </span>
-                      <StatusBadge status={transaction.fulfilmentStatus} />
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="py-10 text-center text-sm text-slate-500">
                   No recent transactions yet.
