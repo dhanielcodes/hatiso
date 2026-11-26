@@ -10,6 +10,8 @@ export interface PaystackCheckoutRequest {
   currency: string;
   orderRef: string;
   guestToken: string;
+  /** Paystack channels to offer, e.g. ['card'] or ['bank_transfer']. All channels when left out. */
+  channels?: string[];
 }
 
 interface PaystackCheckoutProps {
@@ -38,6 +40,7 @@ export default function PaystackCheckout({
         amount: request.totalMinor,
         reference: request.txnRef,
         currency: request.currency,
+        ...(request.channels?.length ? { channels: request.channels } : {}),
         metadata: {
           custom_fields: [],
           orderRef: request.orderRef,

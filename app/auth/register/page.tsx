@@ -6,11 +6,11 @@ import { useRouter } from 'next/navigation';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'sonner';
-import { CheckCircle2, ArrowLeft } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useRegister, useResumeVerification } from '@/lib/queries/useAuth';
 import { TextField, PasswordField, PhoneField, CheckboxField, SubmitButton } from '@/components/forms';
-import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
+import AuthLayout, { AUTH_ERROR, AUTH_LINK, AUTH_PRIMARY, AuthHeading } from '@/components/auth/AuthLayout';
 import StepIndicator from '@/components/auth/StepIndicator';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import VerifyContactPanel from '@/components/auth/VerifyContactPanel';
@@ -68,8 +68,7 @@ const step2Schema = Yup.object({
 });
 
 /* ─── Shared button style ───────────────────────────────────────── */
-const BTN =
-  'w-full rounded-xl bg-brand-305 py-3.5 text-sm font-semibold text-on-brand shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-brand-249 active:scale-[0.99] disabled:opacity-50';
+const BTN = AUTH_PRIMARY;
 
 /* ─── Email / Phone tab switch ──────────────────────────────────── */
 function MethodTabs({
@@ -88,7 +87,7 @@ function MethodTabs({
     <div
       role="tablist"
       aria-label="Sign up method"
-      className="grid grid-cols-2 gap-1 rounded-xl bg-tone-85 p-1"
+      className="grid grid-cols-2 gap-1 rounded-xl border border-grey-100 bg-white p-1"
     >
       {tabs.map((tab) => {
         const active = value === tab.id;
@@ -99,9 +98,9 @@ function MethodTabs({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(tab.id)}
-            className={`rounded-lg py-2.5 text-[13px] font-semibold transition ${active
-              ? 'bg-surface text-brand-361 shadow-sm'
-              : 'text-slate-500 hover:text-slate-800'
+            className={`min-h-10 rounded-lg text-sm font-medium transition-colors ${active
+              ? 'bg-carbon text-cloud'
+              : 'text-grey-600 hover:text-carbon'
               }`}
           >
             {tab.label}
@@ -181,30 +180,34 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="grid min-h-screen bg-tone-35 lg:grid-cols-2">
-      <AuthBrandPanel />
-
-      {/* ── Right panel ── */}
-      <main className="flex min-h-screen flex-col bg-tone-35 px-5 py-6 sm:px-10 lg:px-16 xl:px-20">
-        <div className="flex flex-1 flex-col items-center justify-center py-4">
-          <div className="w-full max-w-[460px]">
+    <>
+      <AuthLayout
+        width={460}
+        back={
+          step === 2
+            ? { onClick: () => { setRegisterError(''); setStep(1); } }
+            : step === 3
+              ? { onClick: () => { clearVerificationContext(); setVerification(null); setStep(1); } }
+              : undefined
+        }
+        aside={
+          <>
+            Have an account?{' '}
+            <Link href="/auth/login" className={AUTH_LINK}>
+              Sign in
+            </Link>
+          </>
+        }
+      >
             {/* Step indicator */}
             <StepIndicator currentStep={step} />
 
             {/* ══ STEP 1: CREATE ACCOUNT ══════════════════════════ */}
             {step === 1 && (
               <>
-                <div className="mb-6 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-brand-361">
-                    STEP 1
-                  </p>
-                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-tone-822">
-                    Create your account
-                  </h1>
-                  <p className="mt-1.5 text-[13px] text-slate-500">
-                    Join Hatiso today. It takes few minutes to set up your profile
-                  </p>
-                </div>
+                <AuthHeading title="Create your account.">
+                  It takes about two minutes. You&apos;ll keep your receipts and saved numbers in one place.
+                </AuthHeading>
 
                 <Formik
                   initialValues={{
@@ -227,7 +230,7 @@ export default function RegisterPage() {
                   }}
                 >
                   {({ setErrors, setTouched }) => (
-                    <Form className="space-y-4" noValidate>
+                    <Form className="flex flex-col gap-5" noValidate>
                       <MethodTabs
                         value={step1Data.method}
                         onChange={(next) => {
@@ -241,32 +244,34 @@ export default function RegisterPage() {
 
                       <TextField
                         name="fullName"
-                        label="Full Name"
+                        label="Full name"
                         required
                         variant="auth"
-                        placeholder="e.g. Mayowa Babs"
+                        placeholder="e.g. Ada Okafor"
                       />
 
                       {step1Data.method === 'email' ? (
                         <TextField
                           name="email"
                           type="email"
-                          label="Email Address"
+                          label="Email address"
                           required
                           variant="auth"
-                          placeholder="e.g. alexandra@example.com"
+                          placeholder="e.g. ada@example.com"
+                          hint="We'll send a code to this email to verify it."
                           autoComplete="email"
                         />
                       ) : (
                         <PhoneField
                           name="phone"
-                          label="Phone Number"
+                          label="Phone number"
                           required
                           variant="auth"
                           dialCode="+234"
                           inputMode="numeric"
                           autoComplete="tel-national"
-                          placeholder="_ _ _ _ _ _ _ _ _"
+                          placeholder="e.g. 0803 123 4567"
+                          hint="We'll text a code to this number to verify it."
                         />
                       )}
 
@@ -276,11 +281,11 @@ export default function RegisterPage() {
                         label={
                           <>
                             I agree to the{' '}
-                            <Link href="/terms" className="font-semibold text-slate-900 underline">
+                            <Link href="/terms" className={AUTH_LINK}>
                               Terms of Service
                             </Link>{' '}
                             and{' '}
-                            <Link href="/privacy" className="font-semibold text-slate-900 underline">
+                            <Link href="/privacy" className={AUTH_LINK}>
                               Privacy Policy
                             </Link>
                             .
@@ -288,40 +293,23 @@ export default function RegisterPage() {
                         }
                       />
 
-                      <SubmitButton className={BTN}>Continue</SubmitButton>
+                      <SubmitButton className={BTN}>Continue<ArrowRight className="h-4 w-4" aria-hidden="true" /></SubmitButton>
                     </Form>
                   )}
                 </Formik>
 
-                <p className="mt-5 text-center text-[13px] text-slate-500">
-                  Already have an account?{' '}
-                  <Link
-                    href="/auth/login"
-                    className="font-semibold text-brand-361 hover:text-brand-370"
-                  >
-                    Sign In
-                  </Link>
-                </p>
               </>
             )}
 
             {/* ══ STEP 2: CREATE PASSWORD & REGISTER ══════════════ */}
             {step === 2 && (
               <>
-                <div className="mb-6 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-brand-361">
-                    STEP 2
-                  </p>
-                  <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-tone-822">
-                    Create Password
-                  </h1>
-                  <p className="mt-1.5 text-[13px] text-slate-500">
-                    Choose a password that you will use to log in to your Hatiso account
-                  </p>
-                </div>
+                <AuthHeading title="Create a password.">
+                  You&apos;ll use it with {isEmailMethod ? step1Data.email : step1Data.phone} to sign in.
+                </AuthHeading>
 
                 {registerError && (
-                  <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-600">
+                  <div role="alert" className={AUTH_ERROR}>
                     {registerError}
                   </div>
                 )}
@@ -376,53 +364,39 @@ export default function RegisterPage() {
                   }}
                 >
                   {({ values }) => (
-                    <Form className="space-y-4" noValidate>
+                    <Form className="flex flex-col gap-5" noValidate>
                       <PasswordField
                         name="password"
                         label="Password"
                         required
                         variant="auth"
-                        placeholder="••••••••••"
                         autoComplete="new-password"
                       />
+
+                      <PasswordStrength password={values.password} />
 
                       <PasswordField
                         name="confirmPassword"
-                        label="Confirm Password"
+                        label="Confirm password"
                         required
                         variant="auth"
-                        placeholder="••••••••••"
+                        placeholder="Type it again"
                         autoComplete="new-password"
                       />
 
-                      {/* Strength indicator */}
-                      {values.password && <PasswordStrength password={values.password} />}
-
                       <SubmitButton
                         disabled={isRegistering}
-                        className={`${BTN} mt-2`}
+                        className={`${BTN} mt-1`}
                         loadingLabel={
                           <span className="inline-flex items-center justify-center gap-2">
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-cloud border-t-transparent" />
                             Creating account...
                           </span>
                         }
                       >
-                        Create Password
+                        Continue
+                        <ArrowRight className="h-4 w-4" aria-hidden="true" />
                       </SubmitButton>
-
-                      <div className="pt-2 text-center">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRegisterError('');
-                            setStep(1);
-                          }}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800"
-                        >
-                          <ArrowLeft className="h-3.5 w-3.5" /> Back to account details
-                        </button>
-                      </div>
                     </Form>
                   )}
                 </Formik>
@@ -433,7 +407,6 @@ export default function RegisterPage() {
             {step === 3 && verification && (
               <>
                 <VerifyContactPanel
-                  eyebrow="STEP 3"
                   context={verification}
                   onVerified={() => handleVerified(verification)}
                   footer={
@@ -444,7 +417,7 @@ export default function RegisterPage() {
                         setVerification(null);
                         setStep(1);
                       }}
-                      className="text-xs text-slate-500 underline hover:text-slate-800"
+                      className="text-sm font-medium text-grey-600 underline underline-offset-4 hover:text-carbon"
                     >
                       {isEmailMethod ? 'Change email or details' : 'Change phone number or details'}
                     </button>
@@ -452,23 +425,20 @@ export default function RegisterPage() {
                 />
               </>
             )}
-          </div>
-        </div>
-      </main>
+      </AuthLayout>
 
       {/* ══ SUCCESS MODAL ═══════════════════════════════════════════ */}
       {showSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-surface p-8 text-center shadow-2xl">
-            {/* Green check */}
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-              <CheckCircle2 className="h-9 w-9 text-emerald-500" strokeWidth={2.2} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/60 p-4 backdrop-blur-sm">
+          <div role="dialog" aria-modal="true" className="hz-pop w-full max-w-sm overflow-hidden rounded-2xl bg-white p-8 text-center text-carbon shadow-[0_40px_80px_-30px_rgba(0,0,0,0.6)]">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-carbon text-cloud">
+              <CheckCircle2 className="h-8 w-8" strokeWidth={2} />
             </div>
 
-            <h2 className="text-xl font-bold text-tone-822">
+            <h2 className="text-2xl font-semibold tracking-[-0.02em]">
               Welcome aboard, {createdName}.
             </h2>
-            <p className="mx-auto mt-2 max-w-[260px] text-[13px] leading-relaxed text-slate-500">
+            <p className="mx-auto mt-2 max-w-[280px] text-[15px] leading-relaxed text-grey-600">
               Your Hatiso account is all set. Step into your dashboard and discover what&apos;s
               waiting for you.
             </p>
@@ -476,13 +446,13 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => router.push('/dashboard')}
-              className="mt-7 w-full rounded-xl bg-brand-361 py-3.5 text-sm font-semibold text-on-brand transition-colors hover:bg-brand-370 active:scale-[0.99]"
+              className={`${AUTH_PRIMARY} mt-7`}
             >
               Continue to Dashboard
             </button>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

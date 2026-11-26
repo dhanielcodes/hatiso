@@ -1,23 +1,28 @@
 'use client';
 
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Formik, Form, type FormikHelpers } from 'formik';
-import * as Yup from 'yup';
-import { ChevronLeft, Clock, Headphones, MessageSquare, RotateCcw, UserRound } from 'lucide-react';
-import { SubmitButton, TextAreaField } from '@/components/forms';
+import moment from 'moment';
+import { ArrowLeft, Check, ChevronRight, LifeBuoy, Receipt, X } from 'lucide-react';
 import {
   REOPENABLE_STATUSES,
-  formatDateTime,
   humanizeEnum,
   ticketStatus,
   ticketTypeLabel,
 } from '@/components/support/supportDisplay';
 import { newIdempotencyKey, type SupportTicket, type SupportTicketMessage } from '@/lib/api/support';
-import { useReopenSupportTicket, useReplyToSupportTicket, useSupportTicket } from '@/lib/queries/useSupport';
+import {
+  useReopenSupportTicket,
+  useReplyToSupportTicket,
+  useSubmitSupportFeedback,
+  useSupportTicket,
+} from '@/lib/queries/useSupport';
 
-const CARD = 'rounded-xl border border-tone-88 bg-surface';
+const CARD = 'rounded-[14px] border border-tone-100 bg-surface';
+const BTN = 'hz-press inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-tone-100 bg-surface px-[18px] text-sm font-medium text-tone-744 hover:border-tone-414 disabled:opacity-50';
+const BTN_PRIMARY = 'hz-press inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-brand-305 px-[18px] text-sm font-medium text-on-brand hover:bg-brand-361 disabled:opacity-50';
+const TEXTAREA = 'w-full resize-y rounded-lg border border-tone-100 bg-surface px-3.5 py-3 text-[15px] leading-normal text-tone-744 outline-none placeholder:text-tone-414 focus:border-brand-305';
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 function isFromCustomer(message: SupportTicketMessage, ticket: SupportTicket) {
@@ -27,266 +32,324 @@ function isFromCustomer(message: SupportTicketMessage, ticket: SupportTicket) {
   return Boolean(author && ticket.customerId && author === ticket.customerId);
 }
 
-function DetailRow({ label, children }: { label: string; children: ReactNode }) {
+function when(iso: string | null | undefined) {
+  const d = moment(iso);
+  if (!iso || !d.isValid()) return '—';
+  if (d.isSame(moment(), 'day')) return `Today, ${d.format('HH:mm')}`;
+  if (d.isSame(moment().subtract(1, 'day'), 'day')) return `Yesterday, ${d.format('HH:mm')}`;
+  return d.format('D MMM, HH:mm');
+}
+
+function statusColor(status: string) {
+  const key = status.toUpperCase();
+  if (['RESOLVED', 'CLOSED'].includes(key)) return { text: 'text-status-success', dot: 'bg-status-success' };
+  if (['CANCELLED', 'REJECTED'].includes(key)) return { text: 'text-status-error', dot: 'bg-status-error' };
+  return { text: 'text-status-warning', dot: 'bg-status-warning' };
+}
+
+type ThreadItem = { id: string; kind: 'me' | 'them' | 'update'; who: string; at: string; text: string };
+
+/* ─── Reply and reopen ─────────────────────────────────────────── */
+function ReplyBox({ ticketId }: { ticketId: string }) {
+  const reply = useReplyToSupportTicket(ticketId);
+  const keyRef = useRef(newIdempotencyKey());
+  const [body, setBody] = useState('');
+
+  const send = async () => {
+    const text = body.trim();
+    if (!text) return;
+    try {
+      await reply.mutateAsync({ body: text.slice(0, 10_000), idempotencyKey: keyRef.current });
+      keyRef.current = newIdempotencyKey();
+      setBody('');
+    } catch {
+      // Error toast comes from the axios interceptor.
+    }
+  };
+
   return (
-    <div className="flex items-start justify-between gap-6 border-t border-tone-78 py-3.5 first:border-t-0">
-      <dt className="shrink-0 text-sm text-tone-405">{label}</dt>
-      <dd className="min-w-0 break-words text-right text-sm font-medium text-tone-744">{children}</dd>
+    <div className="flex flex-col gap-2.5 border-t border-tone-44 px-[22px] pt-4 pb-[22px]">
+      <label htmlFor="reply" className="sr-only">Reply</label>
+      <textarea id="reply" rows={3} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write a reply" maxLength={10_000} className={TEXTAREA} />
+      <div className="flex justify-end">
+        <button type="button" onClick={send} disabled={!body.trim() || reply.isPending} className={BTN_PRIMARY}>
+          {reply.isPending ? 'Sending…' : 'Send reply'}
+        </button>
+      </div>
     </div>
   );
 }
 
-function Bubble({ mine, author, time, children }: { mine: boolean; author: string; time: string; children: ReactNode }) {
-  return (
-    <li className={`flex gap-3 ${mine ? 'flex-row-reverse' : ''}`}>
-      <span
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${mine ? 'bg-tone-30 text-brand-361' : 'bg-tone-48 text-info-450'}`}
-        aria-hidden="true"
-      >
-        {mine ? <UserRound className="h-4 w-4" /> : <Headphones className="h-4 w-4" />}
-      </span>
-      <div className={`min-w-0 max-w-[85%] ${mine ? 'text-right' : ''}`}>
-        <p className="text-xs text-tone-405">
-          <span className="font-medium text-ink-510">{author}</span> · {time}
-        </p>
-        <div
-          className={`mt-1.5 inline-block whitespace-pre-line break-words rounded-xl px-4 py-3 text-left text-sm leading-relaxed ${mine ? 'rounded-tr-sm bg-ink-660 text-white' : 'rounded-tl-sm bg-tone-31 text-tone-744'}`}
-        >
-          {children}
-        </div>
-      </div>
-    </li>
-  );
-}
-
-/* ─── Reply / reopen forms ─────────────────────────────────────── */
-const replySchema = Yup.object({
-  body: Yup.string().trim().required('Write a message.').max(10_000, 'Keep it under 10,000 characters.'),
-});
-const reopenSchema = Yup.object({
-  reason: Yup.string().trim().required('Tell us why you are reopening this ticket.').max(2_000, 'Keep it under 2,000 characters.'),
-});
-
-function ReplyForm({ ticketId }: { ticketId: string }) {
-  const reply = useReplyToSupportTicket(ticketId);
-  const keyRef = useRef(newIdempotencyKey());
-
-  const submit = async (values: { body: string }, { resetForm }: FormikHelpers<{ body: string }>) => {
-    try {
-      await reply.mutateAsync({ body: values.body.trim(), idempotencyKey: keyRef.current });
-      keyRef.current = newIdempotencyKey();
-      resetForm();
-    } catch {
-      // Error toast comes from the axios interceptor.
-    }
-  };
-
-  return (
-    <Formik initialValues={{ body: '' }} validationSchema={replySchema} onSubmit={submit}>
-      <Form noValidate className="border-t border-tone-78 pt-5">
-        <TextAreaField name="body" id="ticket-reply" label="Reply" variant="dashboard" placeholder="Write a message to support" rows={3} maxLength={10_000} />
-        <div className="mt-4 flex justify-end">
-          <SubmitButton variant="primary" loadingLabel="Sending…">
-            Send reply
-          </SubmitButton>
-        </div>
-      </Form>
-    </Formik>
-  );
-}
-
-function ReopenForm({ ticketId }: { ticketId: string }) {
+function ResolvedBar({ ticketId, onRate, startAsking = false }: { ticketId: string; onRate: () => void; startAsking?: boolean }) {
   const reopen = useReopenSupportTicket(ticketId);
   const keyRef = useRef(newIdempotencyKey());
+  const [asking, setAsking] = useState(startAsking);
+  const [reason, setReason] = useState('');
 
-  const submit = async (values: { reason: string }, { resetForm }: FormikHelpers<{ reason: string }>) => {
+  const submit = async () => {
+    const text = reason.trim();
+    if (!text) return;
     try {
-      await reopen.mutateAsync({ reason: values.reason.trim(), idempotencyKey: keyRef.current });
+      await reopen.mutateAsync({ reason: text.slice(0, 2_000), idempotencyKey: keyRef.current });
       keyRef.current = newIdempotencyKey();
-      resetForm();
+      setReason('');
+      setAsking(false);
+    } catch {
+      // Error toast comes from the axios interceptor.
+    }
+  };
+
+  if (asking) {
+    return (
+      <div className="hz-pop flex flex-col gap-2.5 border-t border-tone-44 px-[22px] pt-4 pb-[22px]">
+        <label htmlFor="reopen-reason" className="text-sm font-medium">What happened?</label>
+        <textarea id="reopen-reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="The problem came back…" maxLength={2_000} className={TEXTAREA} />
+        <div className="flex justify-end gap-2.5">
+          <button type="button" onClick={() => setAsking(false)} className={BTN}>Cancel</button>
+          <button type="button" onClick={submit} disabled={!reason.trim() || reopen.isPending} className={BTN_PRIMARY}>
+            {reopen.isPending ? 'Reopening…' : 'Reopen request'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="hz-pop flex flex-wrap items-center gap-3 border-t border-tone-44 px-[22px] py-[18px]">
+      <span className="flex-[1_1_260px] text-sm text-tone-414">This request is resolved. Still having trouble? Reopen it and tell us what happened.</span>
+      <button type="button" onClick={() => setAsking(true)} className={BTN}>Reopen</button>
+      <button type="button" onClick={onRate} className={BTN_PRIMARY}>Rate this help</button>
+    </div>
+  );
+}
+
+/* ─── Feedback dialog (Feedback board) ─────────────────────────── */
+const SCORE_LABELS = ['Poor', 'Fair', 'Okay', 'Good', 'Great'];
+
+function FeedbackDialog({ ticket, onClose, onReopen }: { ticket: SupportTicket; onClose: () => void; onReopen: () => void }) {
+  const submitFeedback = useSubmitSupportFeedback();
+  const keyRef = useRef(newIdempotencyKey());
+  const [step, setStep] = useState<'ask' | 'rate' | 'thanks'>('ask');
+  const [score, setScore] = useState(0);
+  const [remark, setRemark] = useState('');
+
+  const send = async () => {
+    if (!score) return;
+    const text = remark.trim();
+    try {
+      await submitFeedback.mutateAsync({
+        rating: score,
+        // Feedback isn't linked to a ticket in the API, so the reference goes in the remark.
+        remark: `Support request ${ticket.reference}${text ? `\n\n${text}` : ''}`,
+        idempotencyKey: keyRef.current,
+      });
+      keyRef.current = newIdempotencyKey();
+      setStep('thanks');
     } catch {
       // Error toast comes from the axios interceptor.
     }
   };
 
   return (
-    <Formik initialValues={{ reason: '' }} validationSchema={reopenSchema} onSubmit={submit}>
-      <Form noValidate className="rounded-lg border border-brand-95 bg-tone-23 p-4 sm:p-5">
-        <p className="flex items-center gap-2 text-sm font-semibold text-tone-744">
-          <RotateCcw className="h-4 w-4 text-brand-361" /> Still having this problem?
-        </p>
-        <p className="mt-1 text-xs text-ink-510">Reopen the ticket and tell us what happened.</p>
-        <TextAreaField name="reason" id="ticket-reopen" label="Reason" variant="dashboard" placeholder="The issue occurred again…" rows={3} maxLength={2_000} className="mt-4" />
-        <div className="mt-4 flex justify-end">
-          <SubmitButton variant="primary" loadingLabel="Reopening…">
-            Reopen ticket
-          </SubmitButton>
-        </div>
-      </Form>
-    </Formik>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-carbon/60 px-4 py-10" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div role="dialog" aria-modal="true" aria-labelledby="fb-title" className="hz-pop relative w-full max-w-[460px] overflow-hidden rounded-[14px] bg-surface text-tone-744 shadow-[0_40px_80px_-30px_rgba(0,0,0,0.6)]">
+        <button type="button" onClick={onClose} aria-label="Close" className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-lg bg-tone-44 hover:bg-tone-100">
+          <X className="h-4 w-4" aria-hidden="true" />
+        </button>
+
+        {step === 'ask' && (
+          <div className="flex flex-col gap-[18px] px-6 pt-7 pb-6">
+            <span className="flex h-12 w-12 items-center justify-center rounded-[10px] bg-tone-44">
+              <LifeBuoy className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="flex flex-col gap-1.5">
+              <h2 id="fb-title" className="text-xl font-semibold">Do you still need our help?</h2>
+              <p className="text-[15px] leading-relaxed text-tone-414">We marked &ldquo;{ticket.subject || ticketTypeLabel(ticket)}&rdquo; as resolved.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button type="button" onClick={onReopen} className={BTN}>Yes, reopen it</button>
+              <button type="button" onClick={() => setStep('rate')} className={BTN_PRIMARY}>No, all sorted</button>
+            </div>
+          </div>
+        )}
+
+        {step === 'rate' && (
+          <div className="hz-pop flex flex-col gap-[18px] px-6 pt-7 pb-6">
+            <h2 id="fb-title" className="pr-12 text-xl font-semibold">How was your experience with Hatiso support?</h2>
+            <div role="radiogroup" aria-label="Rating" className="grid grid-cols-5 gap-2">
+              {SCORE_LABELS.map((label, i) => {
+                const on = score === i + 1;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => setScore(i + 1)}
+                    className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-[10px] border transition-colors ${on ? 'border-brand-305 bg-brand-305 text-on-brand' : 'border-tone-100 bg-surface hover:border-tone-414'}`}
+                  >
+                    <span className="text-xl font-semibold">{i + 1}</span>
+                    <span className="text-[11px]">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <label className="flex flex-col gap-2 text-sm font-medium">
+              <span>
+                Anything we could do better? <span className="font-normal text-tone-414">(optional)</span>
+              </span>
+              <textarea rows={3} value={remark} onChange={(e) => setRemark(e.target.value)} maxLength={9_000} className={TEXTAREA} />
+            </label>
+            <button type="button" onClick={send} disabled={!score || submitFeedback.isPending} className={`${BTN_PRIMARY} min-h-12`}>
+              {submitFeedback.isPending ? 'Sending…' : 'Send feedback'}
+            </button>
+          </div>
+        )}
+
+        {step === 'thanks' && (
+          <div className="hz-stagger flex flex-col items-center gap-3 px-6 pt-9 pb-7 text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-status-success text-white">
+              <Check className="h-6 w-6" aria-hidden="true" />
+            </span>
+            <h2 id="fb-title" className="text-[22px] font-semibold">Thanks for your feedback.</h2>
+            <p className="text-[15px] leading-relaxed text-tone-414">It helps us make Hatiso support better.</p>
+            <Link href="/dashboard/support" className={`${BTN_PRIMARY} mt-2`}>Back to help</Link>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
 /* ─── Page ─────────────────────────────────────────────────────── */
-function TicketSkeleton() {
-  return (
-    <div className="grid gap-5 px-5 py-6 sm:px-8 lg:grid-cols-[1.6fr_1fr] lg:py-7" aria-hidden="true">
-      {[0, 1].map((col) => (
-        <div key={col} className={`${CARD} space-y-4 p-6`}>
-          {Array.from({ length: col ? 5 : 3 }, (_, i) => (
-            <span key={i} className="block h-4 animate-pulse rounded bg-tone-63" style={{ width: `${90 - i * 12}%` }} />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default function SupportTicketPage() {
   const params = useParams<{ ticketId: string }>();
   const ticketId = params?.ticketId ? decodeURIComponent(params.ticketId) : undefined;
   const { data, isLoading, isError, refetch, isFetching } = useSupportTicket(ticketId);
-  const [showAllActivity, setShowAllActivity] = useState(false);
+  const [rating, setRating] = useState(false);
+  const [reopenKey, setReopenKey] = useState(0);
 
   const ticket = data?.ticket;
   const status = ticket ? ticketStatus(ticket.status) : null;
-  const canReopen = ticket ? REOPENABLE_STATUSES.includes(ticket.status.toUpperCase()) : false;
-  const messages = data?.messages ?? [];
-  const activities = [...(data?.activities ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const shownActivities = showAllActivity ? activities : activities.slice(0, 5);
+  const tone = ticket ? statusColor(ticket.status) : null;
+  const closed = ticket ? REOPENABLE_STATUSES.includes(ticket.status.toUpperCase()) : false;
+
+  // One thread: the opening description, messages, and status changes as "Update" notes.
+  const thread: ThreadItem[] = ticket
+    ? [
+      ...(ticket.description ? [{ id: 'desc', kind: 'me' as const, who: 'You', at: ticket.createdAt, text: ticket.description }] : []),
+      ...(data?.messages ?? []).map((m) => {
+        const mine = isFromCustomer(m, ticket);
+        return { id: m.id, kind: mine ? ('me' as const) : ('them' as const), who: mine ? 'You' : m.authorName || 'Hatiso support', at: m.createdAt, text: m.body };
+      }),
+      ...(data?.activities ?? [])
+        .filter((a) => a.type?.toUpperCase().includes('STATUS') && a.toValue)
+        .map((a) => ({ id: a.id, kind: 'update' as const, who: 'Update', at: a.createdAt, text: `Status changed to ${humanizeEnum(a.toValue)}` })),
+    ].sort((a, b) => a.at.localeCompare(b.at))
+    : [];
 
   return (
-    <div className="min-h-full bg-tone-12 text-tone-760">
-      {/* ── Page header ── */}
-      <section className="border-b border-tone-80 px-5 py-7 sm:px-8">
-        <Link href="/dashboard/support" className="mb-4 inline-flex items-center gap-1 text-sm text-ink-510 transition hover:text-tone-744">
-          <ChevronLeft className="h-4 w-4" /> Support
-        </Link>
-        <p className="text-xs font-semibold uppercase tracking-wide text-brand-361">Support ticket</p>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-tone-744 sm:text-3xl">
-            {ticket ? ticket.subject || ticketTypeLabel(ticket) : isLoading ? 'Loading ticket…' : 'Ticket'}
-          </h2>
-          {status && <span className={`rounded px-2.5 py-1 text-xs font-medium ${status.className}`}>{status.label}</span>}
+    <div className="min-h-full bg-tone-44 text-tone-744">
+      <div className="flex w-full flex-col gap-6 p-[clamp(20px,3vw,40px)]">
+        <div className="hz-rise flex flex-wrap items-end justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <h1 className="text-[clamp(28px,3vw,36px)] leading-[1.1] font-semibold tracking-[-0.025em]">
+              {ticket ? ticket.subject || ticketTypeLabel(ticket) : isLoading ? 'Loading request…' : 'Support request'}
+            </h1>
+            <span className="text-[15px] text-tone-414">
+              <Link href="/dashboard/support" className="inline-flex items-center gap-1.5 font-medium text-tone-744 hover:underline">
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Help and support
+              </Link>
+              {ticket && <> · <span className="break-all">{ticket.reference}</span></>}
+            </span>
+          </div>
+          {status && tone && (
+            <span className={`inline-flex items-center gap-1.5 rounded-md border border-tone-100 bg-surface px-3 py-1.5 text-[13px] font-medium ${tone.text}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+              {status.label}
+            </span>
+          )}
         </div>
-        {ticket && <p className="mt-2 break-all font-mono text-sm text-tone-432">{ticket.reference}</p>}
-      </section>
 
-      {isLoading ? (
-        <TicketSkeleton />
-      ) : isError || !ticket ? (
-        <div className="px-5 py-10 sm:px-8">
-          <div className={`${CARD} mx-auto max-w-md px-6 py-10 text-center`}>
-            <p className="text-sm text-ink-510">We could not load this ticket.</p>
-            <button
-              type="button"
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="mt-4 rounded-md border border-tone-98 bg-surface px-3.5 py-2 text-xs font-medium text-tone-744 transition hover:bg-slate-50 disabled:opacity-60"
-            >
+        {isLoading ? (
+          <div className="flex flex-wrap gap-4" aria-hidden="true">
+            <div className="h-80 flex-[999_1_560px] animate-pulse rounded-[14px] bg-surface" />
+            <div className="h-56 flex-[1_1_300px] animate-pulse rounded-[14px] bg-surface" />
+          </div>
+        ) : isError || !ticket ? (
+          <div className={`${CARD} mx-auto flex max-w-md flex-col items-center gap-3 px-6 py-10 text-center`}>
+            <p className="text-[15px] text-tone-414">We couldn&apos;t load this request.</p>
+            <button type="button" onClick={() => refetch()} disabled={isFetching} className={BTN}>
               {isFetching ? 'Retrying…' : 'Try again'}
             </button>
           </div>
-        </div>
-      ) : (
-        <main className="grid gap-5 px-5 py-6 sm:px-8 lg:grid-cols-[1.6fr_1fr] lg:py-7">
-          {/* ── Conversation ── */}
-          <section className={`${CARD} p-5 sm:p-6`} aria-labelledby="conversation-title">
-            <h3 id="conversation-title" className="flex items-center gap-2 text-base font-semibold text-tone-744">
-              <MessageSquare className="h-4 w-4 text-brand-361" /> Conversation
-            </h3>
-
-            <ul className="mt-6 space-y-5">
-              {ticket.description && (
-                <Bubble mine author="You" time={formatDateTime(ticket.createdAt)}>
-                  {ticket.description}
-                </Bubble>
-              )}
-              {messages.map((message) => {
-                const mine = isFromCustomer(message, ticket);
-                return (
-                  <Bubble key={message.id} mine={mine} author={mine ? 'You' : message.authorName || 'Hatiso support'} time={formatDateTime(message.createdAt)}>
-                    {message.body}
-                  </Bubble>
-                );
-              })}
-            </ul>
-
-            {!messages.length && (
-              <p className="mt-6 flex items-center gap-2 rounded-lg bg-tone-18 px-4 py-3 text-xs text-tone-405">
-                <Clock className="h-4 w-4 shrink-0" /> Our support team will reply here. Most requests get a response within 24 hours.
-              </p>
-            )}
-
-            {ticket.resolutionSummary && (
-              <div className="mt-6 rounded-lg border border-tone-90 bg-tone-21 px-4 py-3">
-                <p className="text-xs font-semibold text-success-392">Resolution</p>
-                <p className="mt-1 whitespace-pre-line text-sm text-tone-744">{ticket.resolutionSummary}</p>
-              </div>
-            )}
-
-            <div className="mt-6">{canReopen ? <ReopenForm ticketId={ticket.id} /> : <ReplyForm ticketId={ticket.id} />}</div>
-          </section>
-
-          {/* ── Side column ── */}
-          <div className="space-y-5">
-            <section className={`${CARD} p-5 sm:p-6`} aria-labelledby="ticket-details-title">
-              <h3 id="ticket-details-title" className="text-base font-semibold text-tone-744">
-                Details
-              </h3>
-              <dl className="mt-3">
-                <DetailRow label="Type">{ticketTypeLabel(ticket)}</DetailRow>
-                <DetailRow label="Request">{humanizeEnum(ticket.requestType)}</DetailRow>
-                {ticket.priority && <DetailRow label="Priority">{humanizeEnum(ticket.priority)}</DetailRow>}
-                {ticket.transactionReference && (
-                  <DetailRow label="Transaction">
-                    <span className="break-all font-mono text-[13px]">{ticket.transactionReference}</span>
-                  </DetailRow>
+        ) : (
+          <div className="flex flex-wrap items-start gap-4">
+            <section className={`hz-rise ${CARD} flex min-w-0 flex-[999_1_560px] flex-col`} style={{ '--d': 1 } as React.CSSProperties}>
+              <div className="hz-stagger flex flex-col gap-[18px] p-[22px]">
+                {thread.map((m) => (
+                  <div key={m.id} className={`flex flex-col gap-1.5 ${m.kind === 'me' ? 'items-end' : m.kind === 'them' ? 'items-start' : 'items-center'}`}>
+                    <span className="text-xs text-tone-414">{m.who} · {when(m.at)}</span>
+                    <div
+                      className={`max-w-[80%] whitespace-pre-line break-words px-4 py-3.5 text-[15px] leading-[1.55] ${m.kind === 'me'
+                        ? 'rounded-[12px_12px_4px_12px] bg-brand-305 text-on-brand'
+                        : m.kind === 'them'
+                          ? 'rounded-[12px_12px_12px_4px] bg-tone-44'
+                          : 'rounded-lg border border-dashed border-tone-100 bg-surface text-tone-414'
+                        }`}
+                    >
+                      {m.text}
+                    </div>
+                  </div>
+                ))}
+                {!(data?.messages ?? []).length && (
+                  <p className="self-center text-[13px] text-tone-414">Our team will reply here. Most requests get an answer within 24 hours.</p>
                 )}
-                <DetailRow label="Created">{formatDateTime(ticket.createdAt)}</DetailRow>
-                <DetailRow label="Last update">{formatDateTime(ticket.updatedAt)}</DetailRow>
-                {ticket.resolvedAt && <DetailRow label="Resolved">{formatDateTime(ticket.resolvedAt)}</DetailRow>}
-                {ticket.closedAt && <DetailRow label="Closed">{formatDateTime(ticket.closedAt)}</DetailRow>}
-              </dl>
+                {ticket.resolutionSummary && (
+                  <div className="flex flex-col items-start gap-1.5">
+                    <span className="text-xs text-tone-414">Hatiso support · Resolution</span>
+                    <div className="max-w-[80%] whitespace-pre-line rounded-[12px_12px_12px_4px] bg-tone-44 px-4 py-3.5 text-[15px] leading-[1.55]">{ticket.resolutionSummary}</div>
+                  </div>
+                )}
+              </div>
+              {closed ? <ResolvedBar key={reopenKey} startAsking={reopenKey > 0} ticketId={ticket.id} onRate={() => setRating(true)} /> : <ReplyBox ticketId={ticket.id} />}
             </section>
 
-            {activities.length > 0 && (
-              <section className={`${CARD} p-5 sm:p-6`} aria-labelledby="ticket-activity-title">
-                <h3 id="ticket-activity-title" className="text-base font-semibold text-tone-744">
-                  Activity
-                </h3>
-                <ol className="mt-5">
-                  {shownActivities.map((activity, index) => (
-                    <li key={activity.id} className="relative flex gap-3 pb-5 last:pb-0">
-                      {index < shownActivities.length - 1 && (
-                        <span className="absolute bottom-0 left-[5px] top-4 w-px bg-tone-98" aria-hidden="true" />
-                      )}
-                      <span className="relative mt-1.5 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-brand-361 bg-surface" aria-hidden="true" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-tone-744">
-                          {activity.description || humanizeEnum(activity.type)}
-                          {activity.toValue && activity.type?.toUpperCase().includes('STATUS') && (
-                            <span className="font-normal text-ink-510"> → {humanizeEnum(activity.toValue)}</span>
-                          )}
-                        </p>
-                        <p className="mt-0.5 text-xs text-tone-405">{formatDateTime(activity.createdAt)}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-                {activities.length > 5 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllActivity((v) => !v)}
-                    className="mt-4 text-xs font-medium text-brand-361 hover:opacity-70"
-                  >
-                    {showAllActivity ? 'Show less' : `Show all ${activities.length}`}
-                  </button>
-                )}
+            <aside className="hz-rise flex min-w-0 flex-[1_1_300px] flex-col gap-4" style={{ '--d': 2 } as React.CSSProperties}>
+              <section className={`${CARD} flex flex-col gap-3 p-5 text-sm`}>
+                <h2 className="text-lg font-semibold">Details</h2>
+                <div className="flex justify-between gap-3"><span className="text-tone-414">Type</span><span className="font-medium">{ticket.requestType === 'COMPLAINT' ? 'Complaint' : ticketTypeLabel(ticket)}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-tone-414">Opened</span><span className="font-medium">{when(ticket.createdAt)}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-tone-414">Last update</span><span className="font-medium">{when(ticket.updatedAt)}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-tone-414">Handled by</span><span className="font-medium">Hatiso support</span></div>
               </section>
-            )}
+              {ticket.transactionReference && (
+                <Link href="/dashboard/transactions" className={`hz-lift ${CARD} flex items-center gap-3.5 p-[18px]`}>
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-tone-44">
+                    <Receipt className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="text-[15px] font-medium">Linked payment</span>
+                    <span className="truncate text-[13px] text-tone-414">{ticket.transactionReference}</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-tone-414" aria-hidden="true" />
+                </Link>
+              )}
+            </aside>
           </div>
-        </main>
+        )}
+      </div>
+
+      {rating && ticket && (
+        <FeedbackDialog
+          ticket={ticket}
+          onClose={() => setRating(false)}
+          onReopen={() => {
+            setRating(false);
+            setReopenKey((k) => k + 1);
+          }}
+        />
       )}
     </div>
   );

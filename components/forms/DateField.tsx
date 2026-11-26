@@ -57,9 +57,10 @@ export default function DateField({
           max={maxDate ?? max}
           required={required}
           aria-invalid={hasError}
-          className={fieldControlClass(variant, { hasError, withIcon: true })}
+          className={`${fieldControlClass(variant, { hasError, withIcon: true })} [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-y-0 [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-11 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0`}
         />
-        <Calendar className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        {/* The browser's own picker button sits invisibly over this icon, so clicking it still opens the calendar. */}
+        <Calendar className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-tone-414" aria-hidden="true" />
       </div>
     </FieldShell>
   );

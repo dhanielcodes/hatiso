@@ -26,7 +26,7 @@ export default function BankLogo({
       role="img"
       aria-label={bank.name}
       className={`flex items-center justify-center rounded-xl font-extrabold text-white ${textClassName} ${className}`}
-      style={{ background: bank.primaryColor || '#1B3C4A' }}
+      style={{ background: bank.primaryColor || 'var(--color-ink-662)' }}
     >
       {bankInitials(bank.name)}
     </span>

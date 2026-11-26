@@ -1,92 +1,64 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ComponentType } from 'react';
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Formik, Form, type FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import { Bell, Check, ChevronRight, Lock, Palette, Pencil, UserPlus, User } from 'lucide-react';
+import { AlertTriangle, Check, CreditCard, KeyRound, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNotificationSettings, useUpdateNotificationSettings } from '@/lib/queries/useNotifications';
 import { useCurrentUser, useResetPassword, useUpdateProfile } from '@/lib/queries/useAuth';
 import type { CurrentUserProfile } from '@/lib/api/auth';
 import type { NotificationChannel } from '@/lib/api/notifications';
-import { Button, PasswordField, SubmitButton, TextAreaField, TextField } from '@/components/forms';
+import { useAuthStore } from '@/lib/store/authStore';
+import { PasswordField, TextField } from '@/components/forms';
 import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
+import DialogFrame, { DIALOG_DANGER, DIALOG_PRIMARY, DIALOG_SECONDARY } from '@/components/ui/DialogFrame';
 import { DEFAULT_THEME, THEMES, setTheme, useTheme } from '@/lib/theme/theme';
 
-/* ─── Types ────────────────────────────────────────────────────── */
-type TabId = 'personal' | 'notifications' | 'appearance' | 'privacy';
-type Channel = NotificationChannel;
+/* ─── Types and constants ─────────────────────────────────────── */
+type TabId = 'details' | 'security' | 'notif' | 'look' | 'pay';
+type ProfileFields = { firstName: string; lastName: string; displayName: string; bio: string };
+type PasswordValues = { current: string; next: string; confirm: string };
 
-type MenuItem = {
-    id: TabId;
-    label: string;
-    icon: ComponentType<{ className?: string }>;
-};
-
-type ProfileFields = {
-    firstName: string;
-    lastName: string;
-    displayName: string;
-    bio: string;
-};
-
-/* ─── Constants ────────────────────────────────────────────────── */
-const MENU: MenuItem[] = [
-    { id: 'personal', label: 'Personal Details', icon: User },
-    { id: 'notifications', label: 'Notification Settings', icon: Bell },
-    { id: 'appearance', label: 'Appearance', icon: Palette },
-    { id: 'privacy', label: 'Reset Password', icon: Lock },
+const TABS: [TabId, string][] = [
+    ['details', 'Personal details'],
+    ['security', 'Security'],
+    ['notif', 'Notifications'],
+    ['look', 'Appearance'],
+    ['pay', 'Payment methods'],
 ];
 
-const CHANNEL_OPTIONS: { value: Channel; label: string; description: string }[] = [
-    { value: 'EMAIL', label: 'Email', description: 'Receive purchase alerts via email.' },
-    { value: 'SMS', label: 'SMS', description: 'Receive purchase alerts via SMS.' },
-    {
-        value: 'OFF',
-        label: 'Off',
-        description: 'Turn off external alerts. Purchase updates still appear in your in-app feed.',
-    },
-];
+const CARD = 'rounded-[14px] border border-tone-100 bg-surface';
+const BTN = DIALOG_SECONDARY;
+const BTN_PRIMARY = DIALOG_PRIMARY;
+const READONLY_INPUT = 'min-h-12 rounded-lg border border-tone-100 bg-tone-44 px-3.5 text-[15px] font-normal text-tone-414 outline-none';
 
 const PASSWORD_RULES = [
-    { id: 'upper', label: 'At least 1 uppercase', test: (v: string) => /[A-Z]/.test(v) },
-    { id: 'number', label: 'At least 1 number', test: (v: string) => /\d/.test(v) },
-    { id: 'length', label: 'At least 8 characters', test: (v: string) => v.length >= 8 },
+    { id: 'length', test: (v: string) => v.length >= 8 },
+    { id: 'upper', test: (v: string) => /[A-Z]/.test(v) },
+    { id: 'number', test: (v: string) => /\d/.test(v) },
 ];
 
-/* ─── Response helpers ─────────────────────────────────────────── */
-const getErrorMessage = (err: unknown) =>
-    (err as { message?: string } | null)?.message || 'Something went wrong. Please try again.';
-
-// HTTP failures are rejected by the axios interceptor as plain `ApiError` objects and it
-// already shows a toast for them. Only toast errors raised in our own code (`Error` instances),
-// so the user never sees the same failure twice.
+// The axios interceptor already toasts HTTP failures; only toast errors raised in our own code.
 const notifyError = (err: unknown) => {
-    if (err instanceof Error) toast.error(getErrorMessage(err));
+    if (err instanceof Error) toast.error(err.message || 'Something went wrong. Please try again.');
 };
 
-/* ─── Validation ───────────────────────────────────────────────── */
 const profileSchema = Yup.object({
     firstName: Yup.string().trim().required('First name is required.'),
     lastName: Yup.string().trim().required('Last name is required.'),
-    displayName: Yup.string().trim(),
-    bio: Yup.string().trim(),
 });
-
-type PasswordValues = { current: string; next: string; confirm: string };
 
 const passwordSchema = Yup.object({
     current: Yup.string().required('Enter your current password.'),
     next: Yup.string()
         .required('Enter a new password.')
-        .test('rules', 'Password does not meet the rules below.', (v = '') => PASSWORD_RULES.every((rule) => rule.test(v)))
+        .test('rules', 'Use at least 8 characters, an uppercase letter and a number.', (v = '') => PASSWORD_RULES.every((r) => r.test(v)))
         .notOneOf([Yup.ref('current')], 'New password must be different from your current one.'),
-    confirm: Yup.string()
-        .required('Confirm your new password.')
-        .oneOf([Yup.ref('next')], 'Passwords do not match.'),
+    confirm: Yup.string().required('Type the new password again.').oneOf([Yup.ref('next')], 'Passwords do not match.'),
 });
 
-/* ─── Tab: Personal Details ────────────────────────────────────── */
 const fromUser = (u?: CurrentUserProfile): ProfileFields => ({
     firstName: u?.firstName ?? '',
     lastName: u?.lastName ?? '',
@@ -94,456 +66,457 @@ const fromUser = (u?: CurrentUserProfile): ProfileFields => ({
     bio: u?.bio ?? '',
 });
 
-function PersonalDetails() {
-    const { data: user, isLoading, isError, refetch } = useCurrentUser();
+function initials(first: string, last: string) {
+    return ((first[0] ?? '') + (last[0] ?? '')).toUpperCase() || 'H';
+}
+
+function maskPhone(phone?: string) {
+    if (!phone) return '';
+    const d = phone.replace(/\s+/g, '');
+    return d.length > 7 ? `${d.slice(0, 4)} ••• ${d.slice(-4)}` : d;
+}
+
+function Switch({ on, label, onToggle, disabled }: { on: boolean; label: string; onToggle: () => void; disabled?: boolean }) {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={on}
+            aria-label={label}
+            onClick={onToggle}
+            disabled={disabled}
+            className={`relative h-6 w-[42px] shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${on ? 'bg-brand-305' : 'bg-grey-150'}`}
+        >
+            <span className={`absolute top-[3px] left-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform ${on ? 'translate-x-[18px]' : ''}`} />
+        </button>
+    );
+}
+
+/* ─── Personal details ─────────────────────────────────────────── */
+function PersonalDetails({ onDelete }: { onDelete: () => void }) {
+    const { data: profile, isLoading, isError, refetch } = useCurrentUser();
+    const { user } = useAuthStore();
     const updateProfile = useUpdateProfile();
-    const [isEditing, setIsEditing] = useState(false);
-    const details = useMemo(() => fromUser(user), [user]);
+    const details = useMemo(() => fromUser(profile), [profile]);
+    const [saved, setSaved] = useState(false);
 
     const save = async (values: ProfileFields) => {
-        const payload: ProfileFields = {
-            firstName: values.firstName.trim(),
-            lastName: values.lastName.trim(),
-            displayName: values.displayName.trim(),
-            bio: values.bio.trim(),
-        };
         try {
-            // On success the hook refetches the current user, so the page shows what the server stored
-            await updateProfile.mutateAsync(payload);
-            setIsEditing(false);
+            await updateProfile.mutateAsync({
+                firstName: values.firstName.trim(),
+                lastName: values.lastName.trim(),
+                displayName: values.displayName.trim(),
+                bio: values.bio.trim(),
+            });
+            setSaved(true);
             toast.success('Profile updated.');
         } catch (err) {
             notifyError(err);
         }
     };
 
-    const editable: { key: keyof ProfileFields; label: string; multiline?: boolean; required?: boolean }[] = [
-        { key: 'firstName', label: 'First Name', required: true },
-        { key: 'lastName', label: 'Last Name', required: true },
-        { key: 'displayName', label: 'Display Name' },
-        { key: 'bio', label: 'Bio', multiline: true },
-    ];
-
-    const shownName = details.displayName || `${details.firstName} ${details.lastName}`.trim() || '—';
-
     if (isLoading) {
         return (
-            <div>
-                <h2 className="text-xl font-medium text-ink-660">Personal Details</h2>
-                <SkeletonGroup label="Loading your details">
-                    <div className="mt-8 flex items-center gap-5 rounded-2xl bg-tone-29 px-6 py-5">
-                        <Skeleton className="h-[65px] w-[65px] shrink-0 rounded-full" />
-                        <Skeleton strong className="h-5 w-40" />
-                    </div>
-                    <div className="mt-6 rounded-2xl border border-tone-70 bg-tone-18 px-6 pb-6 pt-5">
-                        {Array.from({ length: 4 }, (_, index) => (
-                            <div key={index} className={`space-y-2 px-3 py-5 ${index > 0 ? 'border-t border-tone-98' : ''}`}>
-                                <Skeleton className="h-3.5 w-24" />
-                                <Skeleton strong className="h-5 w-48" />
-                            </div>
-                        ))}
-                    </div>
-                </SkeletonGroup>
+            <SkeletonGroup label="Loading your details" className={`${CARD} flex flex-col gap-5 p-6`}>
+                <div className="flex items-center gap-4">
+                    <Skeleton className="h-16 w-16 rounded-full" />
+                    <Skeleton strong className="h-5 w-40" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                    {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+                </div>
+            </SkeletonGroup>
+        );
+    }
+
+    if (isError && !profile) {
+        return (
+            <div className={`${CARD} p-6`}>
+                <p className="text-sm text-status-error" role="alert">We couldn&apos;t load your details.</p>
+                <button type="button" onClick={() => refetch()} className={`${BTN} mt-4`}>Try again</button>
             </div>
         );
     }
 
-    if (isError && !user) {
-        return (
-            <div>
-                <h2 className="text-xl font-medium text-ink-660">Personal Details</h2>
-                <p className="mt-8 text-sm text-danger-404" role="alert">Couldn&apos;t load your details.</p>
-                <Button variant="secondary" size="sm" onClick={() => refetch()} className="mt-4">
-                    Try again
-                </Button>
-            </div>
-        );
-    }
+    const name = details.displayName || `${details.firstName} ${details.lastName}`.trim() || user?.name || '';
 
     return (
-        <div>
-            <h2 className="text-xl font-medium text-ink-660">Personal Details</h2>
-
-            {/* Profile summary */}
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-tone-29 px-6 py-5">
-                <div className="flex items-center gap-5">
-                    <span className="flex h-[65px] w-[65px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-tone-93">
-                        {user?.avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                            <UserPlus className="h-6 w-6 text-tone-744" />
-                        )}
-                    </span>
-                    <p className="text-lg font-medium text-tone-624">{shownName}</p>
-                </div>
-            </div>
-
-            {/* Details */}
+        <div className="hz-stagger flex flex-wrap items-start gap-4">
             <Formik<ProfileFields> initialValues={details} validationSchema={profileSchema} enableReinitialize onSubmit={save}>
-                {({ resetForm }) => (
-                    <Form noValidate className="mt-6 rounded-2xl border border-tone-70 bg-tone-18 px-6 pb-6 pt-5">
-                        <div className="flex items-center justify-end gap-2">
-                            {isEditing ? (
-                                <>
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => {
-                                            resetForm();
-                                            setIsEditing(false);
-                                        }}
-                                        disabled={updateProfile.isPending}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <SubmitButton variant="primary" size="sm" loadingLabel="Saving…">
-                                        Save
-                                    </SubmitButton>
-                                </>
-                            ) : (
-                                <Button variant="secondary" size="sm" onClick={() => setIsEditing(true)}>
-                                    <Pencil className="h-3 w-3" /> Edit
-                                </Button>
-                            )}
+                {({ resetForm, dirty, isSubmitting }) => (
+                    <Form noValidate className={`${CARD} flex min-w-0 flex-[999_1_520px] flex-col gap-[22px] p-6`} onChange={() => setSaved(false)}>
+                        <div className="flex items-center gap-4">
+                            <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-305 text-[22px] font-semibold text-on-brand">
+                                {profile?.avatarUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                    initials(details.firstName, details.lastName)
+                                )}
+                            </span>
+                            <span className="flex flex-col gap-1.5">
+                                <span className="text-lg font-semibold">{name}</span>
+                                {/* Photo upload has no API yet. */}
+                                <button type="button" disabled title="Photo upload is coming soon" className={`${BTN} min-h-9 px-3 text-[13px]`}>
+                                    Change photo
+                                </button>
+                            </span>
                         </div>
-
-                        <div className="mt-1">
-                            {editable.map((field, index) => (
-                                <div key={field.key} className={`px-3 py-5 ${index > 0 ? 'border-t border-tone-98' : ''}`}>
-                                    {isEditing ? (
-                                        field.multiline ? (
-                                            <TextAreaField
-                                                name={field.key}
-                                                id={`profile-${field.key}`}
-                                                label={field.label}
-                                                variant="dashboard"
-                                                rows={3}
-                                                className="max-w-sm"
-                                            />
-                                        ) : (
-                                            <TextField
-                                                name={field.key}
-                                                id={`profile-${field.key}`}
-                                                label={field.label}
-                                                required={field.required}
-                                                variant="dashboard"
-                                                className="max-w-sm"
-                                            />
-                                        )
-                                    ) : (
-                                        <>
-                                            <p className="text-sm text-ink-510">{field.label}</p>
-                                            <p className="mt-1.5 text-base font-medium text-tone-744">{details[field.key] || '—'}</p>
-                                        </>
-                                    )}
-                                </div>
-                            ))}
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-4">
+                            <TextField name="firstName" id="profile-firstName" label="First name" required variant="dashboard" autoComplete="given-name" />
+                            <TextField name="lastName" id="profile-lastName" label="Last name" required variant="dashboard" autoComplete="family-name" />
+                            <label className="flex flex-col gap-2 text-sm font-medium">
+                                Email address
+                                <input readOnly value={user?.email || 'Not added'} className={READONLY_INPUT} />
+                            </label>
+                            <label className="flex flex-col gap-2 text-sm font-medium">
+                                Phone number
+                                <input readOnly value={user?.phone || 'Not added'} className={READONLY_INPUT} />
+                            </label>
+                        </div>
+                        <div className="flex justify-end gap-2.5">
+                            <button type="button" onClick={() => resetForm()} disabled={!dirty || isSubmitting} className={BTN}>
+                                Cancel
+                            </button>
+                            <button type="submit" disabled={isSubmitting || (!dirty && !saved)} className={BTN_PRIMARY}>
+                                {isSubmitting ? 'Saving…' : saved && !dirty ? 'Saved' : 'Save changes'}
+                            </button>
                         </div>
                     </Form>
                 )}
             </Formik>
+
+            <aside className={`${CARD} flex min-w-0 flex-[1_1_280px] flex-col gap-3 p-[22px]`}>
+                <h2 className="text-lg font-semibold">Account</h2>
+                <div className="flex justify-between gap-3 text-sm">
+                    <span className="text-tone-414">Email</span>
+                    <span className="truncate font-medium">{user?.email || 'Not added'}</span>
+                </div>
+                <div className="flex justify-between gap-3 text-sm">
+                    <span className="text-tone-414">Phone</span>
+                    <span className="font-medium">{maskPhone(user?.phone) || 'Not added'}</span>
+                </div>
+                <button type="button" onClick={onDelete} className={`${BTN} mt-2 text-status-error`}>
+                    Delete account
+                </button>
+            </aside>
         </div>
     );
 }
 
-/* ─── Tab: Notification Settings ───────────────────────────────── */
-function NotificationSettings() {
+/* ─── Security ─────────────────────────────────────────────────── */
+function deviceLabel() {
+    if (typeof navigator === 'undefined') return 'This browser';
+    const ua = navigator.userAgent;
+    const browser = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'Browser';
+    const os = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac OS X/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';
+    return os ? `${browser} on ${os}` : browser;
+}
+
+function Security({ onChangePassword }: { onChangePassword: () => void }) {
+    const [device] = useState(deviceLabel);
+    return (
+        <div className="hz-stagger flex flex-col gap-4">
+            <section className={`${CARD} flex flex-wrap items-center gap-4 p-[22px]`}>
+                <span className="flex flex-[1_1_300px] flex-col gap-1">
+                    <span className="text-base font-semibold">Password</span>
+                    <span className="text-sm text-tone-414">Use at least 8 characters, an uppercase letter and a number.</span>
+                </span>
+                <button type="button" onClick={onChangePassword} className={BTN}>Change password</button>
+            </section>
+            <section className={`${CARD} flex flex-wrap items-center gap-4 p-[22px]`}>
+                <span className="flex flex-[1_1_300px] flex-col gap-1">
+                    <span className="text-base font-semibold">Two-step verification</span>
+                    <span className="text-sm text-tone-414">Ask for a code from your phone when you sign in on a new device.</span>
+                    <span className="text-[13px] font-medium text-status-warning">Coming soon</span>
+                </span>
+                {/* No two-step API yet, so the switch stays off. */}
+                <Switch on={false} label="Two-step verification" onToggle={() => undefined} disabled />
+            </section>
+            <section className={`${CARD} flex flex-col p-[22px]`}>
+                <h2 className="pb-2 text-lg font-semibold">Where you&apos;re signed in</h2>
+                <div className="flex items-center gap-3 border-t border-tone-44 py-3">
+                    <span className="flex flex-1 flex-col gap-0.5">
+                        <span className="text-[15px] font-medium">{device}</span>
+                        <span className="text-[13px] text-tone-414">Now</span>
+                    </span>
+                    <span className="text-[13px] font-medium text-status-success">This device</span>
+                </div>
+                <p className="border-t border-tone-44 pt-3 text-[13px] text-tone-414">Other devices will show here once device history is available.</p>
+            </section>
+        </div>
+    );
+}
+
+/* ─── Notifications ────────────────────────────────────────────── */
+function NotificationPrefs() {
+    const { user } = useAuthStore();
     const { data, isLoading, isError } = useNotificationSettings();
     const update = useUpdateNotificationSettings();
-    const [selected, setSelected] = useState<Channel | undefined>();
-
-    const current = data?.purchaseChannel;
+    const channel = data?.purchaseChannel;
     const available = data?.availableChannels ?? [];
+    const [local, setLocal] = useState({ signin: true, weekly: false, offers: false });
 
-    useEffect(() => {
-        if (current) setSelected(current);
-    }, [current]);
-
-    const choose = (value: Channel) => {
-        if (value === selected || update.isPending) return;
-        const previous = selected;
-        setSelected(value); // optimistic
-        update.mutate({ purchaseChannel: value }, {
+    const choose = (next: NotificationChannel) =>
+        update.mutate({ purchaseChannel: next }, {
             onSuccess: () => toast.success('Notification preference saved.'),
-            onError: (err: unknown) => {
-                setSelected(previous);
-                notifyError(err);
-            },
+            onError: notifyError,
         });
-    };
+
+    const busy = isLoading || update.isPending;
+    const groups = [
+        {
+            title: 'Payments',
+            note: 'Receipts and payment updates go to one channel at a time.',
+            items: [
+                { label: 'Receipts by email', note: user?.email || 'No email on your account', on: channel === 'EMAIL', toggle: () => choose(channel === 'EMAIL' ? 'OFF' : 'EMAIL'), disabled: busy || !available.includes('EMAIL') },
+                { label: 'Payment updates by SMS', note: maskPhone(user?.phone) || 'No phone on your account', on: channel === 'SMS', toggle: () => choose(channel === 'SMS' ? 'OFF' : 'SMS'), disabled: busy || !available.includes('SMS') },
+            ],
+        },
+        {
+            title: 'Account and security',
+            note: 'Sign-ins and changes to your account. Security alerts are always on.',
+            items: [
+                { label: 'New sign-in alerts', note: 'Email and push', on: local.signin, toggle: () => setLocal((s) => ({ ...s, signin: !s.signin })), disabled: false },
+                { label: 'Weekly spending summary', note: 'Every Monday by email', on: local.weekly, toggle: () => setLocal((s) => ({ ...s, weekly: !s.weekly })), disabled: false },
+            ],
+        },
+        {
+            title: 'Offers',
+            note: 'Promotions and new services.',
+            items: [{ label: 'Offers and news', note: 'Email and push', on: local.offers, toggle: () => setLocal((s) => ({ ...s, offers: !s.offers })), disabled: false }],
+        },
+    ];
 
     return (
-        <div className="max-w-[690px]">
-            <h2 className="text-xl font-medium text-ink-660">Notification Settings</h2>
-            <div className="mt-5 grid gap-6 border-t border-tone-78 py-6 md:grid-cols-[1fr_1fr]">
-                <div>
-                    <h3 className="text-base font-medium text-ink-660">Purchase Alerts</h3>
-                    <p className="mt-2 max-w-[300px] text-sm text-tone-405">
-                        Choose how you want to be notified about your purchases.
-                    </p>
-                </div>
-
-                {isLoading ? (
-                    <SkeletonGroup className="space-y-5" label="Loading notification settings">
-                        {CHANNEL_OPTIONS.map((opt) => (
-                            <div key={opt.value} className="flex items-start gap-4">
-                                <Skeleton className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-full" />
-                                <div className="flex-1 space-y-2">
-                                    <Skeleton strong className="h-4 w-16" />
-                                    <Skeleton className="h-3 w-full max-w-[260px]" />
-                                </div>
-                            </div>
-                        ))}
-                    </SkeletonGroup>
-                ) : isError ? (
-                    <p className="text-sm text-danger-404">Couldn&apos;t load your notification settings.</p>
-                ) : (
-                    <div role="radiogroup" aria-label="Purchase alert channel" className="space-y-5">
-                        {CHANNEL_OPTIONS.map((opt) => {
-                            const enabled = opt.value === 'OFF' || available.includes(opt.value);
-                            const checked = selected === opt.value;
-                            return (
-                                <button
-                                    key={opt.value}
-                                    type="button"
-                                    role="radio"
-                                    aria-checked={checked}
-                                    disabled={!enabled || update.isPending}
-                                    onClick={() => choose(opt.value)}
-                                    className="flex w-full items-start gap-4 text-left disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <span
-                                        className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 ${checked ? 'border-brand-361' : 'border-tone-198'
-                                            }`}
-                                    >
-                                        {checked && <span className="h-2 w-2 rounded-full bg-brand-361" />}
-                                    </span>
-                                    <span>
-                                        <span className="block text-sm font-medium text-tone-744">{opt.label}</span>
-                                        <span className="mt-1 block max-w-[260px] text-xs leading-relaxed text-tone-351">
-                                            {enabled ? opt.description : `${opt.label} isn't verified on your account yet.`}
-                                        </span>
-                                    </span>
-                                </button>
-                            );
-                        })}
-                        <p className="text-xs text-tone-351">Push notifications aren&apos;t available yet.</p>
+        <div className="hz-stagger flex flex-col gap-4">
+            {isError && <p role="alert" className="text-sm text-status-error">We couldn&apos;t load your notification settings.</p>}
+            {groups.map((g) => (
+                <section key={g.title} className={`${CARD} flex flex-col p-[22px]`}>
+                    <div className="flex flex-col gap-1 pb-2">
+                        <h2 className="text-lg font-semibold">{g.title}</h2>
+                        <span className="text-sm text-tone-414">{g.note}</span>
                     </div>
-                )}
-            </div>
+                    {g.items.map((p) => (
+                        <div key={p.label} className="flex items-center gap-3 border-t border-tone-44 py-3">
+                            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                <span className="text-[15px] font-medium">{p.label}</span>
+                                <span className="truncate text-[13px] text-tone-414">{p.note}</span>
+                            </span>
+                            <Switch on={p.on} label={p.label} onToggle={p.toggle} disabled={p.disabled} />
+                        </div>
+                    ))}
+                </section>
+            ))}
         </div>
     );
 }
 
-/* ─── Tab: Appearance (colour theme) ───────────────────────────── */
+/* ─── Appearance ───────────────────────────────────────────────── */
 function Appearance() {
     const active = useTheme();
-
     return (
-        <div className="max-w-[900px]">
-            <h2 className="text-xl font-medium text-ink-660">Appearance</h2>
-            <div className="mt-5 space-y-5 border-t border-tone-78 py-6">
-                <div>
-                    <h3 className="text-base font-medium text-ink-660">Theme</h3>
-                    <p className="mt-2 max-w-[520px] text-sm text-tone-405">
-                        Choose the colours for your dashboard. The change applies straight away and is saved on this device. The public Hatiso pages keep the standard look.
-                    </p>
-                </div>
-
-                <div role="radiogroup" aria-label="Colour theme" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    {THEMES.map((theme) => {
-                        const checked = active === theme.id;
-                        // Preview swatches: sidebar, accent, page background, border, card.
-                        const [surface, accent, background, line, card] = theme.swatches;
-                        return (
-                            <button
-                                key={theme.id}
-                                type="button"
-                                role="radio"
-                                aria-checked={checked}
-                                onClick={() => {
-                                    if (checked) return;
-                                    setTheme(theme.id);
-                                    toast.success(`${theme.name} theme applied.`);
-                                }}
-                                className={`group rounded-xl border-2 p-2 text-left transition ${checked ? 'border-brand-361' : 'border-tone-88 hover:border-tone-190'}`}
-                            >
-                                {/* Mini preview, drawn in the theme's own colours whichever theme is active. */}
-                                <span aria-hidden="true" className="flex h-24 overflow-hidden rounded-lg border" style={{ borderColor: line, backgroundColor: background }}>
-                                    <span className="flex w-1/4 flex-col gap-1.5 p-2" style={{ backgroundColor: surface }}>
-                                        <span className="h-1.5 w-full rounded-full" style={{ backgroundColor: accent }} />
-                                        <span className="h-1.5 w-3/4 rounded-full bg-white/30" />
-                                        <span className="h-1.5 w-2/3 rounded-full bg-white/30" />
-                                    </span>
-                                    <span className="flex flex-1 flex-col gap-2 p-2.5">
-                                        <span className="h-2 w-1/2 rounded-full" style={{ backgroundColor: surface }} />
-                                        <span className="flex-1 rounded-md border" style={{ borderColor: line, backgroundColor: card }} />
-                                        <span className="h-3 w-1/3 rounded" style={{ backgroundColor: accent }} />
-                                    </span>
-                                </span>
-                                <span className="mt-3 flex items-start gap-3 px-1 pb-1">
-                                    <span
-                                        className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 ${checked ? 'border-brand-361' : 'border-tone-198'}`}
-                                    >
-                                        {checked && <span className="h-2 w-2 rounded-full bg-brand-361" />}
-                                    </span>
-                                    <span>
-                                        <span className="flex items-center gap-2 text-sm font-medium text-tone-744">
-                                            {theme.name}
-                                            {theme.id === DEFAULT_THEME && (
-                                                <span className="rounded-full bg-tone-69 px-2 py-0.5 text-[10px] font-medium text-tone-405">Default</span>
-                                            )}
-                                        </span>
-                                        <span className="mt-1 block text-xs leading-relaxed text-tone-351">{theme.description}</span>
-                                    </span>
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
+        <section className={`hz-pop ${CARD} flex flex-col gap-[18px] p-[22px]`}>
+            <div className="flex flex-col gap-1">
+                <h2 className="text-lg font-semibold">Appearance</h2>
+                <span className="text-sm text-tone-414">Choose the colours for your dashboard. It&apos;s saved on this device.</span>
             </div>
-        </div>
+            <div role="radiogroup" aria-label="Theme" className="grid grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-3.5">
+                {THEMES.map((theme) => {
+                    const on = active === theme.id;
+                    const [side, accent, background, line, card] = theme.swatches;
+                    return (
+                        <button
+                            key={theme.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            onClick={() => !on && setTheme(theme.id)}
+                            className={`flex flex-col overflow-hidden rounded-xl text-left transition-colors ${on ? 'border-2 border-brand-305' : 'border border-tone-100 hover:border-tone-414'}`}
+                        >
+                            <span aria-hidden="true" className="flex h-24" style={{ backgroundColor: background }}>
+                                <span className="flex w-1/4 flex-col gap-1.5 p-2" style={{ backgroundColor: side }}>
+                                    <span className="h-1.5 w-full rounded-full" style={{ backgroundColor: accent }} />
+                                    <span className="h-1.5 w-3/4 rounded-full bg-white/30" />
+                                    <span className="h-1.5 w-2/3 rounded-full bg-white/30" />
+                                </span>
+                                <span className="flex flex-1 flex-col gap-2 p-2.5">
+                                    <span className="h-2 w-1/2 rounded-full" style={{ backgroundColor: side }} />
+                                    <span className="flex-1 rounded-md border" style={{ borderColor: line, backgroundColor: card }} />
+                                </span>
+                            </span>
+                            <span className="flex items-center gap-3 p-3.5">
+                                <span className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 ${on ? 'border-brand-305' : 'border-grey-400'}`}>
+                                    {on && <span className="h-2 w-2 rounded-full bg-brand-305" />}
+                                </span>
+                                <span className="flex flex-col gap-0.5">
+                                    <span className="text-[15px] font-medium">{theme.name}</span>
+                                    <span className="text-[13px] text-tone-414">{theme.id === DEFAULT_THEME ? 'Recommended' : theme.description}</span>
+                                </span>
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+        </section>
     );
 }
 
-/* ─── Tab: Privacy & Security (change password) ────────────────── */
+/* ─── Payment methods ──────────────────────────────────────────── */
+function PaymentMethods() {
+    // No saved-card API: cards are entered on Paystack's checkout each time.
+    return (
+        <section className={`hz-pop ${CARD} flex flex-col items-center gap-3 px-6 py-12 text-center`}>
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-tone-44">
+                <CreditCard className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <h2 className="text-lg font-semibold">No saved cards yet</h2>
+            <p className="max-w-[420px] text-sm leading-normal text-tone-414">
+                You enter your card on Paystack&apos;s secure checkout each time you pay. Hatiso never stores your card details.
+            </p>
+        </section>
+    );
+}
+
+/* ─── Dialogs ──────────────────────────────────────────────────── */
 const EMPTY_PASSWORDS: PasswordValues = { current: '', next: '', confirm: '' };
 
-function PrivacySecurity() {
+function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
     const resetPassword = useResetPassword();
-
-    const handleSubmit = async (values: PasswordValues, { resetForm }: FormikHelpers<PasswordValues>) => {
+    const submit = async (values: PasswordValues, { resetForm }: FormikHelpers<PasswordValues>) => {
         try {
             const result = await resetPassword.mutateAsync({ oldPassword: values.current, newPassword: values.next });
             resetForm();
             toast.success(result?.message || 'Password updated.');
+            onClose();
         } catch (err) {
             notifyError(err);
         }
     };
-
     return (
-        <Formik<PasswordValues> initialValues={EMPTY_PASSWORDS} validationSchema={passwordSchema} onSubmit={handleSubmit}>
-            {({ values }) => {
-                const results = PASSWORD_RULES.map((rule) => ({ ...rule, passed: rule.test(values.next) }));
-                const passedCount = results.filter((r) => r.passed).length;
-                const isStrong = passedCount === PASSWORD_RULES.length;
-
-                return (
-                    <Form className="max-w-[560px]" noValidate>
-                        <h2 className="text-xl font-medium text-ink-660">Change Password</h2>
-                        <div className="mt-5 border-t border-tone-78" />
-
-                        <div className="mt-7 space-y-5">
-                            <PasswordField name="current" label="Current Password" required variant="dashboard" autoComplete="current-password" />
-                            <PasswordField name="next" label="New Password" required variant="dashboard" autoComplete="new-password" />
-                            <PasswordField name="confirm" label="Confirm Password" required variant="dashboard" autoComplete="new-password" />
-                        </div>
-
-                        {/* Strength meter */}
-                        <div className="mt-7 grid grid-cols-3 gap-3" aria-hidden="true">
-                            {PASSWORD_RULES.map((rule, i) => (
-                                <div key={rule.id} className={`h-[3px] rounded-full ${i < passedCount ? 'bg-success-331' : 'bg-tone-102'}`} />
-                            ))}
-                        </div>
-
-                        <p className="mt-5 text-base text-ink-510" aria-live="polite">
-                            {isStrong ? 'Strong password.' : 'Weak password. Must contain;'}
-                        </p>
-                        <ul className="mt-4 space-y-3">
-                            {results.map((rule) => (
-                                <li key={rule.id} className="flex items-center gap-3 text-base text-ink-510">
-                                    <span
-                                        className={`flex h-[22px] w-[22px] items-center justify-center rounded-full ${rule.passed ? 'bg-success-331' : 'bg-tone-102'}`}
-                                    >
-                                        <Check className="h-3 w-3 text-white" strokeWidth={3} />
-                                    </span>
-                                    {rule.label}
-                                </li>
-                            ))}
+        <Formik<PasswordValues> initialValues={EMPTY_PASSWORDS} validationSchema={passwordSchema} onSubmit={submit}>
+            {({ values, isSubmitting, submitForm }) => (
+                <DialogFrame
+                    title="Change password"
+                    icon={KeyRound}
+                    onClose={onClose}
+                    footer={
+                        <>
+                            <button type="button" onClick={onClose} className={DIALOG_SECONDARY}>Cancel</button>
+                            <button type="button" onClick={submitForm} disabled={isSubmitting} className={DIALOG_PRIMARY}>
+                                {isSubmitting ? 'Updating…' : 'Update password'}
+                            </button>
+                        </>
+                    }
+                >
+                    <Form noValidate className="flex flex-col gap-3.5">
+                        <PasswordField name="current" label="Current password" required variant="dashboard" autoComplete="current-password" />
+                        <PasswordField name="next" label="New password" required variant="dashboard" autoComplete="new-password" placeholder="At least 8 characters" />
+                        <PasswordField name="confirm" label="Confirm new password" required variant="dashboard" autoComplete="new-password" placeholder="Type it again" />
+                        <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-tone-414" aria-label="Password rules">
+                            {[['length', '8+ characters'], ['upper', 'Uppercase letter'], ['number', 'Number']].map(([id, label]) => {
+                                const ok = PASSWORD_RULES.find((r) => r.id === id)!.test(values.next);
+                                return (
+                                    <li key={id} className={`inline-flex items-center gap-1.5 ${ok ? 'text-tone-744' : ''}`}>
+                                        <Check className={`h-3.5 w-3.5 ${ok ? '' : 'opacity-30'}`} aria-hidden="true" />
+                                        {label}
+                                    </li>
+                                );
+                            })}
                         </ul>
-
-                        <div className="mt-6 flex justify-end border-t border-tone-78 pt-6">
-                            <SubmitButton variant="primary" size="lg" loadingLabel="Updating…">
-                                Reset Password
-                            </SubmitButton>
-                        </div>
+                        <button type="submit" hidden aria-hidden="true" />
                     </Form>
-                );
-            }}
+                </DialogFrame>
+            )}
         </Formik>
+    );
+}
+
+function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
+    const router = useRouter();
+    const [typed, setTyped] = useState('');
+    // There's no self-serve delete API, so confirming hands the request to support.
+    const confirm = () => {
+        onClose();
+        toast.message('Our support team will finish closing your account.');
+        router.push('/dashboard/support');
+    };
+    return (
+        <DialogFrame
+            title="Delete your account?"
+            icon={Trash2}
+            tone="danger"
+            onClose={onClose}
+            footer={
+                <>
+                    <button type="button" onClick={onClose} className={DIALOG_SECONDARY}>Keep my account</button>
+                    <button type="button" onClick={confirm} disabled={typed.trim() !== 'DELETE'} className={DIALOG_DANGER}>Delete account</button>
+                </>
+            }
+        >
+            <p className="text-[15px] leading-relaxed text-tone-414">This removes your saved numbers and receipts. It can&apos;t be undone.</p>
+            <label className="flex flex-col gap-2 text-sm font-medium">
+                Type DELETE to confirm
+                <input
+                    type="text"
+                    value={typed}
+                    onChange={(e) => setTyped(e.target.value)}
+                    placeholder="DELETE"
+                    autoComplete="off"
+                    className="min-h-12 rounded-lg border border-tone-100 bg-surface px-3.5 text-[15px] font-normal outline-none focus:border-brand-305"
+                />
+            </label>
+            <span className="inline-flex items-center gap-2 text-[13px] font-medium text-status-error">
+                <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                Warning: this is permanent
+            </span>
+        </DialogFrame>
     );
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
 export default function AccountPage() {
-    const [tab, setTab] = useState<TabId>('personal');
+    const [tab, setTab] = useState<TabId>('details');
+    const [dialog, setDialog] = useState<'password' | 'delete' | null>(null);
+
     return (
-        <div className="min-h-full bg-tone-12 text-tone-760">
-            {/* ── Page header ── */}
-            <section className="border-b border-tone-80 px-5 py-7 sm:px-8">
-                <p className="text-xs font-semibold uppercase tracking-wide text-brand-361">Your account</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-tone-744 sm:text-3xl">
-                    Your details, privacy and security.
-                </h2>
-                <p className="mt-2 text-sm text-tone-432 sm:text-base">
-                    Keep your information current and choose how Hatiso protects you.
-                </p>
-            </section>
-
-            <main className="px-5 py-6 sm:px-8 lg:py-8">
-                <div className="grid gap-8 rounded-lg bg-surface p-5 sm:p-5 lg:min-h-[826px] lg:grid-cols-[280px_1fr]">
-                    {/* ── Side menu ── */}
-                    <aside className="h-fit self-start rounded-xl border border-tone-88 bg-surface px-3.5 pb-8 pt-7" aria-label="Account menu">
-                        <p className="px-3 text-xs font-medium uppercase text-ink-510">Select menu</p>
-                        <div role="tablist" aria-orientation="vertical" className="mt-3 space-y-1">
-                            {MENU.map((item) => {
-                                const Icon = item.icon;
-                                const active = tab === item.id;
-                                return (
-                                    <button
-                                        key={item.id}
-                                        type="button"
-                                        role="tab"
-                                        id={`tab-${item.id}`}
-                                        aria-selected={active}
-                                        aria-controls={`panel-${item.id}`}
-                                        onClick={() => setTab(item.id)}
-                                        className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-[15px] transition ${active ? 'bg-tone-41 font-medium text-tone-744' : 'text-ink-510 hover:bg-slate-50'
-                                            }`}
-                                    >
-                                        <Icon className="h-[18px] w-[18px] shrink-0" />
-                                        <span className="flex-1">{item.label}</span>
-                                        {active && (
-                                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-ink-660">
-                                                <ChevronRight className="h-3 w-3 text-white" strokeWidth={3} />
-                                            </span>
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </aside>
-
-                    {/* ── Active panel ── */}
-                    <section
-                        role="tabpanel"
-                        id={`panel-${tab}`}
-                        aria-labelledby={`tab-${tab}`}
-                        className="min-w-0 pt-3 lg:pr-6"
-                    >
-                        {tab === 'personal' && (
-                            <PersonalDetails />
-                        )}
-                        {tab === 'notifications' && <NotificationSettings />}
-                        {tab === 'appearance' && <Appearance />}
-                        {tab === 'privacy' && (
-                            <PrivacySecurity />
-                        )}
-                    </section>
+        <div className="min-h-full bg-tone-44 text-tone-744">
+            <div className="flex w-full flex-col gap-6 p-[clamp(20px,3vw,40px)]">
+                <div className="hz-rise flex flex-col gap-1.5">
+                    <h1 className="text-[clamp(28px,3vw,36px)] leading-[1.1] font-semibold tracking-[-0.025em]">Profile and security</h1>
+                    <span className="text-[15px] text-tone-414">Your details, how you sign in, and how you pay.</span>
                 </div>
-            </main>
+
+                <div className="hz-rise" style={{ '--d': 1 } as React.CSSProperties}>
+                    <div role="radiogroup" aria-label="Section" className="flex flex-wrap gap-2">
+                        {TABS.map(([id, label]) => {
+                            const on = tab === id;
+                            return (
+                                <button
+                                    key={id}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={on}
+                                    onClick={() => setTab(id)}
+                                    className={`min-h-[38px] rounded-lg border px-3.5 text-sm font-medium transition-colors ${on ? 'border-brand-305 bg-brand-305 text-on-brand' : 'border-tone-100 bg-surface hover:border-tone-414'}`}
+                                >
+                                    {label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {tab === 'details' && <PersonalDetails onDelete={() => setDialog('delete')} />}
+                {tab === 'security' && <Security onChangePassword={() => setDialog('password')} />}
+                {tab === 'notif' && <NotificationPrefs />}
+                {tab === 'look' && <Appearance />}
+                {tab === 'pay' && <PaymentMethods />}
+            </div>
+
+            {dialog === 'password' && <ChangePasswordDialog onClose={() => setDialog(null)} />}
+            {dialog === 'delete' && <DeleteAccountDialog onClose={() => setDialog(null)} />}
         </div>
     );
 }
+

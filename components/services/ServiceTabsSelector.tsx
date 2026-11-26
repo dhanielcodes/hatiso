@@ -2,7 +2,6 @@
 
 import React, { useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServices';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { servicesForCategory } from '@/lib/digitalServices/categoryServices';
@@ -21,7 +20,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-brand-361"
+        className="h-7 w-7"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -42,7 +41,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-brand-361"
+        className="h-7 w-7"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -64,7 +63,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-brand-361"
+        className="h-7 w-7"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -85,7 +84,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-brand-361"
+        className="h-7 w-7"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -107,7 +106,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-brand-361"
+        className="h-7 w-7"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -128,7 +127,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-brand-361"
+        className="h-7 w-7"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -148,7 +147,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-brand-361"
+        className="h-7 w-7"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -171,7 +170,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-brand-361"
+        className="h-7 w-7"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -190,7 +189,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-brand-361"
+        className="h-7 w-7"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -213,7 +212,7 @@ export const ALL_DIGITAL_SERVICES: ServiceItem[] = [
     icon: (
       <svg
         viewBox="0 0 44 44"
-        className="h-9 w-9 text-brand-361"
+        className="h-7 w-7"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.4"
@@ -253,167 +252,47 @@ export default function ServiceTabsSelector({
     return visualService ? [{ ...visualService, slug: service.slug, name: service.label }] : [];
   });
 
-  // Mouse drag-to-scroll state
-  const isDown = useRef(false);
-  const startX = useRef(0);
-  const scrollLeft = useRef(0);
-  const hasMoved = useRef(false);
-
   const handleSelect = (slug: string, title: string) => {
-    // If the user was dragging, don't trigger the click
-    if (hasMoved.current) return;
-
-    if (onSelectService) {
-      onSelectService(slug, title);
-    } else {
-      router.push(`/categories/${slug}`);
-    }
+    if (onSelectService) onSelectService(slug, title);
+    else router.push(`/categories/${slug}`);
   };
 
-  // Scroll smoothly with arrow buttons
-  const scroll = (direction: 'left' | 'right') => {
-    if (carouselRef.current) {
-      const scrollAmount = 300;
-      carouselRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
-      });
-    }
-  };
-
-  // Auto-scroll the active tab into view whenever activeSlug changes
+  // Keep the active tab in view when it changes
   useEffect(() => {
-    if (carouselRef.current) {
-      const activeEl = carouselRef.current.querySelector(
-        `[data-slug="${activeSlug}"]`
-      ) as HTMLElement | null;
-      if (activeEl) {
-        activeEl.scrollIntoView({
-          behavior: 'smooth',
-          inline: 'center',
-          block: 'nearest',
-        });
-      }
-    }
+    const el = carouselRef.current?.querySelector(`[data-slug="${activeSlug}"]`) as HTMLElement | null;
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }, [activeSlug]);
 
-  // Mouse drag-to-scroll handlers
-  const onMouseDown = (e: React.MouseEvent) => {
-    if (!carouselRef.current) return;
-    isDown.current = true;
-    hasMoved.current = false;
-    startX.current = e.pageX - carouselRef.current.offsetLeft;
-    scrollLeft.current = carouselRef.current.scrollLeft;
-  };
-
-  const onMouseLeave = () => {
-    isDown.current = false;
-  };
-
-  const onMouseUp = () => {
-    isDown.current = false;
-  };
-
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDown.current || !carouselRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - carouselRef.current.offsetLeft;
-    const walk = (x - startX.current) * 1.5;
-    if (Math.abs(walk) > 5) {
-      hasMoved.current = true;
-    }
-    carouselRef.current.scrollLeft = scrollLeft.current - walk;
-  };
-
+  /** Service board switcher: a row of pills under the hero; the current service is Cloud. */
   return (
-    <section className="my-12 w-full sm:my-16">
-      {/* Title & Subtitle */}
-      <div className="mb-8 text-center sm:mb-10">
-        <p className="text-xs font-semibold tracking-wide text-brand-305 sm:text-sm">
-          Choose your digital service
-        </p>
-        <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-white sm:text-3xl lg:text-4xl">
-          Select a service below to continue.
-        </h2>
-      </div>
-
-      {/* Spanning full width to align directly with Hero section */}
-      <div className="flex w-full items-center justify-between gap-3 sm:gap-4">
-        {/* Left Arrow Button */}
-        <button
-          type="button"
-          onClick={() => scroll('left')}
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-slate-500/80 text-white transition-all duration-200 hover:border-white hover:bg-white/10 active:scale-95 sm:h-10 sm:w-10"
-          aria-label="Previous categories"
-        >
-          <ChevronLeft className="h-5 w-5 stroke-[2.2]" />
-        </button>
-
-        {/* Carousel Container - Scrollable, Grabbable, and displaying Two-Tone Cards with Hidden Scrollbar */}
-        <div
-          ref={carouselRef}
-          onMouseDown={onMouseDown}
-          onMouseLeave={onMouseLeave}
-          onMouseUp={onMouseUp}
-          onMouseMove={onMouseMove}
-          className="no-scrollbar flex flex-1 cursor-grab items-center gap-3.5 overflow-x-auto py-3 select-none active:cursor-grabbing sm:gap-4 [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]"
-          style={{
-            scrollBehavior: 'smooth',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-          }}
-        >
-          {isLoading && Array.from({ length: 6 }, (_, index) => (
-            <Skeleton key={index} tone="dark" className="h-[125px] w-[105px] shrink-0 rounded-2xl sm:h-[142px] sm:w-[124px]" />
-          ))}
-          {services.map((srv) => {
-            const isActive = activeSlug === srv.slug;
-
-            return (
-              <button
-                key={srv.slug}
-                data-slug={srv.slug}
-                type="button"
-                onClick={() => handleSelect(srv.slug, srv.name)}
-                className={`group flex h-[125px] w-[105px] flex-shrink-0 flex-col overflow-hidden rounded-2xl transition-all duration-200 active:scale-95 focus:outline-none sm:h-[142px] sm:w-[124px] ${isActive
-                  ? 'border-2 border-brand-305 shadow-xl ring-4 ring-brand-361/20'
-                  : 'border border-transparent shadow-sm hover:shadow-md'
-                  }`}
-              >
-                {/* TOP PORTION: Two-Tone upper portion with Centered Orange Icon */}
-                <div
-                  className={`flex flex-1 items-center justify-center px-2 py-4 transition-colors ${isActive ? 'bg-tone-36' : 'bg-tone-51 group-hover:bg-tone-74'
-                    }`}
-                >
-                  <div className="transition-transform duration-200 group-hover:scale-105">
-                    {srv.icon}
-                  </div>
-                </div>
-
-                {/* BOTTOM PORTION: Pure Crisp White with Category Name */}
-                <div className="flex items-center justify-center bg-surface py-2.5 px-1.5 text-center">
-                  <span
-                    className={`text-xs font-bold transition-colors sm:text-sm ${isActive ? 'text-brand-305' : 'text-ink-729'
-                      }`}
-                  >
-                    {srv.name}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Right Arrow Button */}
-        <button
-          type="button"
-          onClick={() => scroll('right')}
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-slate-500/80 text-white transition-all duration-200 hover:border-white hover:bg-white/10 active:scale-95 sm:h-10 sm:w-10"
-          aria-label="Next categories"
-        >
-          <ChevronRight className="h-5 w-5 stroke-[2.2]" />
-        </button>
-      </div>
-    </section>
+    <div
+      ref={carouselRef}
+      role="tablist"
+      aria-label="Services"
+      className="hz-stagger no-scrollbar flex gap-2 overflow-x-auto pt-8 pb-6 [scrollbar-width:none]"
+    >
+      {isLoading &&
+        Array.from({ length: 6 }, (_, index) => (
+          <Skeleton key={index} tone="dark" className="h-11 w-24 shrink-0 rounded-[10px]" />
+        ))}
+      {services.map((srv) => {
+        const isActive = activeSlug === srv.slug;
+        return (
+          <button
+            key={srv.slug}
+            data-slug={srv.slug}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => handleSelect(srv.slug, srv.name)}
+            className={`hz-press inline-flex min-h-11 shrink-0 items-center rounded-[10px] border px-[18px] text-sm font-medium whitespace-nowrap transition-colors ${
+              isActive ? 'border-cloud bg-cloud text-carbon' : 'border-grey-800 text-silver hover:border-grey-500 hover:text-cloud'
+            }`}
+          >
+            {srv.name}
+          </button>
+        );
+      })}
+    </div>
   );
 }

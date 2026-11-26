@@ -1,27 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
+import { useMemo, useRef, useState, type ComponentType, type SVGProps } from 'react';
 import Link from 'next/link';
 import { Formik, Form, type FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { SubmitButton, TextAreaField, useFormField } from '@/components/forms';
-import {
-    CheckCircle2,
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    ExternalLink,
-    FileText,
-    Headphones,
-    Mail,
-    Minus,
-    Phone,
-    Plus,
-    Star,
-    X,
-} from 'lucide-react';
+import { Check, ChevronDown, ExternalLink, FileText, Mail, Phone, Search } from 'lucide-react';
 import SupportEnquiryForm from '@/components/support/SupportEnquiryForm';
-import { formatDateTime, formatPlainDate, ticketHref, ticketStatus, ticketTypeLabel } from '@/components/support/supportDisplay';
+import { ticketHref, ticketStatus, ticketTypeLabel } from '@/components/support/supportDisplay';
 import { newIdempotencyKey, type SupportContentEntry, type SupportReceipt } from '@/lib/api/support';
 import { useSubmitSupportFeedback, useSupportHistory, useSupportOptions } from '@/lib/queries/useSupport';
 
@@ -37,8 +23,8 @@ type ContactItem = {
 
 /* ─── Constants ────────────────────────────────────────────────── */
 const TABS: { id: SupportTab; label: string }[] = [
-    { id: 'help', label: 'Help Center' },
-    { id: 'faqs', label: 'FAQs' },
+    { id: 'help', label: 'Get help' },
+    { id: 'faqs', label: 'Questions' },
     { id: 'feedback', label: 'Feedback' },
 ];
 
@@ -49,7 +35,7 @@ const feedbackSchema = Yup.object({
     rating: Yup.number().min(1, 'Choose a rating.').max(5),
     remark: Yup.string().trim().max(10_000, 'Keep it under 10,000 characters.'),
 });
-const PAGE_SIZES = [10, 20, 50];
+const HISTORY_PAGE = 6;
 
 // Fallback contacts, used until support publishes CONTACT entries in GET /support/options
 const CONTACTS: ContactItem[] = [
@@ -60,63 +46,33 @@ const CONTACTS: ContactItem[] = [
     { id: 'x', label: 'Qapp by Hatiso', href: 'https://x.com', icon: XLogo },
 ];
 
+/** Support board questions. Published FAQ entries from the API replace these once support adds any. */
 const FAQ_GROUPS = [
     {
-        id: 'getting-started',
-        label: 'Getting Started',
+        id: 'pay',
+        label: 'Payments',
         items: [
-            {
-                q: 'What is QApp by Hatiso?',
-                a: 'QApp by Hatiso is a single place to pay bills, manage transactions and earn rewards, all from your personal account.',
-            },
-            {
-                q: 'How do I create an account?',
-                a: 'Tap Sign Up, enter your name, phone number and email, verify the OTP we send you and set a password. It only takes a few minutes.',
-            },
-            {
-                q: 'Does BowenMFB give out loans?',
-                a: 'Loan availability depends on your account profile and eligibility. Check the Loans section in your dashboard or contact support for current offers.',
-            },
-            {
-                q: 'Can I buy a service without creating an account?',
-                a: 'You need an account to complete a purchase so we can protect your payment and keep a record of your transaction.',
-            },
+            { q: 'I paid but my electricity token didn\u2019t arrive', a: 'Tokens usually arrive within a minute. Check Transactions for the token on your receipt. If it\u2019s still missing after 15 minutes, send us a request with the meter number.' },
+            { q: 'How do refunds work?', a: 'If a provider declines a payment, the money goes back to your card automatically. Your bank may take 1 to 5 working days to show it.' },
+            { q: 'Can I pay without an account?', a: 'Yes. You can pay as a guest from any service page.' },
+            { q: 'Are there any fees?', a: 'Any service fee is shown on the confirmation screen before you pay.' },
         ],
     },
     {
-        id: 'payments',
-        label: 'Payments and Pricing',
+        id: 'account',
+        label: 'Account',
         items: [
-            { q: 'Which payment methods are supported?', a: 'You can pay with your wallet balance, a linked debit card or bank transfer.' },
-            { q: 'Are there any transaction fees?', a: 'Any applicable fee is shown on the confirmation screen before you pay, so there are no surprises.' },
-            { q: 'What happens if a payment fails?', a: 'If you were debited for a failed payment, the amount is automatically reversed, usually within 24 hours.' },
+            { q: 'How do I change my name?', a: 'Go to Profile and security, then Personal details.' },
+            { q: 'How do I change my password?', a: 'Go to Profile and security, then Security, and choose Change password.' },
+            { q: 'What should I do if I notice suspicious activity?', a: 'Change your password straight away and send us a request so we can secure your account.' },
         ],
     },
     {
-        id: 'orders',
-        label: 'Orders and Delivery',
+        id: 'bank',
+        label: 'Banking',
         items: [
-            { q: 'How do I track my order?', a: 'Open Orders from your dashboard and select the order to see its current status.' },
-            { q: 'How long does delivery take?', a: 'Digital services are delivered instantly. Other timelines are shown on the order summary.' },
-            { q: 'Can I cancel an order?', a: 'You can cancel an order while it is still pending. Once it is processing, please contact support.' },
-        ],
-    },
-    {
-        id: 'security',
-        label: 'Account and Security',
-        items: [
-            { q: 'How do I reset my password?', a: 'Go to Account, then Privacy & Security, verify your phone number with the OTP and choose a new password.' },
-            { q: 'How is my data protected?', a: 'We use encryption and OTP verification for sensitive actions to keep your account safe.' },
-            { q: 'What should I do if I notice suspicious activity?', a: 'Change your password immediately and contact our support team so we can secure your account.' },
-        ],
-    },
-    {
-        id: 'support',
-        label: 'Support and Refunds',
-        items: [
-            { q: 'How do I contact support?', a: 'Use the Help Center to send an enquiry or tap Contact Us for phone, email and social channels.' },
-            { q: 'How do refunds work?', a: 'Approved refunds are returned to your original payment method, usually within 3 to 5 working days.' },
-            { q: 'How long does a support enquiry take?', a: 'Most enquiries are resolved within 24 hours. You can follow progress in Recent Support History.' },
+            { q: 'Does Hatiso see my bank login?', a: 'No. We open your bank\u2019s official app or website and you sign in there.' },
+            { q: 'My bank isn\u2019t listed. What can I do?', a: 'Send us a request with the bank\u2019s name. We add new partner banks regularly.' },
         ],
     },
 ];
@@ -184,437 +140,285 @@ function contactFromEntry(entry: SupportContentEntry, index: number): ContactIte
     return { id: `contact-${index}`, label: entry.body && entry.url ? `${entry.title} · ${entry.body}` : entry.title || value, href, icon };
 }
 
-/* ─── Contact Us modal ─────────────────────────────────────────── */
-function ContactModal({ open, onClose, contacts }: { open: boolean; onClose: () => void; contacts: ContactItem[] }) {
-    const closeRef = useRef<HTMLButtonElement>(null);
-
-    useEffect(() => {
-        if (!open) return;
-        const previouslyFocused = document.activeElement as HTMLElement | null;
-        const previousOverflow = document.body.style.overflow;
-        const onKey = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') onClose();
-        };
-        document.addEventListener('keydown', onKey);
-        document.body.style.overflow = 'hidden';
-        closeRef.current?.focus();
-        return () => {
-            document.removeEventListener('keydown', onKey);
-            document.body.style.overflow = previousOverflow;
-            previouslyFocused?.focus();
-        };
-    }, [open, onClose]);
-
-    if (!open) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-            <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="contact-title"
-                onClick={(event) => event.stopPropagation()}
-                className="w-full max-w-[523px] rounded-2xl bg-surface shadow-xl"
-            >
-                <div className="flex items-center justify-between border-b border-tone-78 px-6 py-5">
-                    <h2 id="contact-title" className="text-xl font-semibold text-tone-744">
-                        Contact Us
-                    </h2>
-                    <button
-                        ref={closeRef}
-                        type="button"
-                        onClick={onClose}
-                        aria-label="Close"
-                        className="rounded-md p-1 text-ink-660 transition hover:bg-slate-100"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
-                <ul className="px-6 pb-6 pt-2">
-                    {contacts.map((item, index) => {
-                        const Icon = item.icon;
-                        const external = item.href.startsWith('http');
-                        return (
-                            <li key={item.id} className={index > 0 ? 'border-t border-tone-70' : ''}>
-                                <a
-                                    href={item.href}
-                                    {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-                                    className="flex items-center gap-3 py-4 text-sm text-tone-624 transition hover:text-brand-361"
-                                >
-                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-tone-63 text-ink-660">
-                                        <Icon className="h-4 w-4" />
-                                    </span>
-                                    {item.label}
-                                </a>
-                            </li>
-                        );
-                    })}
-                </ul>
-            </div>
-        </div>
-    );
-}
-
-/* ─── Tab: Help Center ─────────────────────────────────────────── */
+/* ─── Get help ─────────────────────────────────────────────────── */
 type HelpCenterProps = {
     enquiryTypes: string[];
     loadingTypes: boolean;
     content: SupportContentEntry[];
 };
 
-function HistorySkeleton({ rows }: { rows: number }) {
-    return (
-        <ul className="mt-6" aria-hidden="true">
-            {Array.from({ length: rows }, (_, index) => (
-                <li key={index} className={`grid grid-cols-2 gap-4 py-4 md:grid-cols-[1.4fr_1fr_1fr_1fr] ${index > 0 ? 'border-t border-tone-78' : ''}`}>
-                    {Array.from({ length: 4 }, (_, cell) => (
-                        <div key={cell}>
-                            <span className="block h-3 w-16 animate-pulse rounded bg-tone-63" />
-                            <span className="mt-3 block h-4 w-24 animate-pulse rounded bg-tone-63" />
-                        </div>
-                    ))}
-                </li>
-            ))}
-        </ul>
-    );
+const CARD = 'rounded-[14px] border border-tone-100 bg-surface';
+
+/** Status colour for the "Your requests" dots: resolved/closed green, anything still open amber. */
+function statusDot(status: string) {
+    const key = (status || '').toUpperCase();
+    if (['RESOLVED', 'CLOSED', 'COMPLETED'].includes(key)) return 'bg-status-success';
+    if (['REJECTED', 'FAILED', 'CANCELLED'].includes(key)) return 'bg-status-error';
+    return 'bg-status-warning';
+}
+
+function whenLabel(iso: string) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return 'Today';
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(d);
 }
 
 function HelpCenter({ enquiryTypes, loadingTypes, content }: HelpCenterProps) {
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
-    const [contactOpen, setContactOpen] = useState(false);
-    const closeContact = useCallback(() => setContactOpen(false), []);
-
-    const history = useSupportHistory(page - 1, pageSize);
+    const [size, setSize] = useState(HISTORY_PAGE);
+    const history = useSupportHistory(0, size);
     const rows = history.data ?? [];
-    // The history endpoint has no total count, so a short page means it is the last one.
-    const hasNext = rows.length === pageSize;
-    const start = (page - 1) * pageSize;
+    const hasMore = rows.length === size;
 
     const helpEntries = bySection(content, 'HELP');
     const publishedContacts = bySection(content, 'CONTACT').map(contactFromEntry);
     const contacts = publishedContacts.length ? publishedContacts : CONTACTS;
+    const direct = contacts.filter((c) => c.href.startsWith('mailto:') || c.href.startsWith('tel:'));
+    const social = contacts.filter((c) => c.href.startsWith('http'));
     const legalLinks = [...bySection(content, 'TERMS'), ...bySection(content, 'PRIVACY')].filter((entry) => entry.url);
 
     return (
-        <div>
-            {/* Service banner */}
-            <div className="flex items-center gap-3 rounded-lg bg-tone-48 px-4 py-4 text-sm text-ink-660">
-                <Headphones className="h-5 w-5 shrink-0 text-info-450" />
-                <p>
-                    <span className="font-semibold">Customer Service Center.</span>{' '}
-                    <span className="text-ink-510">24 hours service for you.</span>
-                </p>
-            </div>
-
-            {/* Published help entries */}
-            {helpEntries.length > 0 && (
-                <section className="mt-6" aria-labelledby="help-articles-title">
-                    <h3 id="help-articles-title" className="text-sm font-semibold text-tone-744">
-                        Helpful articles
-                    </h3>
-                    <ul className="mt-3 grid gap-3 md:grid-cols-2">
-                        {helpEntries.map((entry, index) => {
-                            const body = (
-                                <>
-                                    <span className="flex items-center gap-2 text-sm font-medium text-tone-744">
-                                        <FileText className="h-4 w-4 shrink-0 text-brand-361" />
-                                        {entry.title}
-                                        {entry.url && <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-tone-405" />}
-                                    </span>
-                                    {entry.body && <span className="mt-1.5 line-clamp-3 block text-xs leading-relaxed text-ink-510">{entry.body}</span>}
-                                </>
-                            );
-                            const cls = 'block h-full rounded-lg border border-tone-88 bg-surface px-4 py-3.5';
-                            return (
-                                <li key={`${entry.title}-${index}`}>
-                                    {entry.url ? (
-                                        <a href={entry.url} target="_blank" rel="noreferrer" className={`${cls} transition hover:border-brand-95 hover:bg-tone-15`}>
-                                            {body}
-                                        </a>
-                                    ) : (
-                                        <div className={cls}>{body}</div>
-                                    )}
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </section>
-            )}
-
-            <p className="mt-8 text-sm text-tone-405 sm:text-base">Hi there! 👋 Need a hand with anything today?</p>
-
-            {/* Enquiry form */}
-            <div className="mt-6">
-                <SupportEnquiryForm enquiryTypes={enquiryTypes} loadingTypes={loadingTypes} onSent={() => setPage(1)} />
-            </div>
-
-            {/* Recent Support History */}
-            <section className="mt-8 rounded-xl border border-tone-88 bg-surface px-5 py-6 sm:px-6" aria-labelledby="history-title">
-                <h3 id="history-title" className="text-base font-semibold text-tone-744">
-                    Recent Support History
-                </h3>
-                <p className="mt-2 text-xs text-ink-510">Select a request to see replies and its progress.</p>
-
-                {history.isLoading ? (
-                    <HistorySkeleton rows={3} />
-                ) : history.isError && !rows.length ? (
-                    <div className="mt-6 rounded-lg bg-tone-24 px-4 py-6 text-center">
-                        <p className="text-sm text-ink-510">We could not load your support history.</p>
-                        <button
-                            type="button"
-                            onClick={() => history.refetch()}
-                            className="mt-3 rounded-md border border-tone-98 bg-surface px-3.5 py-2 text-xs font-medium text-tone-744 transition hover:bg-slate-50"
-                        >
-                            Try again
-                        </button>
-                    </div>
-                ) : !rows.length ? (
-                    <p className="mt-6 rounded-lg bg-tone-18 px-4 py-8 text-center text-sm text-tone-405">
-                        {page > 1 ? 'No more requests.' : 'You have not contacted support yet. Your requests will show here.'}
-                    </p>
-                ) : (
-                    <ul className={`mt-6 transition-opacity ${history.isPlaceholderData ? 'opacity-55' : ''}`}>
-                        {rows.map((row, index) => {
-                            const status = ticketStatus(row.status);
-                            return (
-                                <li key={row.ticketId} className={index > 0 ? 'border-t border-tone-78' : ''}>
-                                    <Link
-                                        href={ticketHref(row.ticketId)}
-                                        className="-mx-3 grid grid-cols-2 gap-x-4 gap-y-4 rounded-lg px-3 py-4 transition hover:bg-tone-15 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto] md:items-center"
-                                    >
-                                        <div className="min-w-0">
-                                            <p className="text-xs text-tone-405">Comment</p>
-                                            <p className="mt-2 truncate text-sm font-medium text-tone-744 sm:text-base">
-                                                {row.remark?.trim() || (row.rating != null ? `${row.rating} star rating` : '—')}
-                                            </p>
-                                            <p className="mt-1 truncate font-mono text-[11px] text-tone-405">{row.reference}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-tone-405">Enquiry Type</p>
-                                            <p className="mt-2 text-sm font-medium text-tone-744 sm:text-base">{ticketTypeLabel(row)}</p>
-                                            {row.requestType === 'COMPLAINT' && <p className="mt-1 text-[11px] text-brand-447">Complaint</p>}
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-tone-405">Date</p>
-                                            <p className="mt-2 text-sm font-medium text-tone-744 sm:text-base">
-                                                {row.date ? formatPlainDate(row.date) : formatDateTime(row.createdAt)}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-tone-405">Status</p>
-                                            <span className={`mt-2 inline-block rounded px-2.5 py-1 text-xs font-medium ${status.className}`}>{status.label}</span>
-                                        </div>
-                                        <ChevronRight className="hidden h-4 w-4 text-tone-270 md:block" aria-hidden="true" />
-                                    </Link>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-
-                {/* Pagination */}
-                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 text-sm text-tone-405">
-                    <p>{rows.length ? `Showing ${start + 1}-${start + rows.length}` : `Page ${page}`}</p>
-                    <div className="flex items-center gap-2">
-                        <label htmlFor="page-size">Show</label>
-                        <div className="relative">
-                            <select
-                                id="page-size"
-                                value={pageSize}
-                                onChange={(event) => {
-                                    setPageSize(Number(event.target.value));
-                                    setPage(1);
-                                }}
-                                className="h-8 appearance-none rounded-md border border-tone-98 bg-surface pl-3 pr-7 text-sm text-ink-510 outline-none focus:border-brand-361"
-                            >
-                                {PAGE_SIZES.map((size) => (
-                                    <option key={size} value={size}>
-                                        {size}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
-                        </div>
-                        <span>entries</span>
-                        <button
-                            type="button"
-                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                            aria-label="Previous page"
-                            className="ml-1 flex h-7 w-7 items-center justify-center rounded-md border border-tone-98 bg-tone-47 text-ink-510 transition disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <span className="px-1 font-medium text-tone-744" aria-current="page">
-                            {page}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => setPage((p) => p + 1)}
-                            disabled={!hasNext || history.isPlaceholderData}
-                            aria-label="Next page"
-                            className="flex h-7 w-7 items-center justify-center rounded-md border border-tone-98 bg-surface text-tone-744 transition disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <ChevronRight className="h-4 w-4" />
-                        </button>
-                    </div>
-                </div>
+        <div className="hz-stagger flex flex-wrap items-start gap-4">
+            <section className={`${CARD} flex min-w-0 flex-[999_1_520px] flex-col gap-[18px] p-6`}>
+                <h2 className="text-lg font-semibold">Send us a request</h2>
+                <SupportEnquiryForm enquiryTypes={enquiryTypes} loadingTypes={loadingTypes} onSent={() => setSize(HISTORY_PAGE)} />
             </section>
 
-            {/* Contact strip */}
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-tone-52 px-5 py-4">
-                <div>
-                    <p className="text-sm font-semibold text-tone-744">Do you still need our help?</p>
-                    <p className="mt-1 text-xs text-ink-510">Reach us via phone, email &amp; social accounts</p>
-                </div>
-                <button
-                    type="button"
-                    onClick={() => setContactOpen(true)}
-                    className="rounded-md border border-tone-98 bg-surface px-3.5 py-2 text-xs font-medium text-tone-744 transition hover:bg-slate-50"
-                >
-                    Contact Us
-                </button>
-            </div>
+            <aside className="flex min-w-0 flex-[1_1_300px] flex-col gap-4">
+                <section className={`${CARD} flex flex-col p-[22px]`}>
+                    <h2 className="pb-2 text-lg font-semibold">Your requests</h2>
+                    {history.isLoading ? (
+                        <div className="flex flex-col gap-3 py-2" aria-hidden="true">
+                            {Array.from({ length: 3 }, (_, i) => <span key={i} className="block h-10 animate-pulse rounded-lg bg-tone-44" />)}
+                        </div>
+                    ) : history.isError && !rows.length ? (
+                        <div className="flex flex-col items-start gap-3 border-t border-tone-44 py-3">
+                            <p className="text-sm text-tone-414">We couldn&apos;t load your requests.</p>
+                            <button type="button" onClick={() => history.refetch()} className="text-sm font-medium underline underline-offset-4">Try again</button>
+                        </div>
+                    ) : !rows.length ? (
+                        <p className="border-t border-tone-44 py-3 text-sm text-tone-414">You haven&apos;t sent a request yet. They&apos;ll show here.</p>
+                    ) : (
+                        <ul className={history.isPlaceholderData ? 'opacity-60' : ''}>
+                            {rows.map((row) => {
+                                const status = ticketStatus(row.status);
+                                const subject = row.remark?.trim().replace(/^Transaction reference:.*\n+/, '') || ticketTypeLabel(row);
+                                return (
+                                    <li key={row.ticketId}>
+                                        <Link href={ticketHref(row.ticketId)} className="-mx-2 flex flex-col gap-1 rounded-lg border-t border-tone-44 px-2 py-3 transition-colors hover:bg-tone-44">
+                                            <span className="flex items-center justify-between gap-3">
+                                                <span className="truncate text-[15px] font-medium">{subject}</span>
+                                                <span className="inline-flex shrink-0 items-center gap-1.5 text-[13px] text-tone-414">
+                                                    <span className={`h-2 w-2 rounded-full ${statusDot(row.status)}`} aria-hidden="true" />
+                                                    {status.label}
+                                                </span>
+                                            </span>
+                                            <span className="truncate text-[13px] text-tone-414">{row.reference} · {whenLabel(row.createdAt)}</span>
+                                        </Link>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                    {hasMore && (
+                        <button type="button" onClick={() => setSize((n) => n + HISTORY_PAGE)} disabled={history.isPlaceholderData} className="mt-2 self-start text-sm font-medium underline underline-offset-4 disabled:opacity-50">
+                            Show more
+                        </button>
+                    )}
+                </section>
 
-            {legalLinks.length > 0 && (
-                <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-ink-510">
-                    {legalLinks.map((entry, index) => (
-                        <li key={`${entry.section}-${index}`}>
-                            <a href={entry.url as string} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 transition hover:text-brand-361">
-                                {entry.title} <ExternalLink className="h-3 w-3" />
+                <div className="flex flex-col gap-2.5 rounded-[14px] bg-carbon p-[22px] text-cloud">
+                    <span className="text-base font-semibold">Reach us directly</span>
+                    {direct.map((c) => {
+                        const Icon = c.icon;
+                        return (
+                            <a key={c.id} href={c.href} className="inline-flex items-center gap-2.5 text-sm text-silver hover:text-cloud">
+                                <Icon className="h-4 w-4" />
+                                {c.label}
+                                {c.href.startsWith('tel:') && ' · 24 hours'}
                             </a>
-                        </li>
-                    ))}
-                </ul>
-            )}
+                        );
+                    })}
+                    {social.length > 0 && (
+                        <div className="mt-1 flex gap-2">
+                            {social.map((c) => {
+                                const Icon = c.icon;
+                                return (
+                                    <a key={c.id} href={c.href} target="_blank" rel="noreferrer" aria-label={c.label} className="flex h-9 w-9 items-center justify-center rounded-lg bg-graphite text-silver hover:text-cloud">
+                                        <Icon className="h-4 w-4" />
+                                    </a>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
 
-            <ContactModal open={contactOpen} onClose={closeContact} contacts={contacts} />
+                {helpEntries.length > 0 && (
+                    <section className={`${CARD} flex flex-col gap-1 p-[22px]`} aria-labelledby="help-articles-title">
+                        <h2 id="help-articles-title" className="pb-2 text-lg font-semibold">Helpful articles</h2>
+                        {helpEntries.map((entry, index) => {
+                            const inner = (
+                                <>
+                                    <FileText className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                                    <span className="flex min-w-0 flex-col gap-0.5">
+                                        <span className="text-[15px] font-medium">{entry.title}</span>
+                                        {entry.body && <span className="line-clamp-2 text-[13px] text-tone-414">{entry.body}</span>}
+                                    </span>
+                                </>
+                            );
+                            const cls = 'flex gap-2.5 border-t border-tone-44 py-3';
+                            return entry.url ? (
+                                <a key={`${entry.title}-${index}`} href={entry.url} target="_blank" rel="noreferrer" className={`${cls} hover:text-tone-414`}>{inner}</a>
+                            ) : (
+                                <div key={`${entry.title}-${index}`} className={cls}>{inner}</div>
+                            );
+                        })}
+                    </section>
+                )}
+
+                {legalLinks.length > 0 && (
+                    <ul className="flex flex-wrap gap-x-5 gap-y-2 px-1 text-xs text-tone-414">
+                        {legalLinks.map((entry, index) => (
+                            <li key={`${entry.section}-${index}`}>
+                                <a href={entry.url as string} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-tone-744">
+                                    {entry.title} <ExternalLink className="h-3 w-3" />
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </aside>
         </div>
     );
 }
 
-/* ─── Tab: FAQs ────────────────────────────────────────────────── */
+/* ─── Questions ────────────────────────────────────────────────── */
 type FaqGroup = { id: string; label: string; items: { q: string; a: string; url?: string | null }[] };
 
 function Faqs({ entries }: { entries: SupportContentEntry[] }) {
-    // Published FAQ entries from the API replace the built-in list once support adds any.
-    const groups: FaqGroup[] = entries.length
-        ? [{ id: 'published', label: 'Frequently asked questions', items: entries.map((e) => ({ q: e.title, a: e.body ?? '', url: e.url })) }]
-        : FAQ_GROUPS;
+    const groups: FaqGroup[] = useMemo(
+        () => (entries.length ? [{ id: 'published', label: 'All questions', items: entries.map((e) => ({ q: e.title, a: e.body ?? '', url: e.url })) }] : FAQ_GROUPS),
+        [entries]
+    );
     const [groupId, setGroupId] = useState(groups[0].id);
-    const [openIndex, setOpenIndex] = useState<number | null>(null);
+    const [open, setOpen] = useState(0);
+    const [query, setQuery] = useState('');
     const group = groups.find((g) => g.id === groupId) ?? groups[0];
 
-    const selectGroup = (id: string) => {
-        setGroupId(id);
-        setOpenIndex(null);
-    };
+    // Search looks across every group; without a search, the chosen group shows.
+    const items = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        if (!q) return group.items;
+        return groups.flatMap((g) => g.items).filter((i) => `${i.q} ${i.a}`.toLowerCase().includes(q));
+    }, [query, group, groups]);
 
     return (
-        <div className="grid gap-8 lg:grid-cols-[270px_1fr]">
-            <aside className="h-fit self-start rounded-xl border border-tone-88 bg-surface px-3.5 pb-6 pt-6" aria-label="FAQ categories">
-                <p className="px-3 text-xs font-medium uppercase text-ink-510">Select FAQs type</p>
-                <ul className="mt-3 space-y-1">
-                    {groups.map((item) => {
-                        const active = item.id === group.id;
+        <div className="hz-stagger flex w-full flex-col gap-3.5">
+            <label className="relative flex items-center">
+                <Search className="pointer-events-none absolute left-4 h-[18px] w-[18px] text-tone-414" aria-hidden="true" />
+                <span className="sr-only">Search questions</span>
+                <input
+                    type="search"
+                    value={query}
+                    onChange={(e) => {
+                        setQuery(e.target.value);
+                        setOpen(0);
+                    }}
+                    placeholder="Search questions"
+                    className="min-h-12 w-full rounded-[10px] border border-tone-100 bg-surface pr-4 pl-11 text-[15px] outline-none placeholder:text-tone-414 focus:border-brand-305"
+                />
+            </label>
+            {groups.length > 1 && !query.trim() && (
+                <div role="radiogroup" aria-label="Question type" className="flex flex-wrap gap-2">
+                    {groups.map((g) => {
+                        const on = g.id === group.id;
                         return (
-                            <li key={item.id}>
-                                <button
-                                    type="button"
-                                    onClick={() => selectGroup(item.id)}
-                                    aria-current={active ? 'true' : undefined}
-                                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${active ? 'bg-tone-63 font-medium text-tone-744' : 'text-ink-510 hover:bg-slate-50'
-                                        }`}
-                                >
-                                    <span className="flex-1">{item.label}</span>
-                                    {active && (
-                                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-ink-660">
-                                            <ChevronRight className="h-3 w-3 text-white" strokeWidth={3} />
-                                        </span>
-                                    )}
-                                </button>
-                            </li>
+                            <button
+                                key={g.id}
+                                type="button"
+                                role="radio"
+                                aria-checked={on}
+                                onClick={() => {
+                                    setGroupId(g.id);
+                                    setOpen(0);
+                                }}
+                                className={`min-h-[38px] rounded-lg border px-3.5 text-sm font-medium transition-colors ${on ? 'border-brand-305 bg-brand-305 text-on-brand' : 'border-tone-100 bg-surface hover:border-tone-414'}`}
+                            >
+                                {g.label}
+                            </button>
                         );
                     })}
-                </ul>
-            </aside>
-
-            <section className="min-w-0 max-w-[592px] lg:pt-3" aria-labelledby="faq-title">
-                <h3 id="faq-title" className="text-lg font-semibold text-tone-744">
-                    {group.label}
-                </h3>
-                <ul className="mt-4">
-                    {group.items.map((item, index) => {
-                        const open = openIndex === index;
-                        const panelId = `faq-panel-${group.id}-${index}`;
+                </div>
+            )}
+            <div className={`${CARD} overflow-hidden`}>
+                {items.length ? (
+                    items.map((item, index) => {
+                        const isOpen = open === index;
+                        const panelId = `faq-panel-${index}`;
                         return (
-                            <li key={item.q} className="border-b border-tone-98">
+                            <div key={item.q} className="border-b border-tone-44 last:border-b-0">
                                 <button
                                     type="button"
-                                    onClick={() => setOpenIndex(open ? null : index)}
-                                    aria-expanded={open}
+                                    aria-expanded={isOpen}
                                     aria-controls={panelId}
-                                    className="flex w-full items-center gap-4 py-4 text-left text-base text-tone-744"
+                                    onClick={() => setOpen(isOpen ? -1 : index)}
+                                    className="flex w-full items-center justify-between gap-4 px-5 py-[18px] text-left text-[15px] font-medium hover:bg-tone-44"
                                 >
-                                    {open ? (
-                                        <Minus className="h-4 w-4 shrink-0 text-brand-361" />
-                                    ) : (
-                                        <Plus className="h-4 w-4 shrink-0 text-brand-361" />
-                                    )}
                                     {item.q}
+                                    <ChevronDown className={`h-[18px] w-[18px] shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                                 </button>
-                                {open && (
-                                    <div id={panelId} className="pb-5 pl-8 text-sm leading-relaxed text-ink-510">
+                                {isOpen && (
+                                    <div id={panelId} className="hz-pop px-5 pb-[18px] text-sm leading-relaxed text-tone-414">
                                         {item.a && <p className="whitespace-pre-line">{item.a}</p>}
-                                        {'url' in item && item.url && (
-                                            <a href={item.url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-brand-361 hover:underline">
+                                        {item.url && (
+                                            <a href={item.url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 font-medium text-tone-744 underline underline-offset-4">
                                                 Read more <ExternalLink className="h-3 w-3" />
                                             </a>
                                         )}
                                     </div>
                                 )}
-                            </li>
+                            </div>
                         );
-                    })}
-                </ul>
-            </section>
+                    })
+                ) : (
+                    <p className="px-5 py-10 text-center text-sm text-tone-414">No questions match that. Try another word, or send us a request.</p>
+                )}
+            </div>
         </div>
     );
 }
 
-/* ─── Tab: Feedback ────────────────────────────────────────────── */
-// Star rating bound to Formik through the shared field hook
-function RatingField({ name }: { name: string }) {
-    const { field, setValue, error } = useFormField<number>(name);
-    const [hover, setHover] = useState(0);
-    const shown = hover || field.value;
+/* ─── Feedback ─────────────────────────────────────────────────── */
+const SCORE_LABELS = ['Poor', 'Fair', 'Okay', 'Good', 'Great'];
 
+function ScoreField({ name }: { name: string }) {
+    const { field, setValue, error } = useFormField<number>(name);
     return (
-        <div>
-            <p id={`${name}-label`} className="mt-7 text-base font-medium text-tone-744">
-                Rating <span className="text-brand-361">*</span>
-            </p>
-            <div role="radiogroup" aria-labelledby={`${name}-label`} className="mt-5 flex gap-4" onMouseLeave={() => setHover(0)}>
-                {[1, 2, 3, 4, 5].map((value) => (
-                    <button
-                        key={value}
-                        type="button"
-                        role="radio"
-                        aria-checked={field.value === value}
-                        aria-label={`${value} star${value > 1 ? 's' : ''}`}
-                        onClick={() => setValue(value)}
-                        onMouseEnter={() => setHover(value)}
-                        className="rounded-md transition hover:scale-105"
-                    >
-                        <Star
-                            className={`h-[52px] w-[52px] text-brand-410 ${value <= shown ? 'fill-brand-410' : 'fill-transparent'}`}
-                            strokeWidth={1.5}
-                        />
-                    </button>
-                ))}
+        <div className="flex flex-col gap-2">
+            <div role="radiogroup" aria-label="Rating" className="grid grid-cols-5 gap-2">
+                {SCORE_LABELS.map((label, i) => {
+                    const value = i + 1;
+                    const on = field.value === value;
+                    return (
+                        <button
+                            key={label}
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            onClick={() => setValue(value)}
+                            className={`flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-[10px] border transition-colors ${on ? 'border-brand-305 bg-brand-305 text-on-brand' : 'border-tone-100 bg-surface hover:border-tone-414'}`}
+                        >
+                            <span className="text-xl font-semibold">{value}</span>
+                            <span className={`text-xs ${on ? '' : 'text-tone-414'}`}>{label}</span>
+                        </button>
+                    );
+                })}
             </div>
-            {error ? <p className="mt-2 text-xs text-rose-600">{error}</p> : null}
+            {error ? <p className="text-xs text-status-error">{error}</p> : null}
         </div>
     );
 }
@@ -641,48 +445,30 @@ function Feedback() {
         }
     };
 
+    if (receipt) {
+        return (
+            <section className={`hz-pop ${CARD} flex max-w-[720px] flex-col items-center gap-3 px-6 py-12 text-center`}>
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-305 text-on-brand">
+                    <Check className="h-6 w-6" aria-hidden="true" />
+                </span>
+                <h2 className="text-xl font-semibold">Thanks for your feedback.</h2>
+                <p className="text-[15px] text-tone-414">It helps us make Hatiso better.</p>
+                <div className="mt-2 flex flex-wrap justify-center gap-2.5">
+                    <Link href={ticketHref(receipt.ticketId)} className="hz-press inline-flex min-h-11 items-center rounded-[10px] border border-tone-100 px-[18px] text-sm font-medium hover:border-tone-414">View {receipt.reference}</Link>
+                    <button type="button" onClick={() => setReceipt(null)} className="hz-press inline-flex min-h-11 items-center rounded-[10px] px-[18px] text-sm font-medium hover:bg-tone-44">Send more feedback</button>
+                </div>
+            </section>
+        );
+    }
+
     return (
         <Formik<FeedbackValues> initialValues={EMPTY_FEEDBACK} validationSchema={feedbackSchema} onSubmit={handleSubmit}>
-            <Form noValidate>
-                {receipt && (
-                    <div className="mb-6 flex flex-wrap items-start justify-between gap-3 rounded-lg border border-tone-90 bg-tone-21 px-4 py-4" aria-live="polite">
-                        <div className="flex min-w-0 items-start gap-3">
-                            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success-392" />
-                            <div className="min-w-0">
-                                <p className="text-sm font-semibold text-tone-744">Thanks for your feedback.</p>
-                                <p className="mt-1 text-xs text-ink-510">
-                                    Reference <span className="break-all font-mono font-medium text-tone-744">{receipt.reference}</span>
-                                </p>
-                            </div>
-                        </div>
-                        <Link
-                            href={ticketHref(receipt.ticketId)}
-                            className="shrink-0 rounded-md border border-tone-98 bg-surface px-3.5 py-2 text-xs font-medium text-tone-744 transition hover:bg-slate-50"
-                        >
-                            View ticket
-                        </Link>
-                    </div>
-                )}
-
-                <p className="text-sm text-tone-405 sm:text-base">How would you rate your experience with QApp today?</p>
-
-                <RatingField name="rating" />
-
-                <TextAreaField
-                    name="remark"
-                    id="feedback-remark"
-                    label="Remark"
-                    variant="dashboard"
-                    placeholder="Enter Remark"
-                    rows={4}
-                    maxLength={10_000}
-                    className="mt-7"
-                />
-
-                <div className="mt-4 flex items-center justify-end gap-4">
-                    <SubmitButton variant="primary" loadingLabel="Submitting…">
-                        Submit
-                    </SubmitButton>
+            <Form noValidate className={`hz-pop ${CARD} flex max-w-[720px] flex-col gap-5 p-6`}>
+                <h2 className="text-lg font-semibold">How would you rate your experience with Hatiso today?</h2>
+                <ScoreField name="rating" />
+                <TextAreaField name="remark" id="feedback-remark" label="What could we do better? (optional)" variant="dashboard" rows={4} maxLength={10_000} />
+                <div className="flex justify-end">
+                    <SubmitButton variant="primary" loadingLabel="Sending…">Send feedback</SubmitButton>
                 </div>
             </Form>
         </Formik>
@@ -696,55 +482,37 @@ export default function SupportPage() {
     const content = options.data?.content ?? [];
 
     return (
-        <div className="min-h-full bg-tone-12 text-tone-760">
-            {/* ── Page header ── */}
-            <section className="border-b border-tone-80 px-5 py-7 sm:px-8">
-                <p className="text-xs font-semibold uppercase tracking-wide text-brand-361">Support</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-tone-744 sm:text-3xl">
-                    Real help, right <span className="text-brand-311">when you need it.</span>
-                </h2>
-                <p className="mt-2 text-sm text-tone-432 sm:text-base">Keep your information current and choose how Hatiso protects you.</p>
-            </section>
-
-            <main className="px-5 py-6 sm:px-8 lg:py-8">
-                {/* ── Pill tabs ── */}
-                <div role="tablist" aria-label="Support sections" className="flex flex-wrap gap-3">
-                    {TABS.map((item) => {
-                        const active = tab === item.id;
-                        return (
-                            <button
-                                key={item.id}
-                                type="button"
-                                role="tab"
-                                id={`support-tab-${item.id}`}
-                                aria-selected={active}
-                                aria-controls={`support-panel-${item.id}`}
-                                onClick={() => setTab(item.id)}
-                                className={`rounded-full border px-5 py-2.5 text-sm transition ${active
-                                    ? 'border-ink-660 bg-ink-660 font-medium text-white'
-                                    : 'border-tone-88 bg-surface text-tone-744 hover:bg-slate-50'
-                                    }`}
-                            >
-                                {item.label}
-                            </button>
-                        );
-                    })}
+        <div className="min-h-full bg-tone-44 text-tone-744">
+            <div className="flex w-full flex-col gap-6 p-[clamp(20px,3vw,40px)]">
+                <div className="hz-rise flex flex-col gap-1.5">
+                    <h1 className="text-[clamp(28px,3vw,36px)] leading-[1.1] font-semibold tracking-[-0.025em]">Help and support</h1>
+                    <span className="text-[15px] text-tone-414">Get help with a payment, find answers, or tell us how we did.</span>
                 </div>
 
-                {/* ── Active panel ── */}
-                <section
-                    role="tabpanel"
-                    id={`support-panel-${tab}`}
-                    aria-labelledby={`support-tab-${tab}`}
-                    className="mt-8 min-w-0"
-                >
-                    {tab === 'help' && (
-                        <HelpCenter enquiryTypes={options.data?.enquiryTypes ?? []} loadingTypes={options.isLoading} content={content} />
-                    )}
-                    {tab === 'faqs' && <Faqs entries={bySection(content, 'FAQ')} />}
-                    {tab === 'feedback' && <Feedback />}
-                </section>
-            </main>
+                <div className="hz-rise" style={{ '--d': 1 } as React.CSSProperties}>
+                    <div role="radiogroup" aria-label="Section" className="flex flex-wrap gap-2">
+                        {TABS.map((item) => {
+                            const on = tab === item.id;
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={on}
+                                    onClick={() => setTab(item.id)}
+                                    className={`min-h-[38px] rounded-lg border px-3.5 text-sm font-medium transition-colors ${on ? 'border-brand-305 bg-brand-305 text-on-brand' : 'border-tone-100 bg-surface hover:border-tone-414'}`}
+                                >
+                                    {item.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {tab === 'help' && <HelpCenter enquiryTypes={options.data?.enquiryTypes ?? []} loadingTypes={options.isLoading} content={content} />}
+                {tab === 'faqs' && <Faqs entries={bySection(content, 'FAQ')} />}
+                {tab === 'feedback' && <Feedback />}
+            </div>
         </div>
     );
 }

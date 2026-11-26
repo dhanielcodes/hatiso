@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { ArrowUpRight } from 'lucide-react';
 import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServices';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { servicesForCategory } from '@/lib/digitalServices/categoryServices';
@@ -11,7 +12,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   airtime: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-brand-305"
+      className="h-7 w-7"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -30,7 +31,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   data: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-brand-305"
+      className="h-7 w-7"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -50,7 +51,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   electricity: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-brand-305"
+      className="h-7 w-7"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -69,7 +70,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   tv: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-brand-305"
+      className="h-7 w-7"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -89,7 +90,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   betting: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-brand-305"
+      className="h-7 w-7"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -107,7 +108,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   education: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-brand-305"
+      className="h-7 w-7"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -124,7 +125,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   'government-services': (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-brand-305"
+      className="h-7 w-7"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -144,7 +145,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   shopping: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-brand-305"
+      className="h-7 w-7"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -160,7 +161,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   embassies: (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-brand-305"
+      className="h-7 w-7"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -180,7 +181,7 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   'transport-travel': (
     <svg
       viewBox="0 0 44 44"
-      className="h-10 w-10 text-brand-305"
+      className="h-7 w-7"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -195,91 +196,77 @@ const CategoryIconMap: Record<string, React.ReactNode> = {
   ),
 };
 
+/** One line under each service name (Main board). */
+const SERVICE_LINES: Record<string, string> = {
+  airtime: 'MTN, Airtel, Glo and 9mobile',
+  data: 'Daily, weekly and monthly bundles',
+  'internet-services': 'Home and office broadband',
+  electricity: 'Prepaid tokens and postpaid bills',
+  tv: 'Renew your subscription in seconds',
+  education: 'Exam pins and school fees',
+  insurance: 'Cover for you, your car and home',
+  betting: 'Fund your wallet instantly',
+  'other-services': 'Pay verified providers',
+};
+
 export default function PopularCategories() {
   const {
     data: serviceCategories,
     isError: hasCategoryRequestError,
     isLoading,
   } = useDigitalServiceCategories();
+  const services = serviceCategories?.flatMap(servicesForCategory) ?? [];
 
   return (
-    <section id="popular-categories" className="relative px-4 py-36 sm:px-8 lg:px-14">
-      <div className="mx-auto max-w-7xl">
-        {/* Section Title */}
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
-            Popular Categories
-          </h2>
+    <section id="popular-categories" className="bg-cloud text-carbon">
+      <div className="mx-auto flex max-w-[1280px] flex-col gap-12 px-[clamp(16px,4vw,56px)] py-[clamp(72px,9vw,128px)]">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div className="hz-reveal flex max-w-[640px] flex-col gap-4">
+            <p className="hz-eyebrow text-grey-600">Services</p>
+            <h2 className="text-[clamp(32px,4vw,52px)] leading-[1.08] font-semibold tracking-[-0.03em] text-balance">
+              Everything you pay for, every month.
+            </h2>
+          </div>
+          <Link
+            href={services[0] ? `/categories/${services[0].slug}` : '/categories/airtime'}
+            className="inline-flex min-h-11 items-center gap-2 border-b border-carbon text-[15px] font-medium"
+          >
+            See all services
+          </Link>
         </div>
 
-        {/* Categories Grid & Featured Promo Banner */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          {/* Left: 2 Rows x 5 Columns Grid of Two-Tone Category Cards (10 Cards total) */}
-          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-5 lg:col-span-8 lg:gap-3.5 xl:col-span-9" aria-live="polite">
-            {isLoading &&
-              Array.from({ length: 6 }, (_, index) => (
-                <Skeleton key={index} tone="dark" className="min-h-47.5 rounded-xl" />
-              ))}
-            {hasCategoryRequestError && (
-              <p className="col-span-full self-center text-sm text-slate-300">
-                Available services are temporarily unavailable.
-              </p>
-            )}
-            {serviceCategories?.flatMap(servicesForCategory).map((service) => {
-              const icon = CategoryIconMap[service.visualSlug] || CategoryIconMap.airtime;
-
-              return (
-                <Link
-                  key={service.slug}
-                  href={`/categories/${service.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-xl bg-surface transition-all duration-200 hover:-translate-y-1 hover:ring-2 hover:ring-brand-305/40 active:scale-95"
-                  style={{ minHeight: '190px' }}
-                >
-                  {/* Top Portion: Soft Pale Ice-Blue Tint with Centered Orange Icon */}
-                  <div className="flex flex-1 items-center justify-center bg-tone-46 py-8 px-3 transition-colors group-hover:bg-tone-74">
-                    <div className="transition-transform duration-200 group-hover:scale-105">
-                      {icon}
-                    </div>
-                  </div>
-
-                  {/* Bottom Portion: Pure Crisp White with Dark Slate Navy Title */}
-                  <div className="flex items-center justify-center bg-surface py-3 px-2 text-center">
-                    <span className="text-xs sm:text-sm font-semibold text-ink-729 transition-colors group-hover:text-brand-305">
-                      {service.label}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Right: "Pay Instantly" Card matching exact design */}
-          <div className="flex lg:col-span-4 xl:col-span-3">
-            <Link
-              href="/categories/airtime"
-              className="group flex w-full flex-col justify-between rounded-xl bg-ink-636 p-5 transition-all duration-300 hover:bg-ink-608"
-            >
-              {/* Inner Rounded Photo with rounded corners on all 4 sides */}
-              <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-slate-900 sm:aspect-[4/3] lg:aspect-square">
-                <img
-                  src="/images/pay_instantly_verve.jpg"
-                  alt="Pay instantly - woman holding banking app on phone"
-                  className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                />
-              </div>
-
-              {/* Text Area below image */}
-              <div className="pt-5 pb-2">
-                <h3 className="text-2xl font-bold tracking-tight text-white">
-                  Pay instantly
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-slate-200/90 font-normal">
-                  Bills, airtime, transfers, and merchant payments settled in seconds, no extra
-                  apps required.
-                </p>
-              </div>
-            </Link>
-          </div>
+        {/* Services from GET /digital-services/categories */}
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-4" aria-live="polite">
+          {isLoading &&
+            Array.from({ length: 8 }, (_, index) => (
+              <Skeleton key={index} tone="light" className="min-h-47 rounded-xl" />
+            ))}
+          {hasCategoryRequestError && (
+            <p className="col-span-full rounded-xl border border-dashed border-grey-150 p-8 text-center text-sm text-grey-600">
+              Available services are temporarily unavailable.
+            </p>
+          )}
+          {services.map((service) => {
+            const icon = CategoryIconMap[service.visualSlug] || CategoryIconMap.airtime;
+            return (
+              <Link
+                key={service.slug}
+                href={`/categories/${service.slug}`}
+                className="hz-reveal hz-lift flex min-h-47 flex-col gap-7 rounded-xl border border-grey-100 bg-white p-6"
+              >
+                <span className="flex items-center justify-between">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-carbon text-cloud">{icon}</span>
+                  <ArrowUpRight className="hz-arrow h-4.5 w-4.5 text-grey-400" aria-hidden="true" />
+                </span>
+                <span className="flex flex-col gap-1.5">
+                  <span className="text-[19px] font-semibold tracking-[-0.01em]">{service.label}</span>
+                  {SERVICE_LINES[service.slug] && (
+                    <span className="text-sm leading-normal text-grey-600">{SERVICE_LINES[service.slug]}</span>
+                  )}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -145,9 +145,14 @@ export const registerSchema = Yup.object({
 });
 
 export const contactSchema = Yup.object({
-  businessName: requiredString('Business name'),
+  topic: Yup.string().required(),
+  businessName: requiredString('Name'),
   email: emailSchema,
-  phone: loosePhoneSchema,
+  /** Optional on the Contact board; checked only when filled in. */
+  phone: Yup.string()
+    .trim()
+    .test('phone-length', 'Phone number is too short', (v) => !v || v.length >= 7)
+    .default(''),
   message: Yup.string()
     .trim()
     .min(10, 'Message should be at least 10 characters')

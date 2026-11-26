@@ -1,442 +1,204 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import Image from "next/image";
-import {
-  Search,
-  Landmark,
-  ChevronRight,
-  ShieldCheck,
-  X,
-  Loader2,
-  Building2,
-} from "lucide-react";
-import { toast } from "sonner";
-import { Formik, Form } from "formik";
-import * as Yup from "yup";
-import OtpInput from "@/components/auth/OtpInput";
-import { Button, PhoneField, SubmitButton } from "@/components/forms";
-import { useAuthStore } from "@/lib/store/authStore";
+import React, { useMemo, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
+import moment from "moment";
+import { ArrowUpRight, Building2, ChevronRight, Landmark, Search } from "lucide-react";
 import BankLogo from "@/components/banks/BankLogo";
+import BankOpenDialog from "@/components/banks/BankOpenDialog";
 import { useBanks } from "@/lib/queries/useBanks";
 import type { Bank } from "@/lib/api/banks";
-import {
-  bankStatus,
-  bankWebsite,
-  channelLabels,
-} from "@/lib/banks/bankDisplay";
+import { bankStatus, channelLabels, STATUS_DOT, STATUS_TEXT } from "@/lib/banks/bankDisplay";
+import { Skeleton } from "@/components/ui/Skeleton";
 
-/** "All", then one tab per status the API returns (e.g. "Online"). */
-type FilterTab = string;
+/**
+ * "Your banks" on the DashBanking board: the banks this person last opened. There is no API for it,
+ * so it lives in this browser only.
+ */
+const RECENT_KEY = "hatiso_recent_banks";
+type Recent = { id: string; at: number };
 
-const phoneStepSchema = Yup.object({
-  phone: Yup.string()
-    .trim()
-    .required("Enter your phone number.")
-    .test(
-      "digits",
-      "Enter a valid phone number.",
-      (v = "") => v.replace(/\D/g, "").length >= 10,
-    ),
-});
+const listeners = new Set<() => void>();
+function readRecentRaw() {
+  try {
+    return localStorage.getItem(RECENT_KEY) ?? "[]";
+  } catch {
+    return "[]";
+  }
+}
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  window.addEventListener("storage", cb);
+  return () => {
+    listeners.delete(cb);
+    window.removeEventListener("storage", cb);
+  };
+}
+function rememberBank(bank: Bank) {
+  try {
+    const list: Recent[] = JSON.parse(readRecentRaw());
+    const next = [{ id: String(bank.id), at: Date.now() }, ...list.filter((r) => r.id !== String(bank.id))].slice(0, 4);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+  } catch {
+    // Storage blocked: the list just stays empty
+  }
+  listeners.forEach((cb) => cb());
+}
 
 export default function BankingPage() {
-  const { user } = useAuthStore();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<FilterTab>("All");
+  const [query, setQuery] = useState("");
+  const [picked, setPicked] = useState<Bank | null>(null);
   const { data: banks = [], isLoading, isError, refetch } = useBanks();
-  const tabs = useMemo<FilterTab[]>(
-    () => ["All", ...new Set(banks.map((b) => bankStatus(b).label))],
-    [banks],
-  );
+  const recentRaw = useSyncExternalStore(subscribe, readRecentRaw, () => "[]");
 
-  // Redirection Modal State
-  const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
-  const [modalStep, setModalStep] = useState<"phone" | "otp" | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState("+234 904 637 3748");
-  const [otp, setOtp] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [otpError, setOtpError] = useState(false);
-
-  // Filter banks
-  const filteredBanks = useMemo(() => {
-    return banks.filter((bank) => {
-      // Tab filter
-      if (activeTab !== "All" && bankStatus(bank).label !== activeTab) {
-        return false;
-      }
-      // Search filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        return (
-          bank.name.toLowerCase().includes(query) ||
-          channelLabels(bank).join(" ").toLowerCase().includes(query)
-        );
-      }
-      return true;
-    });
-  }, [banks, activeTab, searchQuery]);
-
-  // Open modal step 1
-  const handleBankClick = (bank: Bank) => {
-    setSelectedBank(bank);
-    setModalStep("phone");
-    setOtp("");
-    setOtpError(false);
-  };
-
-  // Close modal
-  const handleCloseModal = () => {
-    setSelectedBank(null);
-    setModalStep(null);
-    setOtp("");
-    setOtpError(false);
-    setIsVerifying(false);
-  };
-
-  // Handle step 1 continue
-  const handleContinueToOtp = ({ phone }: { phone: string }) => {
-    const value = phone.trim();
-    setPhoneNumber(value);
-    setModalStep("otp");
-    toast.success(`OTP code sent to ${value}`);
-  };
-
-  // Handle step 2 verify & redirect
-  const handleVerifyOtp = () => {
-    if (!otp || otp.length < 4) {
-      setOtpError(true);
-      toast.error("Please enter the 6-digit verification code");
-      return;
+  const recent = useMemo(() => {
+    let list: Recent[] = [];
+    try {
+      list = JSON.parse(recentRaw);
+    } catch {
+      list = [];
     }
+    return list.flatMap((r) => {
+      const bank = banks.find((b) => String(b.id) === r.id);
+      return bank ? [{ bank, at: r.at }] : [];
+    });
+  }, [recentRaw, banks]);
 
-    setIsVerifying(true);
-    setOtpError(false);
-
-    setTimeout(() => {
-      setIsVerifying(false);
-      if (selectedBank) {
-        toast.success(`Verified! Opening ${selectedBank.name}...`);
-        window.open(bankWebsite(selectedBank), "_blank", "noopener,noreferrer");
-      }
-      handleCloseModal();
-    }, 800);
-  };
-
-  // Status badge: nothing for online banks, amber/red otherwise
-  const renderBadge = (bank: Bank) => {
-    const status = bankStatus(bank);
-    if (status.tone === "online") return null;
-    return (
-      <span
-        className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${status.tone === "warning" ? "bg-tone-27 text-warning-374" : "bg-red-50 text-red-700"}`}
-      >
-        {status.label}
-      </span>
-    );
-  };
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return banks.filter((b) => !q || `${b.name} ${channelLabels(b).join(" ")}`.toLowerCase().includes(q));
+  }, [banks, query]);
 
   return (
-    <div className="min-h-full bg-tone-12 space-y-6">
-      {/* Top Header */}
-      <section className="border-b border-tone-80 px-5 py-7 sm:px-8">
-        <p className="text-xs font-semibold uppercase tracking-wide text-brand-361">
-          Banking
-        </p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-tone-744 sm:text-3xl">
-          Your bank is <span className="text-brand-305">one tap away.</span>
-        </h2>
-        <p className="mt-2 text-sm text-tone-432 sm:text-base">
-          Visit your bank&apos;s secure digital banking service. Hatiso never
-          sees or stores your login details.
-        </p>
-      </section>
-
-      {/* Security Handoff Cyan Banner */}
-      <section className="px-5 sm:px-8 space-y-6">
-        <div className="flex items-center gap-3 rounded-xl border border-tone-101 bg-tone-45 px-4 py-3 text-xs sm:text-sm text-ink-662">
-          <Landmark className="h-5 w-5 shrink-0 text-info-457" />
-          <span>
-            A secure handoff, every time. You&apos;ll always see where
-            you&apos;re going before leaving Hatiso.
-          </span>
+    <div className="min-h-full bg-tone-44 text-tone-744">
+      <div className="flex w-full flex-col gap-6 p-[clamp(20px,3vw,40px)]">
+        <div className="hz-rise flex flex-col gap-1.5">
+          <h1 className="text-[clamp(28px,3vw,36px)] leading-[1.1] font-semibold tracking-[-0.025em]">Banking</h1>
+          <span className="text-[15px] text-tone-414">Open your bank&apos;s own app or internet banking. You sign in with your bank.</span>
         </div>
-        {/* Search and Filter Tabs */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          {/* Search Input */}
-          <div className="relative flex-1 max-w-xl">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-tone-302" />
-            <input
-              type="text"
-              placeholder="Search services or provider"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-tone-96 bg-surface py-2.5 pl-10 pr-4 text-sm text-ink-662 placeholder:text-tone-302 focus:border-brand-361 focus:outline-none"
-            />
-          </div>
 
-          {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2">
-            {tabs.map((tab) => {
-              const isActive = activeTab === tab;
-              return (
+        <section className="hz-rise flex flex-col gap-3.5" style={{ "--d": 1 } as React.CSSProperties}>
+          <h2 className="text-lg font-semibold">Your banks</h2>
+          {recent.length ? (
+            <div className="hz-stagger grid grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))] gap-3">
+              {recent.map(({ bank, at }) => (
                 <button
-                  key={tab}
+                  key={bank.id}
                   type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`rounded-full px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-ink-662 text-white"
-                      : "border border-tone-96 bg-surface text-tone-572 hover:bg-tone-26"
-                  }`}
+                  onClick={() => setPicked(bank)}
+                  className="hz-lift flex items-center gap-3.5 rounded-[14px] border border-tone-100 bg-surface p-4 text-left"
                 >
-                  {tab}
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-tone-100 bg-tone-44 p-1">
+                    <BankLogo bank={bank} className="h-full w-full" textClassName="text-[15px]" />
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate text-base font-semibold">{bank.name}</span>
+                    <span className="text-[13px] text-tone-414">Last opened {moment(at).fromNow()}</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium">
+                    Open
+                    <ArrowUpRight className="hz-arrow h-4 w-4" aria-hidden="true" />
+                  </span>
                 </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Section Subheader */}
-      <section className="px-5 py-7 space-y-6 sm:px-8">
-        <div>
-          <p className="text-sm font-medium text-tone-504">
-            Where would you like to bank today?
-          </p>
-        </div>
-
-        {/* Bank Cards Grid */}
-        {isLoading ? (
-          <div
-            aria-busy="true"
-            className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
-          >
-            {Array.from({ length: 3 }, (_, i) => (
-              <div
-                key={i}
-                className="h-[84px] animate-pulse rounded-2xl border border-tone-83 bg-surface"
-              />
-            ))}
-          </div>
-        ) : isError ? (
-          <div className="rounded-2xl border border-dashed border-tone-117 bg-surface p-12 text-center">
-            <Building2 className="mx-auto h-10 w-10 text-tone-190" />
-            <h3 className="mt-3 text-base font-semibold text-ink-662">
-              We couldn&apos;t load the banks
-            </h3>
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="mt-3 text-sm font-semibold text-brand-361 hover:underline"
-            >
-              Try again
-            </button>
-          </div>
-        ) : filteredBanks.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-tone-117 bg-surface p-12 text-center">
-            <Building2 className="mx-auto h-10 w-10 text-tone-190" />
-            <h3 className="mt-3 text-base font-semibold text-ink-662">
-              No banks found
-            </h3>
-            <p className="mt-1 text-xs text-tone-381">
-              No partner banks matched your search query. Try searching with a
-              different keyword.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredBanks.map((bank) => (
-              <div
-                key={bank.id}
-                onClick={() => handleBankClick(bank)}
-                className="group flex cursor-pointer items-center justify-between rounded-2xl border border-tone-83 bg-surface p-4 sm:p-5 transition-all hover:border-brand-361/50 hover:shadow-sm"
-              >
-                <div className="flex min-w-0 items-center gap-3.5">
-                  {/* Bank Logo */}
-                  <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface p-1">
-                    <BankLogo bank={bank} className="h-10 w-10" />
-                  </div>
-                  {/* Info */}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="truncate text-sm font-semibold text-ink-662 sm:text-base">
-                        {bank.name}
-                      </h3>
-                      {renderBadge(bank)}
-                    </div>
-                    <p className="mt-0.5 text-xs text-tone-381">
-                      {channelLabels(bank).join(" · ") || "Digital banking"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Right Chevron */}
-                <ChevronRight className="h-4 w-4 shrink-0 text-tone-190 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-361" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Bottom Protected Verified Banks Banner */}
-        <div className="relative flex min-h-[120px] items-center overflow-hidden rounded-2xl bg-tone-87">
-          {/* Left: text content */}
-          <div className="z-10 shrink-0 px-6 py-6 sm:px-8">
-            {/* PROTECTED pill */}
-            <span className="inline-block rounded-full bg-success-133 px-3 py-1 text-[10px] font-semibold tracking-widest text-success-478 uppercase">
-              PROTECTED
-            </span>
-            <h3 className="mt-3 text-xl font-extrabold text-success-740 sm:text-2xl">
-              Verified banks only
-            </h3>
-            <p className="mt-1 text-xs text-success-390 sm:text-sm">
-              Every bank you can reach from Hatiso is registered and approved
-            </p>
-          </div>
-
-          {/* Centre: CBN logo + label — absolutely centred horizontally */}
-          <div className="absolute left-[80%] hidden -translate-x-1/2 items-center gap-2.5 sm:flex">
-            <Image
-              src="/cbn.svg"
-              alt="Central Bank of Nigeria"
-              width={206}
-              height={206}
-              className="object-contain"
-              quality={95}
-            />
-          </div>
-
-          {/* Right: banking.png — anchored to right edge, partially overflowing top */}
-          <div className="absolute bottom-0 right-0 top-0 w-44 sm:w-52">
-            <Image
-              src="/banking.svg"
-              alt=""
-              fill
-              className="object-cover object-left"
-              quality={95}
-              aria-hidden="true"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ── 2-STEP REDIRECTION MODAL ─────────────────────────────────── */}
-      {modalStep && selectedBank && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl sm:p-7">
-            {/* Bank Logo */}
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-tone-83 bg-surface p-1.5">
-              <BankLogo
-                bank={selectedBank}
-                className="h-11 w-11"
-                textClassName="text-xs"
-              />
+              ))}
             </div>
+          ) : (
+            <div className="flex items-center gap-3.5 rounded-[14px] border border-dashed border-tone-100 bg-surface p-4 text-sm text-tone-414">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] bg-tone-44 text-tone-744">
+                <Landmark className="h-5 w-5" aria-hidden="true" />
+              </span>
+              Banks you open from Hatiso show up here, so you can get back to them in one tap.
+            </div>
+          )}
+        </section>
 
-            {/* STEP 1: Phone Number */}
-            {modalStep === "phone" && (
-              <Formik
-                initialValues={{ phone: user?.phone || phoneNumber }}
-                validationSchema={phoneStepSchema}
-                onSubmit={() => {
-                  window.open(
-                    bankWebsite(selectedBank),
-                    "_blank",
-                    "noopener,noreferrer",
-                  );
-                  handleCloseModal();
-                }}
-              >
-                <Form className="mt-4" noValidate>
-                  <h2 className="text-xl font-bold text-ink-662">
-                    Continue to {selectedBank.name}
-                  </h2>
-                  <p className="mt-2 text-xs leading-relaxed text-tone-455 sm:text-sm">
-                    You&apos;re about to open {selectedBank.name}&apos;s secure
-                    banking service. Hatiso will never see your username,
-                    password, PIN, or account details.
-                  </p>
-
-                  {/* <PhoneField
-                    name="phone"
-                    label="Phone Number"
-                    required
-                    variant="dashboard"
-                    showCountryAffix={false}
-                    placeholder="+234 904 637 3748"
-                    className="mt-6"
-                  />
- */}
-                  <div className="mt-6 space-y-2.5">
-                    <SubmitButton variant="primary" fullWidth>
-                      Continue to bank
-                    </SubmitButton>
-                    <Button
-                      variant="secondary"
-                      fullWidth
-                      onClick={handleCloseModal}
-                    >
-                      Cancel
-                    </Button>
+        <div className="flex flex-wrap items-start gap-4">
+          <section className="hz-rise flex min-w-0 flex-[999_1_560px] flex-col gap-3.5" style={{ "--d": 2 } as React.CSSProperties}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">All partner banks</h2>
+              <label className="flex min-h-11 flex-[0_1_300px] items-center gap-2.5 rounded-[10px] border border-tone-100 bg-surface px-3.5 focus-within:border-brand-305">
+                <Search className="h-4 w-4 shrink-0 text-tone-414" aria-hidden="true" />
+                <span className="sr-only">Search banks</span>
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search banks"
+                  className="min-w-0 flex-1 bg-transparent text-[15px] placeholder:text-tone-414 focus:outline-none"
+                />
+              </label>
+            </div>
+            <div className="overflow-hidden rounded-[14px] border border-tone-100 bg-surface">
+              {isLoading &&
+                Array.from({ length: 5 }, (_, i) => (
+                  <div key={i} className="flex items-center gap-3.5 border-b border-tone-44 px-[18px] py-3.5 last:border-b-0">
+                    <Skeleton className="h-10 w-10 rounded-lg" />
+                    <Skeleton className="h-4 w-40" />
                   </div>
-                </Form>
-              </Formik>
-            )}
-
-            {/* STEP 2: OTP Verification */}
-            {modalStep === "otp" && (
-              <div className="mt-4">
-                <h2 className="text-xl font-bold text-ink-662">
-                  Continue to {selectedBank.name}
-                </h2>
-                <p className="mt-2 text-xs leading-relaxed text-tone-455 sm:text-sm">
-                  An OTP (One-Time Password) has been sent to your phone number.
-                  Enter OTP below to verify your phone number.
-                </p>
-
-                <div className="mt-6">
-                  <OtpInput
-                    length={6}
-                    value={otp}
-                    onChange={(val) => {
-                      setOtp(val);
-                      if (otpError) setOtpError(false);
-                    }}
-                    hasError={otpError}
-                    autoFocus
-                  />
+                ))}
+              {isError && (
+                <div className="flex flex-col items-center gap-3 p-10 text-center">
+                  <Building2 className="h-9 w-9 text-tone-414" aria-hidden="true" />
+                  <p className="font-semibold">We couldn&apos;t load the banks</p>
+                  <button type="button" onClick={() => refetch()} className="hz-press min-h-11 rounded-[10px] bg-brand-305 px-5 text-sm font-medium text-on-brand hover:bg-brand-361">
+                    Try again
+                  </button>
                 </div>
+              )}
+              {!isLoading && !isError && !filtered.length && (
+                <p className="p-10 text-center text-sm text-tone-414">No banks match “{query}”.</p>
+              )}
+              {filtered.map((bank) => {
+                const status = bankStatus(bank);
+                return (
+                  <button
+                    key={bank.id}
+                    type="button"
+                    onClick={() => setPicked(bank)}
+                    className="group flex w-full items-center gap-3.5 border-b border-tone-44 px-[18px] py-3.5 text-left transition-colors last:border-b-0 hover:bg-tone-44"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-tone-100 bg-tone-44 p-1">
+                      <BankLogo bank={bank} className="h-full w-full" textClassName="text-[13px]" />
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="truncate text-[15px] font-medium">{bank.name}</span>
+                      <span className="truncate text-[13px] text-tone-414">{channelLabels(bank).join(" · ") || "Official website"}</span>
+                    </span>
+                    <span className={`hidden items-center gap-1.5 text-[13px] font-medium sm:inline-flex ${STATUS_TEXT[status.tone]}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[status.tone]}`} />
+                      {status.label}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-tone-414 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </div>
+          </section>
 
-                <div className="mt-6 space-y-2.5">
-                  <Button
-                    variant="primary"
-                    fullWidth
-                    onClick={handleVerifyOtp}
-                    disabled={isVerifying}
-                  >
-                    {isVerifying ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Verifying identity...</span>
-                      </>
-                    ) : (
-                      "Verify identity"
-                    )}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    fullWidth
-                    onClick={handleCloseModal}
-                    disabled={isVerifying}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
+          <aside className="hz-rise flex min-w-0 flex-[1_1_300px] flex-col gap-4" style={{ "--d": 3 } as React.CSSProperties}>
+            <div className="flex flex-col gap-3.5 rounded-[14px] bg-carbon p-[22px] text-cloud">
+              <span className="flex h-11 w-11 items-center justify-center rounded-[10px] bg-graphite">
+                <Landmark className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span className="text-[17px] font-semibold">How banking on Hatiso works</span>
+              <ol className="flex list-decimal flex-col gap-2.5 pl-[18px] text-sm leading-normal text-silver">
+                <li>Pick your bank.</li>
+                <li>We open its official app or website.</li>
+                <li>You sign in there. We never see your login, password or PIN.</li>
+              </ol>
+            </div>
+            <div className="flex flex-col gap-1.5 rounded-[14px] border border-tone-100 bg-surface p-5">
+              <span className="text-[15px] font-semibold">Bank not listed?</span>
+              <span className="text-sm leading-normal text-tone-414">We&apos;re adding partner banks all the time.</span>
+              <Link href="/dashboard/support" className="mt-1.5 self-start border-b border-tone-744 text-sm font-medium">
+                Ask for your bank
+              </Link>
+            </div>
+          </aside>
         </div>
-      )}
+      </div>
+
+      {picked && <BankOpenDialog bank={picked} onClose={() => setPicked(null)} onContinue={rememberBank} />}
     </div>
   );
 }

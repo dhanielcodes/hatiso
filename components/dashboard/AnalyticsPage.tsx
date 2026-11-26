@@ -1,13 +1,14 @@
 'use client';
 
-import { useMemo, useState, useSyncExternalStore } from 'react';
-import { CalendarDays, ChevronDown, Upload } from 'lucide-react';
-import { ServiceUsageChart, SpendingChart } from '@/components/dashboard/DashboardCharts';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import Link from 'next/link';
+import { CalendarDays, Lightbulb, Upload } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
+import DateRangeDialog from '@/components/ui/DateRangeDialog';
 import { ChartSkeleton, MetricCardSkeleton, ProgressListSkeleton } from '@/components/ui/Skeleton';
 import { useAnalytics, useAnalyticsCSV } from '@/lib/queries/useDashboard';
 import { DashboardBucket } from '@/lib/api/dashboard';
-import { themeColor, useTheme, type ThemeId } from '@/lib/theme/theme';
+import { seriesColor, useTheme, type ThemeId } from '@/lib/theme/theme';
 
 /* ─── API types (swap for the ones in lib/api/dashboard if you already have them) ─── */
 type DashboardSummary = {
@@ -68,20 +69,6 @@ function unwrapAnalytics(payload: unknown): AnalyticsData | undefined {
 }
 
 /* ─── Constants ────────────────────────────────────────────────── */
-const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
-const DAY_KEYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-const TIME_SLOTS = ['Morn.', 'Noon', 'Evening', 'Night'];
-const SLOT_KEYS = ['morning', 'noon', 'evening', 'night'] as const;
-// Heatmap ramp, light to dark. Hue themes build theirs from their accent tokens.
-const CLASSIC_HEAT = ['#F7E1D5', '#F5B692', '#E1966C', '#D9622B'];
-function heatColorsFor(theme: ThemeId): string[] {
-    if (theme === 'classic') return CLASSIC_HEAT;
-    if (theme === 'hatiso') return ['#F1F2F4', '#C9CACB', '#79797A', '#23272F'];
-    return [themeColor('brand-95', CLASSIC_HEAT[0]), themeColor('brand-212', CLASSIC_HEAT[1]), themeColor('brand-249', CLASSIC_HEAT[2]), themeColor('brand-365', CLASSIC_HEAT[3])];
-}
-const HEAT_LABELS = ['<2', '2-4', '5-20', '>20'];
-const CARD = 'rounded-xl border border-tone-88 bg-surface';
-
 // Display name + colour per API serviceType. Unknown types fall back to a title-cased name and a palette colour.
 const SERVICE_META: Record<string, { name: string; color: string }> = {
     AIRTIME: { name: 'Airtime', color: '#2F5BDB' },
@@ -127,6 +114,11 @@ function bucketForRange(from: string, to: string): DashboardBucket {
     return 'MONTH' as DashboardBucket;
 }
 
+// The API can send buckets outside the dates asked for (it always returns 12 months), so keep only the ones that overlap the range.
+function inRange<T extends { from: string; to?: string }>(points: T[], from: string, to: string) {
+    return points.filter((p) => (p.to ?? p.from).slice(0, 10) >= from && p.from.slice(0, 10) <= to);
+}
+
 // X-axis label for one spending bucket: "Nov" for months, "3 Nov" for days / weeks
 function bucketLabel(from: string, bucket: string) {
     const start = new Date(`${from}T00:00:00`);
@@ -139,76 +131,11 @@ function formatNaira(amountMinor: number) {
     return `₦${(amountMinor / 100).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
 }
 
-// "₦500k" / "₦2.5m" for chart axes
-function compactNaira(amountMinor: number) {
-    const n = amountMinor / 100;
-    if (n >= 1_000_000) return `₦${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}m`;
-    if (n >= 1_000) return `₦${Math.round(n / 1_000)}k`;
-    return `₦${Math.round(n)}`;
-}
-
-/* ─── API → UI mapping ─────────────────────────────────────────── */
-type Metric = { label: string; value: string; change: string; positive: boolean };
-
-function buildMetrics(summary?: DashboardSummary, averagePayment?: AveragePayment): Metric[] {
-    const empty = (label: string): Metric => ({ label, value: '—', change: '', positive: true });
-
-    const spending: Metric = summary
-        ? {
-            label: 'Total spent',
-            value: formatNaira(summary.spending.amountMinor),
-            change:
-                summary.spending.changePercent == null
-                    ? ''
-                    : `${summary.spending.changePercent >= 0 ? '+' : '-'} ${Math.abs(summary.spending.changePercent).toFixed(1)}%`,
-            positive: (summary.spending.changePercent ?? 0) >= 0,
-        }
-        : empty('Total spent');
-
-    const transactions: Metric = summary
-        ? (() => {
-            const diff = summary.transactions.count - summary.transactions.previousCount;
-            return {
-                label: 'Transactions',
-                value: String(summary.transactions.count),
-                change: diff === 0 ? 'No change' : `${diff > 0 ? '+' : '-'} ${Math.abs(diff)} ${diff > 0 ? 'more' : 'fewer'}`,
-                positive: diff >= 0,
-            };
-        })()
-        : empty('Transactions');
-
-    const average: Metric = averagePayment
-        ? {
-            label: 'Average payment',
-            value: formatNaira(averagePayment.amountMinor),
-            change:
-                averagePayment.differenceMinor === 0
-                    ? 'No change'
-                    : `${averagePayment.differenceMinor > 0 ? '+' : '-'} ${formatNaira(Math.abs(averagePayment.differenceMinor))}`,
-            positive: averagePayment.differenceMinor >= 0,
-        }
-        : empty('Average payment');
-
-    const successRate: Metric = summary
-        ? {
-            label: 'Success rate',
-            value: `${summary.successRate.percent.toFixed(1)}%`,
-            change:
-                summary.successRate.changePercentagePoints == null
-                    ? ''
-                    : `${summary.successRate.changePercentagePoints >= 0 ? '↑' : '↓'} ${Math.abs(summary.successRate.changePercentagePoints).toFixed(1)} pts`,
-            positive: (summary.successRate.changePercentagePoints ?? 0) >= 0,
-        }
-        : empty('Success rate');
-
-    return [spending, transactions, average, successRate];
-}
-
 function titleCase(value: string) {
     return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
-function buildUsageRows(items: AnalyticsData['digitalServicesUsage']) {
+function buildUsageRows(items: AnalyticsData['digitalServicesUsage'], theme: ThemeId) {
     return [...items]
         .sort((a, b) => b.percentage - a.percentage || b.amountMinor - a.amountMinor)
         .map((item, index) => {
@@ -217,516 +144,277 @@ function buildUsageRows(items: AnalyticsData['digitalServicesUsage']) {
                 name: meta?.name ?? titleCase(item.serviceType),
                 value: item.percentage,
                 spentMinor: item.amountMinor,
-                color: meta?.color ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length],
+                color: seriesColor(theme, meta?.color ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length], index),
             };
         });
 }
 
-// Payment counts as a Mon→Sun × (morning, noon, evening, night) matrix
-function buildHeatCounts(rows: PaymentActivityRow[]) {
-    return DAY_KEYS.map((key) => {
-        const row = rows.find((r) => r.dayOfWeek.toUpperCase() === key);
-        return SLOT_KEYS.map((slot) => row?.[slot] ?? 0);
-    });
-}
+/* ═══════════════════════════════════════════════════════════════ */
+export default function AnalyticsPage() {
+    const theme = useTheme();
+    const { user } = useAuthStore();
+    const [range, setRange] = useState<'6m' | '12m' | 'custom'>('6m');
+    const [isRangePickerOpen, setIsRangePickerOpen] = useState(false);
+    const [customRange, setCustomRange] = useState<{ from: string; to: string; bucket: DashboardBucket } | null>(null);
+    const today = useClientDate();
 
-// Maps a payment count onto the 4 shades (see HEAT_LABELS)
-function heatLevel(count: number) {
-    if (count < 2) return 0;
-    if (count < 5) return 1;
-    if (count <= 20) return 2;
-    return 3;
-}
+    const { from, to, bucket } = useMemo(() => {
+        if (range === 'custom' && customRange) return customRange;
+        if (!today) return { from: '', to: '', bucket: 'MONTH' as DashboardBucket };
+        const end = new Date(`${today}T00:00:00`);
+        const start = new Date(end);
+        start.setMonth(end.getMonth() - (range === '12m' ? 11 : 5), 1);
+        return { from: toDateString(start), to: toDateString(end), bucket: 'MONTH' as DashboardBucket };
+    }, [customRange, range, today]);
 
-/* ─── Small presentational pieces ──────────────────────────────── */
-function CardHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+    // The same length of time just before, for the dashed "previous period" line.
+    const previous = useMemo(() => {
+        if (!from || !to) return null;
+        const start = new Date(`${from}T00:00:00`);
+        const end = new Date(`${to}T00:00:00`);
+        if (bucket === 'MONTH' && start.getDate() === 1) {
+            // Whole calendar months: the same number of months just before.
+            const months = (end.getFullYear() - start.getFullYear()) * 12 + end.getMonth() - start.getMonth() + 1;
+            const prevStart = new Date(start.getFullYear(), start.getMonth() - months, 1);
+            const prevEnd = new Date(start.getFullYear(), start.getMonth(), 0);
+            return { from: toDateString(prevStart), to: toDateString(prevEnd), bucket };
+        }
+        const days = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
+        const prevEnd = new Date(start);
+        prevEnd.setDate(start.getDate() - 1);
+        const prevStart = new Date(prevEnd);
+        prevStart.setDate(prevEnd.getDate() - (days - 1));
+        return { from: toDateString(prevStart), to: toDateString(prevEnd), bucket };
+    }, [from, to, bucket]);
+
+    const { data, isLoading, isError } = useAnalytics({ from, to, bucket, recentLimit: 10 }, Boolean(today), `${user?.name}`);
+    const { data: prevData } = useAnalytics({ ...(previous ?? { from: '', to: '', bucket }), recentLimit: 10 }, Boolean(previous), `${user?.name}`);
+    const { mutate } = useAnalyticsCSV({ from, to, bucket, recentLimit: 10 });
+
+    const analytics = useMemo(() => unwrapAnalytics(data), [data]);
+    const prevAnalytics = useMemo(() => unwrapAnalytics(prevData), [prevData]);
+    const series = useMemo(
+        () =>
+            inRange(analytics?.spendingOverview ?? [], from, to).map((point) => ({ label: bucketLabel(point.from, analytics?.bucket ?? bucket), amountMinor: point.amountMinor })),
+        [analytics, bucket, from, to]
+    );
+    const prevSeries = useMemo(
+        () => (previous ? inRange(prevAnalytics?.spendingOverview ?? [], previous.from, previous.to).map((p) => p.amountMinor) : []),
+        [prevAnalytics, previous]
+    );
+    const usageRows = useMemo(() => buildUsageRows(analytics?.digitalServicesUsage ?? [], theme), [analytics, theme]);
+    const providers = (analytics?.topProviders ?? []).slice(0, 5);
+
+    const summary = analytics?.summary;
+    const totalMinor = summary?.spending.amountMinor ?? 0;
+    const rangeLabel = range === '12m' ? 'Last 12 months' : range === '6m' ? 'Last 6 months' : from && to ? formatRange(from, to) : 'Custom range';
+    const monthlyAverage = analytics?.averageMonthlySpendMinor ?? (series.length ? Math.round(totalMinor / series.length) : 0);
+    const busiest = useMemo(() => {
+        const rows = analytics?.paymentActivity ?? [];
+        let best = { day: '', count: 0 };
+        rows.forEach((r) => {
+            const count = r.morning + r.noon + r.evening + r.night;
+            if (count > best.count) best = { day: r.dayOfWeek, count };
+        });
+        return best.count ? best.day.charAt(0) + best.day.slice(1).toLowerCase() : '';
+    }, [analytics]);
+
+    const kpis = [
+        { label: 'Total spent', value: summary ? formatNaira(totalMinor) : '–', note: rangeLabel },
+        { label: 'Monthly average', value: summary ? formatNaira(monthlyAverage) : '–', note: 'Across all services' },
+        { label: 'Payments', value: summary ? String(summary.transactions.count) : '–', note: summary ? `${Math.round(summary.successRate.percent)}% successful` : '' },
+        { label: 'Busiest day', value: busiest || '–', note: busiest ? `Most payments land on ${busiest}s` : 'Not enough payments yet' },
+    ];
+
+    const spentTotal = usageRows.reduce((sum, r) => sum + r.spentMinor, 0);
+    const donut = usageRows.slice(0, 4).map((r) => ({ ...r, pct: spentTotal ? Math.round((r.spentMinor / spentTotal) * 100) : 0 }));
+    const biggest = [...usageRows].sort((a, b) => b.spentMinor - a.spentMinor)[0];
+    const biggestPct = biggest && spentTotal ? Math.round((biggest.spentMinor / spentTotal) * 100) : 0;
+    const biggestSlug = biggest ? SERVICE_SLUG_BY_NAME[biggest.name] : undefined;
+
+    const applyCustomRange = (nextFrom: string, nextTo: string) => {
+        setCustomRange({ from: nextFrom, to: nextTo, bucket: bucketForRange(nextFrom, nextTo) });
+        setRange('custom');
+        setIsRangePickerOpen(false);
+    };
+    const closeRangePicker = useCallback(() => setIsRangePickerOpen(false), []);
+
+    const CARD = 'rounded-[14px] border border-tone-100 bg-surface';
+    const BTN = 'hz-press inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-tone-100 bg-surface px-[18px] text-sm font-medium text-tone-744 hover:border-tone-414';
+
     return (
-        <div>
-            <h2 className="text-base font-semibold text-tone-744">{title}</h2>
-            {subtitle && <p className="mt-1.5 text-sm text-tone-405">{subtitle}</p>}
+        <div className="min-h-full bg-tone-44 text-tone-744">
+            <div className="flex w-full flex-col gap-6 p-[clamp(20px,3vw,40px)]">
+                <div className="hz-rise flex flex-wrap items-end justify-between gap-4">
+                    <div className="flex flex-col gap-1.5">
+                        <h1 className="text-[clamp(28px,3vw,36px)] leading-[1.1] font-semibold tracking-[-0.025em]">Analytics</h1>
+                        <span className="text-[15px] text-tone-414">Where your money goes, month by month.</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        <div role="radiogroup" aria-label="Period" className="flex rounded-xl border border-tone-100 bg-surface p-1">
+                            {([['6m', '6 months'], ['12m', '12 months']] as const).map(([id, label]) => {
+                                const on = range === id;
+                                return (
+                                    <button
+                                        key={id}
+                                        type="button"
+                                        role="radio"
+                                        aria-checked={on}
+                                        onClick={() => setRange(id)}
+                                        className={`min-h-9 rounded-lg px-3.5 text-[13px] font-medium transition-colors ${on ? 'bg-brand-305 text-on-brand' : 'text-tone-432 hover:text-tone-744'}`}
+                                    >
+                                        {label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <button type="button" onClick={() => mutate({ from, to, bucket, recentLimit: 10 })} className={BTN}>
+                            <Upload className="h-4 w-4" aria-hidden="true" />
+                            Export
+                        </button>
+                        <div>
+                            <button type="button" onClick={() => setIsRangePickerOpen(true)} aria-expanded={isRangePickerOpen} className={`${BTN} ${range === 'custom' ? 'border-brand-305' : ''}`}>
+                                <CalendarDays className="h-4 w-4" aria-hidden="true" />
+                                {range === 'custom' ? rangeLabel : 'Custom range'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {isError && <p role="alert" className="rounded-[10px] border border-status-error/30 bg-status-error/8 px-4 py-3 text-sm text-status-error">We couldn&apos;t load your analytics. Please try again shortly.</p>}
+                {analytics?.containsDemoData && <p className="rounded-[10px] bg-surface px-4 py-3 text-xs text-tone-414">This view includes demo data.</p>}
+
+                <div className="hz-stagger grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] gap-3">
+                    {isLoading
+                        ? Array.from({ length: 4 }, (_, i) => <MetricCardSkeleton key={i} className={`${CARD} p-[18px]`} />)
+                        : kpis.map((k) => (
+                            <div key={k.label} className={`${CARD} flex flex-col gap-2.5 p-[18px]`}>
+                                <span className="text-sm text-tone-414">{k.label}</span>
+                                <span className="text-[28px] leading-none font-semibold tracking-[-0.02em] tabular-nums">{k.value}</span>
+                                <span className="text-[13px] text-tone-414">{k.note}</span>
+                            </div>
+                        ))}
+                </div>
+
+                <section className={`hz-rise ${CARD} flex flex-col gap-[18px] p-[22px]`} style={{ '--d': 2 } as React.CSSProperties}>
+                    <div className="flex flex-wrap justify-between gap-3">
+                        <h2 className="text-lg font-semibold">Spending over time</h2>
+                        <span className="inline-flex gap-4 text-[13px] text-tone-414">
+                            <span className="inline-flex items-center gap-1.5"><span className="h-[3px] w-3.5 bg-tone-744" />{rangeLabel}</span>
+                            <span className="inline-flex items-center gap-1.5"><span className="w-3.5 border-t-2 border-dashed border-tone-414" />Previous period</span>
+                        </span>
+                    </div>
+                    {isLoading ? <ChartSkeleton className="h-[240px]" /> : series.length ? (
+                        <>
+                            <LineChart current={series.map((p) => p.amountMinor)} previous={prevSeries} />
+                            <div className="flex justify-between text-xs text-tone-414">
+                                {series.map((p, i) => <span key={`${p.label}-${i}`}>{p.label}</span>)}
+                            </div>
+                        </>
+                    ) : (
+                        <p className="py-16 text-center text-sm text-tone-414">No spending in this period yet.</p>
+                    )}
+                </section>
+
+                <div className="flex flex-wrap items-stretch gap-4">
+                    <section className={`hz-reveal ${CARD} flex min-w-0 flex-[1_1_360px] flex-col gap-[18px] p-[22px]`}>
+                        <h2 className="text-lg font-semibold">By category</h2>
+                        {isLoading ? <ProgressListSkeleton /> : donut.length ? (
+                            <div className="flex flex-wrap items-center gap-6">
+                                <Donut slices={donut.map((d) => ({ pct: d.pct, color: d.color }))} />
+                                <ul className="flex min-w-[180px] flex-1 flex-col gap-3">
+                                    {donut.map((d) => (
+                                        <li key={d.name} className="flex items-center gap-2.5 text-sm">
+                                            <span className="h-3 w-3 rounded-[3px]" style={{ background: d.color }} />
+                                            <span className="flex-1">{d.name}</span>
+                                            <span className="text-tone-414">{d.pct}%</span>
+                                            <span className="w-[84px] text-right font-semibold tabular-nums">{formatNaira(d.spentMinor)}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ) : <p className="py-10 text-center text-sm text-tone-414">No payments in this period yet.</p>}
+                    </section>
+                    <section className={`hz-reveal ${CARD} flex min-w-0 flex-[1_1_360px] flex-col gap-3.5 p-[22px]`}>
+                        <h2 className="text-lg font-semibold">Top providers</h2>
+                        {isLoading ? <ProgressListSkeleton /> : providers.length ? (
+                            <ol className="flex flex-col">
+                                {providers.map((p, i) => (
+                                    <li key={p.providerCode} className="flex items-center gap-3.5 border-b border-tone-44 py-3 last:border-b-0">
+                                        <span className="w-5 text-sm font-semibold text-tone-414">{i + 1}</span>
+                                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                            <span className="truncate text-[15px] font-medium">{p.providerName}</span>
+                                            <span className="text-[13px] text-tone-414">{totalMinor ? `${Math.round((p.amountMinor / totalMinor) * 100)}% of your spending` : ''}</span>
+                                        </span>
+                                        <span className="text-[15px] font-semibold tabular-nums">{formatNaira(p.amountMinor)}</span>
+                                    </li>
+                                ))}
+                            </ol>
+                        ) : <p className="py-10 text-center text-sm text-tone-414">No providers yet.</p>}
+                    </section>
+                </div>
+
+                {biggest && biggestPct > 0 && (
+                    <section className="hz-reveal flex flex-wrap items-center gap-[18px] rounded-[14px] bg-carbon p-[22px] text-cloud">
+                        <span className="flex h-11 w-11 items-center justify-center rounded-[10px] bg-graphite">
+                            <Lightbulb className="h-5 w-5" aria-hidden="true" />
+                        </span>
+                        <span className="flex flex-[1_1_320px] flex-col gap-1">
+                            <span className="text-base font-semibold">{biggest.name} is your biggest bill</span>
+                            <span className="text-sm leading-normal text-silver">It was {biggestPct}% of your spending in this period.</span>
+                        </span>
+                        <Link href={biggestSlug ? `/dashboard/services?service=${biggestSlug}` : '/dashboard/services'} className="hz-press inline-flex min-h-11 items-center justify-center rounded-[10px] bg-cloud px-[18px] text-sm font-medium text-carbon hover:bg-white">
+                            Pay for {biggest.name.toLowerCase()}
+                        </Link>
+                    </section>
+                )}
+            </div>
+
+            {isRangePickerOpen && today && (
+                <DateRangeDialog today={today} initialFrom={range === 'custom' ? from : undefined} initialTo={range === 'custom' ? to : undefined} onApply={applyCustomRange} onCancel={closeRangePicker} />
+            )}
         </div>
     );
 }
 
-function EmptyState({ message }: { message: string }) {
-    return <div className="flex h-full min-h-[120px] w-full items-center justify-center text-sm text-tone-405">{message}</div>;
-}
+const SERVICE_SLUG_BY_NAME: Record<string, string> = {
+    Airtime: 'airtime',
+    Data: 'data',
+    Electricity: 'electricity',
+    'Cable TV': 'tv',
+    Internet: 'internet-services',
+    Education: 'education',
+    Insurance: 'insurance',
+    Betting: 'betting',
+};
 
-/* ─── Cumulative "this month vs last month" line chart (inline SVG) ─ */
-function CumulativeChart({
-    thisMonth,
-    lastMonth,
-    days,
-}: {
-    thisMonth: number[];
-    lastMonth: number[];
-    days: number;
-}) {
-    const W = 620;
+/** Analytics board line chart: this period solid with a soft fill, the previous period dashed. */
+function LineChart({ current, previous }: { current: number[]; previous: number[] }) {
+    const W = 800;
     const H = 240;
-    const L = 56;
-    const R = 12;
-    const T = 14;
-    const B = 28;
-    const maxVal = Math.max(1, ...thisMonth, ...lastMonth);
-    const x = (i: number) => L + (i / Math.max(days - 1, 1)) * (W - L - R);
-    const y = (v: number) => T + (1 - v / maxVal) * (H - T - B);
-    const path = (values: number[]) =>
-        values.map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
-
-    const yTicks = [0, 1, 2, 3, 4].map((n) => (maxVal * n) / 4);
-    const xTicks = Array.from({ length: days }, (_, i) => i).filter((i) => i === 0 || (i + 1) % 5 === 0);
-    const lastIndex = thisMonth.length - 1;
-    const lastValue = thisMonth[lastIndex] ?? 0;
-
+    const max = Math.max(1, ...current, ...previous) * 1.1;
+    const pts = (arr: number[]) => arr.map((v, i) => `${((i / Math.max(arr.length - 1, 1)) * W).toFixed(1)},${(H - (v / max) * (H - 20)).toFixed(1)}`);
+    const cur = pts(current);
+    const prev = previous.length === current.length ? pts(previous) : [];
     return (
-        <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Cumulative spend, this month versus last month">
-            {yTicks.map((tick) => (
-                <g key={tick}>
-                    <line x1={L} x2={W - R} y1={y(tick)} y2={y(tick)} className="stroke-tone-78" strokeWidth="1" />
-                    <text x={L - 8} y={y(tick) + 3} textAnchor="end" fontSize="10" className="fill-tone-351">
-                        {compactNaira(tick)}
-                    </text>
-                </g>
-            ))}
-            {xTicks.map((i) => (
-                <g key={i}>
-                    <line x1={x(i)} x2={x(i)} y1={T} y2={H - B} className="stroke-tone-62" strokeWidth="1" />
-                    <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="10" className="fill-tone-351">
-                        {i + 1}
-                    </text>
-                </g>
-            ))}
-            <path d={path(lastMonth)} fill="none" stroke="#E8502D" strokeWidth="2" strokeDasharray="2 4" strokeLinecap="round" />
-            <path d={path(thisMonth)} fill="none" stroke="#4CAF50" strokeWidth="2" strokeDasharray="2 4" strokeLinecap="round" />
-            {lastIndex >= 0 && (
-                <g>
-                    <line x1={x(lastIndex)} x2={x(lastIndex)} y1={T} y2={H - B} stroke="#E8502D" strokeWidth="1.5" />
-                    <circle cx={x(lastIndex)} cy={y(lastValue)} r="4" fill="#E8502D" />
-                </g>
-            )}
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-[240px] w-full text-tone-744" role="img" aria-label="Spending over time">
+            {[0.25, 0.5, 0.75].map((f) => <line key={f} x1="0" x2={W} y1={H * f} y2={H * f} className="stroke-tone-44" strokeWidth="1" vectorEffect="non-scaling-stroke" />)}
+            <path d={`M0,${H} L${cur.join(' L')} L${W},${H} Z`} fill="currentColor" opacity="0.06" />
+            {prev.length > 0 && <polyline points={prev.join(' ')} fill="none" className="stroke-tone-414" strokeWidth="2" strokeDasharray="5 5" vectorEffect="non-scaling-stroke" />}
+            <polyline points={cur.join(' ')} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
         </svg>
     );
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
-export default function AnalyticsPage() {
-    const heatColors = heatColorsFor(useTheme());
-    const { user } = useAuthStore();
-    const [period, setPeriod] = useState('Last month');
-    const [isRangePickerOpen, setIsRangePickerOpen] = useState(false);
-    const [customRange, setCustomRange] = useState<{ from?: string; to?: string; bucket: DashboardBucket } | null>({ bucket: 'MONTH' });
-    const [pendingFrom, setPendingFrom] = useState('');
-    const [pendingTo, setPendingTo] = useState('');
-    const today = useClientDate();
-
-    const { from, to, bucket } = useMemo(() => {
-        if (customRange) return customRange;
-        if (!today) return { from: '', to: '', bucket: 'MONTH' as DashboardBucket };
-        const end = new Date(`${today}T00:00:00`);
-        const start = new Date(end);
-        if (period === 'Last 30 days') start.setDate(end.getDate() - 29);
-        else if (period === 'Last 6 months') start.setMonth(end.getMonth() - 5, 1);
-        else start.setDate(end.getDate() - 6);
-        return { from: toDateString(start), to: toDateString(end), bucket: (period === 'Last 6 months' ? 'MONTH' : period === 'Last 30 days' ? 'WEEK' : 'DAY') as DashboardBucket };
-    }, [customRange, period, today]);
-
-    const { data, isLoading, isError } = useAnalytics({ from, to, bucket, recentLimit: 10 }, Boolean(today), `${user?.name}`);
-    const { mutate } = useAnalyticsCSV({ from, to, bucket, recentLimit: 10 });
-
-    /* ── Map API data into the UI ── */
-    const analytics = useMemo(() => unwrapAnalytics(data), [data]);
-    const metrics = useMemo(() => buildMetrics(analytics?.summary, analytics?.averagePayment), [analytics]);
-    const spendingSeries = useMemo(
-        () =>
-            (analytics?.spendingOverview ?? []).map((point) => ({
-                label: bucketLabel(point.from, analytics?.bucket ?? bucket),
-                amountMinor: point.amountMinor,
-            })),
-        [analytics, bucket]
-    );
-    const usageRows = useMemo(() => buildUsageRows(analytics?.digitalServicesUsage ?? []), [analytics]);
-
-    const comparison = analytics?.monthComparison;
-    const comparisonPoints = useMemo(
-        () => [...(analytics?.monthComparison?.points ?? [])].sort((a, b) => a.day - b.day),
-        [analytics]
-    );
-    const thisMonthSeries = useMemo(() => comparisonPoints.map((p) => p.currentAmountMinor), [comparisonPoints]);
-    const lastMonthSeries = useMemo(() => comparisonPoints.map((p) => p.previousAmountMinor), [comparisonPoints]);
-
-    const heatCounts = useMemo(() => buildHeatCounts(analytics?.paymentActivity ?? []), [analytics]);
-
-    const providers = analytics?.topProviders ?? [];
-    const providerMax = Math.max(1, ...providers.map((p) => p.amountMinor));
-
-    // When no explicit range is sent, the API falls back to its own default range, so show that
-    const displayFrom = from || analytics?.from || '';
-    const displayTo = to || analytics?.to || '';
-
-    const openRangePicker = () => {
-        setPendingFrom(displayFrom);
-        setPendingTo(displayTo);
-        setIsRangePickerOpen(true);
-    };
-
-    const applyCustomRange = () => {
-        if (!pendingFrom || !pendingTo || pendingFrom > pendingTo) return;
-        setCustomRange({ from: pendingFrom, to: pendingTo, bucket: bucketForRange(pendingFrom, pendingTo) });
-        setPeriod('Custom range');
-        setIsRangePickerOpen(false);
-    };
-
-    /* ── Export (CSV) ── */
-    const handleExport = () => {
-        const cell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-        const rows: (string | number)[][] = [
-            ['Period', `${displayFrom} to ${displayTo}`],
-            ...metrics.map((m) => [m.label, m.change ? `${m.value} (${m.change})` : m.value]),
-            [],
-            ['Spending by period', 'Amount (NGN)'],
-            ...spendingSeries.map((p) => [p.label, p.amountMinor / 100]),
-            [],
-            ['Service', 'Transactions share (%)', 'Spent (NGN)'],
-            ...usageRows.map((r) => [r.name, r.value, r.spentMinor / 100]),
-            [],
-            ['Day of month', 'This month (NGN)', 'Last month (NGN)'],
-            ...comparisonPoints.map((p) => [p.day, p.currentAmountMinor / 100, p.previousAmountMinor / 100]),
-            [],
-            ['Day', ...TIME_SLOTS],
-            ...heatCounts.map((counts, i) => [WEEK_DAYS[i], ...counts]),
-            [],
-            ['Provider', 'Amount (NGN)'],
-            ...providers.map((p) => [p.providerName, p.amountMinor / 100]),
-        ];
-        const csv = rows.map((r) => r.map(cell).join(',')).join('\n');
-        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `analytics-${displayFrom}-to-${displayTo}.csv`;
-        link.click();
-        URL.revokeObjectURL(url);
-    };
-
-    const comparisonSubtitle = comparison
-        ? `Cumulative spend by day. You're ${formatNaira(Math.abs(comparison.differenceMinor))} ${comparison.differenceMinor >= 0 ? 'ahead' : 'behind'} at this point.`
-        : 'Cumulative spend by day.';
-
+/** Ring chart for "By category"; slices are percentages. */
+function Donut({ slices }: { slices: { pct: number; color: string }[] }) {
+    const offsets = slices.map((_, i) => slices.slice(0, i).reduce((sum, s) => sum + s.pct, 0));
     return (
-        <div className="min-h-full bg-tone-12 text-tone-760">
-            {/* ── Page header ── */}
-            <section className="border-b border-tone-75 px-5 py-5 sm:px-8 sm:py-6">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-brand-361">Insights</p>
-                        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-tone-744 sm:text-3xl">Understand where your<span className="text-brand-305"> money goes.</span></h2>
-
-                        <p className="mt-2 text-sm text-tone-432 sm:text-base">Practical patterns and gentle guidance, built from your payment history.</p>
-
-                    </div>
-
-
-
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex items-stretch overflow-visible rounded-lg border border-tone-114 bg-surface">
-                            <label className="relative flex items-center">
-                                <span className="sr-only">Select period</span>
-                                <select
-                                    value={period}
-                                    onChange={(event) => {
-                                        if (event.target.value !== 'Custom range') {
-                                            setPeriod(event.target.value);
-                                            setCustomRange(null);
-                                        }
-                                    }}
-                                    className="appearance-none rounded-l-lg bg-transparent py-2.5 pl-3 pr-8 text-xs text-tone-678 outline-none"
-                                >
-                                    <option>Last 7 days</option>
-                                    <option>Last 30 days</option>
-                                    <option>Last month</option>
-                                    <option>Last 6 months</option>
-                                    {customRange && <option>Custom range</option>}
-                                </select>
-                                <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-slate-500" />
-                            </label>
-
-                            <div className="relative border-l border-tone-98">
-                                <button
-                                    type="button"
-                                    onClick={openRangePicker}
-                                    className="flex h-full items-center gap-2 rounded-r-lg px-3 py-2.5 text-xs text-tone-678 transition hover:bg-slate-50"
-                                >
-                                    <CalendarDays className="h-4 w-4 text-tone-415" />
-                                    {displayFrom && displayTo ? formatRange(displayFrom, displayTo) : 'Choose range'}
-                                </button>
-
-                                {isRangePickerOpen && (
-                                    <div className="absolute right-0 z-20 mt-2 w-[min(22rem,calc(100vw-2.5rem))] rounded-xl border border-tone-98 bg-surface p-4 shadow-xl shadow-slate-900/10">
-                                        <p className="text-sm font-semibold text-ink-621">Custom date range</p>
-                                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                            <label className="text-xs font-medium text-slate-600">
-                                                From
-                                                <input
-                                                    type="date"
-                                                    value={pendingFrom}
-                                                    max={pendingTo || today || undefined}
-                                                    onChange={(event) => setPendingFrom(event.target.value)}
-                                                    className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-brand-361"
-                                                />
-                                            </label>
-                                            <label className="text-xs font-medium text-slate-600">
-                                                To
-                                                <input
-                                                    type="date"
-                                                    value={pendingTo}
-                                                    min={pendingFrom || undefined}
-                                                    max={today || undefined}
-                                                    onChange={(event) => setPendingTo(event.target.value)}
-                                                    className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-brand-361"
-                                                />
-                                            </label>
-                                        </div>
-                                        {pendingFrom && pendingTo && pendingFrom > pendingTo && (
-                                            <p className="mt-3 text-xs text-rose-600">The end date must be after the start date.</p>
-                                        )}
-                                        <div className="mt-4 flex justify-end gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsRangePickerOpen(false)}
-                                                className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={applyCustomRange}
-                                                disabled={!pendingFrom || !pendingTo || pendingFrom > pendingTo}
-                                                className="rounded-lg bg-brand-361 px-4 py-2 text-xs font-semibold text-on-brand transition hover:bg-brand-406 disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                Apply range
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => {
-                                mutate({ from, to, bucket, recentLimit: 10 })
-                            }}
-                            className="flex items-center gap-2 rounded-lg border border-tone-114 bg-surface px-3 py-2.5 text-xs text-tone-678 transition hover:bg-slate-50"
-                        >
-                            Export <Upload className="h-3.5 w-3.5 text-tone-415" />
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <main className="mx-auto space-y-5 px-5 py-6 sm:px-8 lg:py-7">
-                {isError && (
-                    <p role="alert" className="rounded-lg bg-tone-43 px-4 py-3 text-sm text-brand-463">
-                        We couldn&apos;t load your analytics. Please try again shortly.
-                    </p>
-                )}
-                {analytics?.containsDemoData && (
-                    <p className="rounded-lg bg-tone-40 px-4 py-3 text-xs text-brand-499">This view includes demo data.</p>
-                )}
-
-                {/* ── Metric cards ── */}
-                <section>
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                        {isLoading && Array.from({ length: 4 }, (_, index) => <MetricCardSkeleton key={index} className={`${CARD} px-5 py-6`} />)}
-                        {!isLoading && metrics.map((metric) => (
-                            <article key={metric.label} className={`${CARD} px-5 py-6`}>
-                                <p className="text-sm text-ink-510">{metric.label}</p>
-                                <p className="mt-3 text-[26px] font-semibold tracking-[-0.03em] text-ink-622">{metric.value}</p>
-                                {metric.change && (
-                                    <p className="mt-2 text-[13px]">
-                                        <span className={metric.positive ? 'text-success-392' : 'text-danger-404'}>{metric.change}</span>
-                                        <span className="text-tone-304"> from previous period</span>
-                                    </p>
-                                )}
-                            </article>
-                        ))}
-                    </div>
-                </section>
-
-                {/* ── Spending insights ── */}
-                <section className={`${CARD} p-5 sm:p-6`}>
-                    <CardHeader title="Spending Insights" subtitle="Compare how you spend the most each month." />
-                    <div className="mt-6 h-[260px] sm:h-[300px]">
-                        {isLoading ? (
-                            <ChartSkeleton shape="bars" label="Loading spending" />
-                        ) : spendingSeries.length === 0 ? (
-                            <EmptyState message="No spending in this period." />
-                        ) : (
-                            <SpendingChart data={spendingSeries} />
-                        )}
-                    </div>
-                </section>
-
-                {/* ── Digital services + this month vs last month ── */}
-                <section className="grid gap-5 lg:grid-cols-2">
-                    <article className={`${CARD} p-5 sm:p-6`}>
-                        <CardHeader title="Transaction Rate by Digital Services" subtitle="Transaction distribution across Hatiso digital services." />
-                        {isLoading ? (
-                            <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row">
-                                <ChartSkeleton shape="donut" className="h-[220px] w-[220px] shrink-0" label="Loading services" />
-                                <ProgressListSkeleton rows={4} className="w-full flex-1" />
-                            </div>
-                        ) : usageRows.length === 0 ? (
-                            <div className="mt-6">
-                                <EmptyState message="No service usage in this period." />
-                            </div>
-                        ) : (
-                            <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row">
-                                <div className="relative h-[220px] w-[220px] shrink-0">
-                                    <ServiceUsageChart data={usageRows} donut />
-                                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                        <span className="text-[28px] font-medium tracking-[-0.02em] text-tone-760">100%</span>
-                                    </div>
-                                </div>
-
-                                <div className="w-full min-w-0 flex-1">
-                                    <div className="grid grid-cols-[1.3fr_1fr_.6fr] border-b border-tone-78 pb-2 text-sm text-tone-405">
-                                        <span>Category</span>
-                                        <span>Spent</span>
-                                        <span className="text-right">Share</span>
-                                    </div>
-                                    <div className="divide-y divide-tone-69">
-                                        {usageRows.map((row) => (
-                                            <div key={row.name} className="grid grid-cols-[1.3fr_1fr_.6fr] items-center py-2.5 text-sm">
-                                                <span className="flex min-w-0 items-center gap-2 text-tone-624">
-                                                    <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: row.color }} />
-                                                    <span className="truncate">{row.name}</span>
-                                                </span>
-                                                <span className="font-medium text-tone-624">{formatNaira(row.spentMinor)}</span>
-                                                <span className="text-right font-medium text-tone-624">{Number(row.value.toFixed(1))}%</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </article>
-
-                    <article className={`${CARD} p-5 sm:p-6`}>
-                        <CardHeader title="This month vs last month" subtitle={comparisonSubtitle} />
-                        {isLoading ? (
-                            <ChartSkeleton shape="bars" className="mt-6 h-[220px] w-full" label="Loading comparison" />
-                        ) : !comparison || comparisonPoints.length === 0 ? (
-                            <div className="mt-6">
-                                <EmptyState message="No comparison data yet." />
-                            </div>
-                        ) : (
-                            <>
-                                <div className="mt-6 flex flex-wrap items-start justify-between gap-3">
-                                    <div>
-                                        <p className="text-sm font-semibold text-tone-624">This Month</p>
-                                        <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-tone-760">
-                                            {formatNaira(comparison.currentAmountMinor)}
-                                        </p>
-                                        {comparison.changePercent != null && (
-                                            <p className="mt-1.5 text-[11px] text-tone-405">
-                                                <span
-                                                    className={`rounded px-1.5 py-0.5 font-medium ${comparison.changePercent >= 0 ? 'bg-tone-58 text-success-392' : 'bg-tone-59 text-danger-404'}`}
-                                                >
-                                                    {comparison.changePercent >= 0 ? '+' : '-'}
-                                                    {Number(Math.abs(comparison.changePercent).toFixed(1))}%
-                                                </span>{' '}
-                                                vs last month
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-4 text-xs text-tone-405">
-                                        <span className="flex items-center gap-1.5">
-                                            <span className="h-2 w-2 rounded-full bg-success-327" /> This Month
-                                        </span>
-                                        <span className="flex items-center gap-1.5">
-                                            <span className="h-2 w-2 rounded-full bg-brand-366" /> Last Month
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <CumulativeChart thisMonth={thisMonthSeries} lastMonth={lastMonthSeries} days={comparisonPoints.length} />
-                                </div>
-                            </>
-                        )}
-                    </article>
-                </section>
-
-                {/* ── When you pay + top providers ── */}
-                <section className="grid gap-5 lg:grid-cols-[.85fr_1.4fr]">
-                    <article className={`${CARD} p-5 sm:p-6`}>
-                        <CardHeader title="When you pay" subtitle="Payments by day and time. Darker means more" />
-
-                        <div className="mt-5 flex justify-center gap-1.5 text-[9px] text-tone-351">
-                            {HEAT_LABELS.map((label, i) => (
-                                <div key={label} className="w-12 text-center">
-                                    <div className="mx-auto h-1.5 w-full rounded-full" style={{ backgroundColor: heatColors[i] }} />
-                                    <span className="mt-1 block">{label}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="mt-4 overflow-x-auto">
-                            {isLoading ? (
-                                <ChartSkeleton shape="heatmap" label="Loading activity" />
-                            ) : (
-                                <div className="mx-auto grid min-w-[300px] max-w-[360px] grid-cols-[44px_repeat(4,1fr)] gap-2">
-                                    <span />
-                                    {TIME_SLOTS.map((slot) => (
-                                        <span key={slot} className="pb-1 text-center text-xs text-tone-405">{slot}</span>
-                                    ))}
-                                    {WEEK_DAYS.map((day, dayIndex) => (
-                                        <div key={day} className="contents">
-                                            <span className="flex items-center text-xs text-tone-405">{day}</span>
-                                            {heatCounts[dayIndex].map((count, slotIndex) => (
-                                                <div
-                                                    key={`${day}-${slotIndex}`}
-                                                    title={`${count} payment${count === 1 ? '' : 's'}`}
-                                                    className="h-9 rounded-md"
-                                                    style={{ backgroundColor: heatColors[heatLevel(count)] }}
-                                                />
-                                            ))}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </article>
-
-                    <article className={`${CARD} p-5 sm:p-6`}>
-                        <CardHeader title="Top providers" subtitle="Where most of your money went." />
-                        {isLoading ? (
-                            <ProgressListSkeleton rows={5} className="mt-6" />
-                        ) : providers.length === 0 ? (
-                            <div className="mt-6">
-                                <EmptyState message="No provider spending in this period." />
-                            </div>
-                        ) : (
-                            <div className="mt-6 space-y-5">
-                                {providers.map((provider) => (
-                                    <div key={provider.providerCode}>
-                                        <div className="flex items-center justify-between gap-3 text-sm">
-                                            <span className="truncate font-medium text-ink-510">{provider.providerName}</span>
-                                            <span className="shrink-0 font-semibold text-tone-744">{formatNaira(provider.amountMinor)}</span>
-                                        </div>
-                                        <div className="mt-2 h-1.5 w-full rounded-full bg-tone-115">
-                                            <div
-                                                className="h-full rounded-full bg-brand-326"
-                                                style={{ width: `${Math.max(4, (provider.amountMinor / providerMax) * 100)}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </article>
-                </section>
-            </main>
-        </div>
+        <svg viewBox="0 0 42 42" className="h-40 w-40 shrink-0 -rotate-90" role="img" aria-label="Spending by category">
+            <circle cx="21" cy="21" r="15.915" fill="none" className="stroke-tone-44" strokeWidth="6" />
+            {slices.map((s, i) => (
+                <circle key={i} cx="21" cy="21" r="15.915" fill="none" stroke={s.color} strokeWidth="6" strokeDasharray={`${s.pct} ${100 - s.pct}`} strokeDashoffset={-offsets[i]} />
+            ))}
+        </svg>
     );
 }

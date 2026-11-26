@@ -38,7 +38,7 @@ export default function FieldShell({
           {label ? (
             <label htmlFor={htmlFor} className={`${fieldLabelClass(variant)} mb-0`}>
               {label}
-              {required ? <span className="text-brand-361">*</span> : null}
+              {required ? <span aria-hidden="true" className="ml-0.5 text-grey-500">*</span> : null}
             </label>
           ) : (
             <span />

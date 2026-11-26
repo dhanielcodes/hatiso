@@ -3,7 +3,8 @@ import Navbar from '@/components/marketplace/Navbar';
 import HeroSection from '@/components/marketplace/HeroSection';
 import PopularCategories from '@/components/marketplace/PopularCategories';
 import BanksSection from '@/components/marketplace/BanksSection';
-import SolutionsSection from '@/components/marketplace/SolutionsSection';
+import HowItWorks from '@/components/marketplace/HowItWorks';
+import BusinessSection from '@/components/marketplace/BusinessSection';
 import CtaBanner from '@/components/marketplace/CtaBanner';
 import Footer from '@/components/marketplace/Footer';
 
@@ -15,7 +16,7 @@ export const metadata = {
 
 export default function MarketplacePage() {
   return (
-    <div className="min-h-screen bg-ink-662 text-white flex flex-col justify-between selection:bg-brand-361 selection:text-white">
+    <div className="min-h-screen bg-carbon text-cloud flex flex-col justify-between selection:bg-silver selection:text-carbon">
       {/* Top Navigation */}
       <Navbar />
 
@@ -27,11 +28,14 @@ export default function MarketplacePage() {
         {/* Popular Categories Grid & Instant Pay Card */}
         <PopularCategories />
 
-        {/* Banks Section: Bank the way you already do */}
+        {/* How it works: three steps */}
+        <HowItWorks />
+
+        {/* Banks Section: your bank, one tap away */}
         <BanksSection />
 
-        {/* Personal & Business Solutions Section */}
-        <SolutionsSection />
+        {/* For business */}
+        <BusinessSection />
 
         {/* Ready to Get Started CTA Banner */}
         <CtaBanner />

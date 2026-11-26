@@ -1,271 +1,307 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Globe, Menu, X, ChevronDown, User as UserIcon, LogOut, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  Globe,
+  LayoutDashboard,
+  List,
+  LogOut,
+  Menu,
+  UserRound,
+  X,
+} from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useUiStore } from '@/lib/store/uiStore';
 import HatisoLogo from '@/components/brand/HatisoLogo';
+import LogoutDialog from '@/components/auth/LogoutDialog';
+
+/** Header board links. "Services" is active on any service or category page. */
+const NAV_LINKS = [
+  { label: 'Services', href: '/#popular-categories', match: ['/services', '/categories'] },
+  { label: 'Banks', href: '/banks', match: ['/banks'] },
+  { label: 'For business', href: '/#business', match: [] as string[] },
+  { label: 'Contact', href: '/contact', match: ['/contact'] },
+];
+
+/** Menus board: account menu (Rewards stays hidden while the feature is off). */
+const ACCOUNT_LINKS = [
+  { label: 'Dashboard', href: '/dashboard', Icon: LayoutDashboard },
+  { label: 'Transactions', href: '/dashboard/transactions', Icon: List },
+  /* { label: 'Rewards', href: '/dashboard/rewards', Icon: Gift }, */
+  { label: 'Profile and security', href: '/dashboard/profile', Icon: UserRound },
+];
+
+const LANGUAGES = ['English', 'Français', 'Español'];
+
+const MENU_PANEL =
+  'hz-pop absolute right-0 top-full mt-2 rounded-xl border border-silver bg-white p-1.5 text-carbon shadow-[0_24px_48px_-20px_rgba(18,21,26,0.45)]';
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || 'H';
+}
+
+/** Closes a popover on outside click or Escape. */
+function useDismiss(open: boolean, close: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open, close]);
+  return ref;
+}
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuthStore();
   const { language, setLanguage, isMobileMenuOpen, toggleMobileMenu, setMobileMenuOpen } = useUiStore();
-  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [confirmOut, setConfirmOut] = useState(false);
+  const cancelSignOut = useCallback(() => setConfirmOut(false), []);
+  const langRef = useDismiss(langOpen, () => setLangOpen(false));
+  const accountRef = useDismiss(accountOpen, () => setAccountOpen(false));
 
-  const languages = ['English', 'Français', 'Español'];
+  const signedIn = isAuthenticated && !!user;
+  const isActive = (match: string[]) => match.some((m) => pathname.startsWith(m));
+
+  const askSignOut = () => {
+    setAccountOpen(false);
+    setMobileMenuOpen(false);
+    setConfirmOut(true);
+  };
+
+  const signOut = () => {
+    setConfirmOut(false);
+    logout();
+    router.push('/');
+  };
 
   return (
-    <header className="relative z-50 w-full bg-transparent px-4 py-5 sm:px-8 lg:px-14">
-      <div className="mx-auto flex max-w-7xl items-center justify-between">
-        {/* Brand Logo & Left Nav */}
-        <div className="flex items-center gap-10">
-          <HatisoLogo variant="cloud" height={30} priority />
-
-          {/* Desktop Navigation Links */}
-          <nav className="hidden items-center gap-7 md:flex">
-            <Link
-              href="/#solutions"
-              className="text-sm font-medium text-white transition-colors hover:text-brand-305"
-            >
-              Personal
-            </Link>
-            <Link
-              href="/#solutions"
-              className="text-sm font-medium text-slate-300 transition-colors hover:text-brand-305"
-            >
-              Business
-            </Link>
-            <Link
-              href="/banks"
-              className={`text-sm font-medium transition-colors ${pathname === '/banks'
-                ? 'text-brand-361 font-semibold'
-                : 'text-slate-300 hover:text-brand-305'
-                }`}
-            >
-              Banks
-            </Link>
+    <header className="relative z-50 w-full border-b border-graphite bg-carbon text-cloud">
+      <div className="mx-auto flex min-h-[72px] max-w-7xl items-center justify-between gap-6 px-5 sm:px-8 lg:px-14">
+        <div className="flex items-center gap-6 lg:gap-10">
+          <HatisoLogo variant="cloud" height={26} priority />
+          <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
+            {NAV_LINKS.map((link) => {
+              const active = isActive(link.match);
+              return (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`whitespace-nowrap rounded-md px-3.5 py-2 text-sm font-medium transition-colors ${
+                    active ? 'bg-graphite text-cloud' : 'text-silver hover:bg-graphite hover:text-cloud'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
 
-        {/* Right Navigation & Action Buttons */}
-        <div className="hidden items-center gap-6 md:flex">
-          <Link
-            href="/contact"
-            className={`text-sm font-medium transition-colors ${pathname === '/contact'
-              ? 'text-brand-361 font-semibold'
-              : 'text-slate-300 hover:text-white'
-              }`}
-          >
-            Contact us
-          </Link>
-
-          {/* Language Selector */}
-          <div className="relative">
+        {/* Language and account */}
+        <div className="hidden items-center gap-3 md:flex">
+          <div ref={langRef} className="relative">
             <button
-              onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-              className="flex items-center gap-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white"
-              aria-label="Change language"
+              type="button"
+              onClick={() => setLangOpen((v) => !v)}
+              aria-label={`Language: ${language}`}
+              aria-haspopup="menu"
+              aria-expanded={langOpen}
+              className="hz-press flex min-h-10 items-center gap-2 rounded-lg border border-grey-800 px-3 text-sm font-medium text-silver transition-colors hover:text-cloud"
             >
+              <Globe className="h-4 w-4" aria-hidden="true" />
               <span>{language}</span>
-              <Globe className="h-4 w-4 text-slate-400" />
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${langOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
             </button>
-
-            {isLangDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-32 rounded-lg border border-slate-700/80 bg-ink-709 py-1 shadow-xl backdrop-blur-md">
-                {languages.map((lang) => (
+            {langOpen && (
+              <div role="menu" className={`${MENU_PANEL} w-48`}>
+                {LANGUAGES.map((lang) => (
                   <button
                     key={lang}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={language === lang}
                     onClick={() => {
                       setLanguage(lang);
-                      setIsLangDropdownOpen(false);
+                      setLangOpen(false);
                     }}
-                    className={`block w-full px-4 py-1.5 text-left text-xs transition-colors ${language === lang
-                      ? 'bg-brand-361/20 font-semibold text-brand-361'
-                      : 'text-slate-200 hover:bg-slate-700/40'
-                      }`}
+                    className={`flex min-h-10 w-full items-center justify-between rounded-lg px-3 text-left text-sm transition-colors hover:bg-cloud ${
+                      language === lang ? 'font-semibold' : 'text-grey-700'
+                    }`}
                   >
                     {lang}
+                    {language === lang && <Check className="h-4 w-4" aria-hidden="true" />}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Auth Action Buttons */}
-          {isAuthenticated && user ? (
-            <div className="relative">
+          {signedIn ? (
+            <div ref={accountRef} className="relative">
               <button
-                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="flex items-center gap-2.5 rounded-full border border-slate-700 bg-ink-684 py-1.5 pl-2 pr-3 text-sm text-white transition hover:border-brand-361/60"
+                type="button"
+                onClick={() => setAccountOpen((v) => !v)}
+                aria-label="Account menu"
+                aria-haspopup="menu"
+                aria-expanded={accountOpen}
+                className="hz-press flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-cloud text-sm font-semibold text-carbon ring-offset-2 ring-offset-carbon hover:ring-2 hover:ring-grey-700"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-361 text-xs font-bold text-on-brand">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-                <span className="max-w-[120px] truncate font-medium">{user.name}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                {user.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.avatar} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  initials(user.name)
+                )}
               </button>
-
-              {isProfileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-52 rounded-xl border border-slate-700/80 bg-ink-713 p-2 shadow-2xl backdrop-blur-lg">
-                  <div className="border-b border-slate-700/60 px-3 py-2">
-                    <p className="text-xs font-semibold text-white">{user.name}</p>
-                    <p className="truncate text-[11px] text-slate-400">{user.email}</p>
-                    {user.balance !== undefined && (
-                      <p className="mt-1 text-xs font-medium text-emerald-400">
-                        Balance: ₦{user.balance.toLocaleString()}
-                      </p>
-                    )}
+              {accountOpen && (
+                <div role="menu" className={`${MENU_PANEL} w-[260px]`}>
+                  <div className="border-b border-cloud px-3 pt-2 pb-3">
+                    <p className="truncate text-sm font-semibold">{user.name}</p>
+                    <p className="truncate text-[13px] text-grey-600">{user.email || user.phone}</p>
                   </div>
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setIsProfileDropdownOpen(false)}
-                    className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/40 hover:text-white"
-                  >
-                    <LayoutDashboard className="h-3.5 w-3.5 text-slate-400" />
-                    Dashboard
-                  </Link>
-                  <button
-                    onClick={() => {
-                      logout();
-                      setIsProfileDropdownOpen(false);
-                      router.push('/');
-                    }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-rose-400 hover:bg-rose-500/10"
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    Sign out
-                  </button>
+                  <div className="flex flex-col py-1">
+                    {ACCOUNT_LINKS.map(({ label, href, Icon }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        role="menuitem"
+                        onClick={() => setAccountOpen(false)}
+                        className="flex min-h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium hover:bg-cloud"
+                      >
+                        <Icon className="h-4 w-4 text-grey-600" aria-hidden="true" />
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="border-t border-cloud pt-1">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={askSignOut}
+                      className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-3 text-sm font-medium hover:bg-cloud"
+                    >
+                      <LogOut className="h-4 w-4 text-grey-600" aria-hidden="true" />
+                      Sign out
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <>
               <Link
                 href="/auth/login"
-                className="rounded-lg bg-brand-359 px-5 py-2 text-sm font-semibold text-on-brand shadow-md shadow-brand-361/20 transition-all duration-200 hover:bg-brand-370 hover:shadow-lg hover:shadow-brand-361/30 active:scale-95"
+                className="hz-press inline-flex min-h-11 items-center whitespace-nowrap rounded-[10px] px-3.5 text-sm font-medium text-cloud hover:bg-graphite"
               >
                 Sign in
               </Link>
               <Link
                 href="/auth/register"
-                className="rounded-lg border border-slate-600/80 bg-ink-665/60 px-4 py-2 text-sm font-medium text-slate-200 backdrop-blur-sm transition-all duration-200 hover:border-slate-400 hover:bg-ink-665 hover:text-white active:scale-95"
+                className="hz-press inline-flex min-h-11 items-center whitespace-nowrap rounded-[10px] bg-cloud px-[18px] text-sm font-medium text-carbon hover:bg-white"
               >
-                Create a new account
+                Create account
               </Link>
-            </div>
+            </>
           )}
         </div>
 
-        {/* Mobile Hamburger Button */}
-        <div className="flex items-center gap-3 md:hidden">
-          {!isAuthenticated && (
-            <Link
-              href="/auth/login"
-              className="rounded-lg bg-brand-361 px-3.5 py-1.5 text-xs font-semibold text-on-brand shadow"
-            >
-              Sign in
-            </Link>
-          )}
-          <button
-            onClick={toggleMobileMenu}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-700 bg-ink-709 text-slate-200"
-            aria-label="Toggle Menu"
-          >
-            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={toggleMobileMenu}
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-grey-800 bg-graphite text-cloud md:hidden"
+          aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={isMobileMenuOpen}
+        >
+          {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
 
-      {/* Mobile Menu Drawer */}
+      {/* MobileMenus board: full-height Carbon sheet */}
       {isMobileMenuOpen && (
-        <div className="mt-4 rounded-2xl border border-slate-700/80 bg-ink-721/95 p-5 shadow-2xl backdrop-blur-xl md:hidden">
-          <nav className="flex flex-col gap-3">
-            <Link
-              href="/#solutions"
-              onClick={() => setMobileMenuOpen(false)}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-white hover:bg-slate-700/40"
-            >
-              Personal
-            </Link>
-            <Link
-              href="/#solutions"
-              onClick={() => setMobileMenuOpen(false)}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white"
-            >
-              Business
-            </Link>
-            <Link
-              href="/banks"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${pathname === '/banks'
-                ? 'bg-brand-361/15 text-brand-361 font-semibold'
-                : 'text-slate-300 hover:bg-slate-700/40 hover:text-white'
-                }`}
-            >
-              Banks
-            </Link>
-            <Link
-              href="/contact"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${pathname === '/contact'
-                ? 'bg-brand-361/15 text-brand-361 font-semibold'
-                : 'text-slate-300 hover:bg-slate-700/40 hover:text-white'
-                }`}
-            >
-              Contact us
-            </Link>
-
-            <div className="my-2 border-t border-slate-700/60 pt-3">
-              {isAuthenticated && user ? (
-                <div className="flex flex-col gap-2">
-                  <div className="px-3 py-1 text-xs text-slate-400">
-                    Signed in as <span className="font-semibold text-white">{user.name}</span>
-                  </div>
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-lg bg-brand-361/20 px-3 py-2 text-sm font-semibold text-brand-361"
-                  >
-                    <LayoutDashboard className="h-4 w-4" />
-                    Go to Dashboard
-                  </Link>
-                  <button
-                    onClick={() => {
-                      logout();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-rose-400 hover:bg-rose-500/10"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign out
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2.5">
-                  <Link
-                    href="/auth/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full rounded-lg bg-brand-361 py-2.5 text-center text-sm font-semibold text-on-brand shadow-md shadow-brand-361/20"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    href="/auth/register"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full rounded-lg border border-slate-600 bg-ink-665 py-2.5 text-center text-sm font-medium text-white"
-                  >
-                    Create a new account
-                  </Link>
-                </div>
-              )}
-            </div>
+        <div className="hz-pop fixed inset-x-0 top-[73px] bottom-0 z-50 flex flex-col overflow-y-auto bg-carbon md:hidden">
+          <nav aria-label="Main" className="hz-stagger flex flex-col px-5 py-3">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                aria-current={isActive(link.match) ? 'page' : undefined}
+                className="flex min-h-14 items-center justify-between border-b border-graphite text-xl font-medium text-cloud"
+              >
+                {link.label}
+                <ArrowRight className="h-5 w-5 text-grey-500" aria-hidden="true" />
+              </Link>
+            ))}
+            {signedIn &&
+              ACCOUNT_LINKS.map(({ label, href }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex min-h-14 items-center justify-between border-b border-graphite text-xl font-medium text-cloud"
+                >
+                  {label}
+                  <ArrowRight className="h-5 w-5 text-grey-500" aria-hidden="true" />
+                </Link>
+              ))}
           </nav>
+
+          <div className="mt-auto flex flex-col gap-2.5 p-5">
+            {signedIn ? (
+              <>
+                <p className="text-sm text-grey-400">
+                  Signed in as <span className="font-semibold text-cloud">{user.name}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={askSignOut}
+                  className="flex min-h-[52px] items-center justify-center gap-2 rounded-[10px] border border-grey-800 text-[15px] font-medium text-cloud"
+                >
+                  <LogOut className="h-4 w-4" aria-hidden="true" />
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/auth/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex min-h-[52px] items-center justify-center rounded-[10px] bg-cloud text-[15px] font-medium text-carbon"
+                >
+                  Create a free account
+                </Link>
+                <Link
+                  href="/auth/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex min-h-[52px] items-center justify-center rounded-[10px] border border-grey-800 text-[15px] font-medium text-cloud"
+                >
+                  Sign in
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       )}
+      {confirmOut && <LogoutDialog onCancel={cancelSignOut} onConfirm={signOut} />}
     </header>
   );
 }

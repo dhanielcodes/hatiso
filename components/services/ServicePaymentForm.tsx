@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { Form, Formik, useFormikContext } from 'formik';
 import * as Yup from 'yup';
-import { AlertCircle, Mail, Phone } from 'lucide-react';
+import { AlertCircle, ArrowRight, Mail, Phone } from 'lucide-react';
+import { useAuthStore } from '@/lib/store/authStore';
 import {
   DateField,
   MinorAmountField,
@@ -21,6 +23,7 @@ import type {
 import { SERVICE_LABEL_BY_SLUG } from '@/lib/digitalServices/categoryServices';
 import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import ProviderSelector, {
+  providerLogoSrc,
   type ProviderItem,
   type ProviderSelectorType,
 } from './ProviderSelector';
@@ -59,21 +62,20 @@ interface ServicePaymentFormProps {
   hideProductSelector?: boolean;
   variant?: 'marketplace' | 'dashboard';
   initialEmail?: string;
+  /** Called as the form changes, so the page hero can mirror the receipt. */
+  onDraftChange?: (draft: ServiceDraft) => void;
 }
 
-const providerImages: Record<string, string> = {
-  mtn: '/images/network_mtn.png',
-  airtel: '/images/network_airtel.png',
-  glo: '/images/network_glo.png',
-  '9mobile': '/images/network_9mobile.png',
-  dstv: '/images/tv_dstv.png',
-  gotv: '/images/tv_gotv.png',
-  ikeja: '/images/elec_ikeja.png',
-  ibedc: '/images/elec_ibedc.png',
-  ekedc: '/images/elec_ekedc.png',
-  jos: '/images/elec_jos.png',
-  kaduna: '/images/elec_kaduna.png',
+export type ServiceDraft = {
+  billerCode: string;
+  billerName: string;
+  amountMinor: number;
+  recipient: string;
 };
+
+/** Quick amounts from the Service board, in naira. Only the ones inside the product's limits are shown. */
+const QUICK_AMOUNTS = [100, 200, 500, 1000, 2000];
+
 
 const providerSelectorType: ProviderSelectorType = 'image';
 
@@ -217,7 +219,7 @@ function toProviderItems(
     id: biller.billerCode,
     name: biller.billerName,
     imageSrc:
-      type === 'image' ? biller?.logoUrl || providerImages[biller.billerCode.toLowerCase()] : undefined,
+      type === 'image' ? providerLogoSrc(biller) : undefined,
   }));
 }
 
@@ -257,6 +259,87 @@ function DynamicFormField({ field }: { field: DigitalServiceFormField }) {
   );
 }
 
+function QuickAmounts({ field }: { field: DigitalServiceFormField }) {
+  const { values, setFieldValue } = useFormikContext<DynamicServiceFormValues>();
+  const current = Number(valueAtPath(values, field.path) ?? 0);
+  const options = QUICK_AMOUNTS.map((n) => n * 100).filter(
+    (minor) => (field.minimum === null || minor >= field.minimum) && (field.maximum === null || minor <= field.maximum)
+  );
+  if (field.readOnly || !options.length) return null;
+  return (
+    <div className="-mt-2 flex flex-wrap gap-2" aria-label="Quick amounts">
+      {options.map((minor) => {
+        const on = current === minor;
+        return (
+          <button
+            key={minor}
+            type="button"
+            aria-pressed={on}
+            onClick={() => setFieldValue(field.path, minor)}
+            className={`hz-press min-h-10 rounded-[10px] border px-4 text-sm font-medium transition-colors ${
+              on ? 'border-brand-305 bg-brand-305 text-on-brand' : 'border-tone-100 bg-surface text-tone-744 hover:border-tone-414'
+            }`}
+          >
+            {nairaLabel(minor)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function displayRecipient(value: unknown) {
+  const phone = normalizeNigerianPhone(value);
+  const m = phone.match(/^\+234(\d{3})(\d{3})(\d{4})$/);
+  return m ? `+234 ${m[1]} ${m[2]} ${m[3]}` : String(value ?? '').trim();
+}
+
+/** Service board Carbon summary card, with the form's submit button. */
+function ServiceSummary({
+  rows,
+  amountMinor,
+}: {
+  rows: { label: string; value: string }[];
+  amountMinor: number;
+}) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const total = amountMinor > 0 ? `₦${(amountMinor / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}` : '₦0.00';
+  return (
+    <aside className="hz-rise flex min-w-0 flex-[1_1_320px] flex-col gap-4 lg:sticky lg:top-6" style={{ '--d': 4 } as React.CSSProperties}>
+      <div className="flex flex-col gap-5 rounded-[14px] bg-carbon p-7 text-cloud">
+        <p className="hz-eyebrow text-grey-400">Summary</p>
+        <dl className="flex flex-col gap-3.5 text-[15px]">
+          {rows.map((row) => (
+            <div key={row.label} className="flex justify-between gap-4">
+              <dt className="text-grey-400">{row.label}</dt>
+              <dd className="truncate text-right font-medium">{row.value || '–'}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="h-px bg-grey-800" />
+        <div className="flex items-baseline justify-between gap-4">
+          <span className="text-[15px] text-silver">You pay</span>
+          <span className="text-[30px] font-semibold tracking-[-0.02em] tabular-nums">{total}</span>
+        </div>
+        <SubmitButton className="hz-press flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[10px] bg-cloud text-[15px] font-medium text-carbon hover:bg-white">
+          Continue to payment
+          <ArrowRight className="hz-arrow h-4 w-4" aria-hidden="true" />
+        </SubmitButton>
+        <p className="text-center text-xs text-grey-500">Any service fee is shown before you pay.</p>
+      </div>
+      {!isAuthenticated && (
+        <p className="px-2 text-sm leading-[1.6] text-grey-600">
+          Paying as a guest.{' '}
+          <Link href="/auth/login" className="border-b border-carbon font-medium text-carbon">
+            Sign in
+          </Link>{' '}
+          to save numbers and see your history.
+        </p>
+      )}
+    </aside>
+  );
+}
+
 function DynamicFields({
   activeSlug,
   activeTitle,
@@ -266,6 +349,7 @@ function DynamicFields({
   hideBillerSelector = false,
   hideProductSelector = false,
   variant = 'marketplace',
+  onDraftChange,
 }: {
   activeSlug: string;
   activeTitle?: string;
@@ -275,6 +359,7 @@ function DynamicFields({
   hideBillerSelector?: boolean;
   hideProductSelector?: boolean;
   variant?: 'marketplace' | 'dashboard';
+  onDraftChange?: (draft: ServiceDraft) => void;
 }) {
   const { values, errors, submitCount } = useFormikContext<DynamicServiceFormValues>();
   const selectedBiller = billers.find((biller) => biller.billerCode === values.billerCode) ?? billers[0];
@@ -282,26 +367,78 @@ function DynamicFields({
   const selectedProduct = products.find((product) => product.code === values.productCode) ?? products[0];
 
 
+  const amountMinor = Number(valueAtPath(values, 'amountMinor') ?? selectedProduct?.fixedAmountMinor ?? 0) || 0;
+  const recipient = String(valueAtPath(values, 'recipient') ?? '');
+  const billerCode = selectedBiller?.billerCode ?? '';
+  const billerName = selectedBiller?.billerName ?? '';
+  useEffect(() => {
+    onDraftChange?.({ billerCode, billerName, amountMinor, recipient });
+  }, [onDraftChange, billerCode, billerName, amountMinor, recipient]);
+
   if (!selectedBiller || !selectedProduct) return null;
 
   const topLevelError = submitCount > 0 ? Object.values(errors).find((error) => typeof error === 'string') : undefined;
+  const label = SERVICE_LABEL_BY_SLUG[activeSlug] ?? activeTitle ?? '';
+  const verb = ['airtime', 'data', 'electricity'].includes(activeSlug) ? 'Buy' : 'Pay for';
+  const visibleFields = selectedProduct.formFields.filter((field) => field.type !== 'hidden' && field.path !== 'productCode');
+
+  const fields = (
+    <>
+      {typeof topLevelError === 'string' ? <div className="flex items-center gap-2 rounded-lg border border-status-error/30 bg-status-error/8 px-3.5 py-3 text-sm text-status-error"><AlertCircle className="h-4 w-4 shrink-0" /><span>{topLevelError}</span></div> : null}
+      {!hideBillerSelector && <ProviderSelector label={['airtime', 'data'].includes(activeSlug) ? 'Network' : 'Provider'} providers={toProviderItems(billers, providerSelectorType)} selectedId={selectedBiller.billerCode} onSelect={onBillerChange} type={providerSelectorType} />}
+      {!hideProductSelector && <SelectField name="productCode" label="Plan" required placeholder="Select a plan" options={products.map((product) => ({ value: product.code, label: product.name }))} onValueChange={onProductChange} />}
+      {visibleFields.map((field) => (
+        <React.Fragment key={field.path}>
+          <DynamicFormField field={field} />
+          {field.path === 'amountMinor' && <QuickAmounts field={field} />}
+        </React.Fragment>
+      ))}
+      {!selectedProduct.formFields.some((field) => field.path === 'email') && (
+        <TextField
+          name="email"
+          type="email"
+          label={<>Email for your receipt <span className="font-normal text-tone-414">(optional)</span></>}
+          placeholder="you@example.com"
+          startIcon={<Mail className="h-4 w-4" />}
+        />
+      )}
+    </>
+  );
+
+  if (variant === 'dashboard') {
+    return (
+      <Form className="space-y-5" noValidate>
+        {fields}
+        <SubmitButton className="hz-press flex min-h-13 w-full items-center justify-center rounded-xl bg-brand-305 text-[15px] font-medium text-on-brand hover:bg-brand-361">Continue</SubmitButton>
+      </Form>
+    );
+  }
+
+  const productName = !hideProductSelector ? selectedProduct.name : '';
   return (
-    <Form className={variant === 'dashboard' ? 'space-y-5' : 'mt-6 space-y-5'} noValidate>
-      {variant === 'marketplace' && <div className="text-center">
-        <h2 className="text-xl font-bold capitalize text-slate-900 sm:text-2xl">{SERVICE_LABEL_BY_SLUG[activeSlug] ?? activeTitle}</h2>
-        <p className="mt-1 text-xs text-slate-500 sm:text-sm">Choose a provider and product to continue.</p>
-      </div>}
-      {typeof topLevelError === 'string' ? <div className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-600"><AlertCircle className="h-4 w-4 shrink-0" /><span>{topLevelError}</span></div> : null}
-      {!hideBillerSelector && <ProviderSelector label="Select biller" providers={toProviderItems(billers, providerSelectorType)} selectedId={selectedBiller.billerCode} onSelect={onBillerChange} type={providerSelectorType} />}
-      {!hideProductSelector && <SelectField name="productCode" label="Select product" required placeholder="Select a product" options={products.map((product) => ({ value: product.code, label: product.name }))} onValueChange={onProductChange} />}
-      {selectedProduct.formFields.filter((field) => field.type !== 'hidden' && field.path !== 'productCode').map((field) => <DynamicFormField key={field.path} field={field} />)}
-      {!selectedProduct.formFields.some((field) => field.path === 'email') && <TextField name="email" type="email" label="Email for receipt (optional)" placeholder="Enter your email address" startIcon={<Mail className="h-4 w-4" />} />}
-      <SubmitButton className="w-full rounded-xl bg-brand-305 py-3.5 text-center text-sm font-bold text-on-brand shadow-md transition-all duration-200 hover:bg-brand-361 hover:shadow-lg active:scale-[0.99]">Continue</SubmitButton>
+    <Form className="flex w-full flex-wrap items-start gap-6" noValidate>
+      <div className="hz-rise flex min-w-0 flex-[999_1_560px] flex-col gap-7 rounded-[14px] border border-grey-100 bg-white p-[clamp(20px,3vw,36px)] text-carbon" style={{ '--d': 3 } as React.CSSProperties}>
+        <h2 className="text-2xl font-semibold tracking-[-0.02em]">
+          {verb} {label.toLowerCase()}
+        </h2>
+        {fields}
+      </div>
+      <ServiceSummary
+        amountMinor={amountMinor}
+        rows={[
+          { label: ['airtime', 'data'].includes(activeSlug) ? 'Network' : 'Provider', value: selectedBiller.billerName },
+          ...(productName ? [{ label: 'Plan', value: productName }] : []),
+          ...(visibleFields.some((f) => f.path === 'recipient')
+            ? [{ label: visibleFields.find((f) => f.path === 'recipient')?.label ?? 'Recipient', value: displayRecipient(recipient) }]
+            : []),
+          { label: 'Amount', value: amountMinor > 0 ? nairaLabel(amountMinor) : '' },
+        ]}
+      />
     </Form>
   );
 }
 
-export default function ServicePaymentForm({ activeSlug, activeTitle, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0, initialBillerCode, hideBillerSelector = false, hideProductSelector = false, variant = 'marketplace', initialEmail = '' }: ServicePaymentFormProps) {
+export default function ServicePaymentForm({ activeSlug, activeTitle, billers, isLoading = false, isError = false, submissionError, isFading, onValidated, formResetKey = 0, initialBillerCode, hideBillerSelector = false, hideProductSelector = false, variant = 'marketplace', initialEmail = '', onDraftChange }: ServicePaymentFormProps) {
   const [selectedBillerCode, setSelectedBillerCode] = useState<string | undefined>(initialBillerCode);
   const [selectedProductCode, setSelectedProductCode] = useState<string>();
   const selectedBiller = billers.find((biller) => biller.billerCode === selectedBillerCode) ?? billers[0];
@@ -314,11 +451,15 @@ export default function ServicePaymentForm({ activeSlug, activeTitle, billers, i
   );
 
   return (
-    <div className={variant === 'dashboard' ? 'w-full py-6' : `w-full max-w-xl rounded-3xl border border-slate-100 bg-surface p-6 shadow-2xl transition-all duration-300 ease-out sm:p-8 ${isFading ? 'scale-[0.99] opacity-30 blur-[0.4px]' : 'scale-100 opacity-100 blur-0'}`}>
-      {isLoading ? <ServiceFormSkeleton /> : null}
-      {isError ? <p className="py-14 text-center text-sm text-red-600">We could not load services right now. Please try again.</p> : null}
-      {!isLoading && !isError && !initialValues ? <p className="py-14 text-center text-sm text-slate-500">No purchasable products are available for this service.</p> : null}
-      {/* {submissionError && !isLoading && !isError ? <div className="mb-5 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs font-medium text-red-600"><AlertCircle className="h-4 w-4 shrink-0" />{submissionError}</div> : null} */}
+    <div className={variant === 'dashboard' ? 'w-full py-6' : `w-full transition-all duration-300 ease-out ${isFading ? 'opacity-30 blur-[0.4px]' : 'opacity-100 blur-0'}`}>
+      {(isLoading || isError || !initialValues) && (
+        <div className={variant === 'dashboard' ? '' : 'rounded-[14px] border border-grey-100 bg-white p-[clamp(20px,3vw,36px)] text-carbon'}>
+          {isLoading ? <ServiceFormSkeleton /> : null}
+          {isError ? <p className="py-14 text-center text-sm text-status-error">We could not load services right now. Please try again.</p> : null}
+          {!isLoading && !isError && !initialValues ? <p className="py-14 text-center text-sm text-grey-600">No purchasable products are available for this service.</p> : null}
+        </div>
+      )}
+      {/* {submissionError && !isLoading && !isError ? <div className="mb-5 flex items-center gap-2 rounded-xl bg-status-error/8 p-3 text-xs font-medium text-status-error"><AlertCircle className="h-4 w-4 shrink-0" />{submissionError}</div> : null} */}
       {initialValues && selectedBiller && selectedProduct && validationSchema ? (
         <Formik<DynamicServiceFormValues>
           key={`${selectedBiller.billerCode}-${selectedProduct.code}-${formResetKey}`}
@@ -335,7 +476,7 @@ export default function ServicePaymentForm({ activeSlug, activeTitle, billers, i
               recipient: recipientNumber,
               ...(contactPhone ? { contactPhone } : {}),
             };
-            return onValidated({ slug: activeSlug, providerId: biller.billerCode, providerName: biller.billerName, providerImage: providerSelectorType === 'image' ? providerImages[biller.billerCode.toLowerCase()] : undefined, recipientNumber, amount: Number.isFinite(amountMinor) ? amountMinor / 100 : 0, amountMinor: Number.isFinite(amountMinor) ? amountMinor : 0, email: String(valueAtPath(values, 'email') ?? ''), productCode: product.code, values: apiValues });
+            return onValidated({ slug: activeSlug, providerId: biller.billerCode, providerName: biller.billerName, providerImage: providerSelectorType === 'image' ? providerLogoSrc(biller) : undefined, recipientNumber, amount: Number.isFinite(amountMinor) ? amountMinor / 100 : 0, amountMinor: Number.isFinite(amountMinor) ? amountMinor : 0, email: String(valueAtPath(values, 'email') ?? ''), productCode: product.code, values: apiValues });
           }}
         >
           <DynamicFields
@@ -345,6 +486,7 @@ export default function ServicePaymentForm({ activeSlug, activeTitle, billers, i
             hideBillerSelector={hideBillerSelector}
             hideProductSelector={hideProductSelector}
             variant={variant}
+            onDraftChange={onDraftChange}
             onBillerChange={(billerCode) => {
               setSelectedBillerCode(billerCode);
               setSelectedProductCode(undefined);

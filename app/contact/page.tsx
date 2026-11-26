@@ -1,210 +1,253 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Formik, Form } from 'formik';
-import { MapPin, CheckCircle2, ArrowRight } from 'lucide-react';
+import { ArrowDown, ArrowRight, ArrowUpRight, Check, Mail, MapPin, Phone } from 'lucide-react';
 import Navbar from '@/components/marketplace/Navbar';
 import Footer from '@/components/marketplace/Footer';
-import CtaBanner from '@/components/marketplace/CtaBanner';
 import { TextField, PhoneField, TextAreaField, SubmitButton } from '@/components/forms';
 import { contactSchema, ContactFormValues } from '@/lib/validation/schemas';
 
+const rise = (d: number) => ({ '--d': d }) as React.CSSProperties;
+
+const TOPICS = [
+  { id: 'support', label: 'Help with a payment', placeholder: 'Tell us what you paid for, the amount, and roughly when.' },
+  { id: 'account', label: 'My account', placeholder: 'Tell us what you need help with on your account.' },
+  { id: 'business', label: 'Sell on Hatiso', placeholder: 'Tell us about your business and what you sell.' },
+  { id: 'bank', label: 'Bank partnership', placeholder: 'Tell us about your bank and who we should talk to.' },
+];
+
+const CHANNELS = [
+  {
+    Icon: Mail,
+    title: 'Email support',
+    line: 'For payments, receipts and your account.',
+    value: 'Support@untitledUI.com',
+    href: 'mailto:Support@untitledUI.com',
+  },
+  {
+    Icon: Phone,
+    title: 'Call us',
+    line: 'Speak to the support team.',
+    value: '09 1358 4893 39',
+    href: 'tel:091358489339',
+  },
+  {
+    Icon: MapPin,
+    title: 'Visit us',
+    line: 'Our office, by appointment.',
+    value: 'Lagos, Nigeria',
+    href: 'https://maps.google.com/?q=Lagos,+Nigeria',
+    external: true,
+  },
+];
+
+const TIPS = [
+  { title: "Payment didn't land?", body: 'Add the amount, time and phone or meter number so we can find it fast.' },
+  { title: 'Bank login trouble?', body: 'Contact your bank directly. Hatiso never sees your bank login.' },
+  { title: 'Never share your PIN', body: 'We will never ask for your password, PIN or one-time code.' },
+];
+
 const initialValues: ContactFormValues = {
+  topic: 'support',
   businessName: '',
   email: '',
   phone: '',
   message: '',
 };
 
+/** Contact board. The form has no backend yet, so sending only shows the confirmation. */
 export default function ContactPage() {
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [submittedName, setSubmittedName] = useState('');
+  const [sent, setSent] = useState(false);
 
   return (
-    <div className="min-h-screen bg-ink-662 text-white selection:bg-brand-361 selection:text-white flex flex-col justify-between">
-      <div className="relative overflow-hidden bg-ink-662">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-20">
-          <svg
-            className="absolute -top-32 -left-32 h-[800px] w-[1100px]"
-            viewBox="0 0 1000 600"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M -100 150 C 150 120, 250 320, 500 240 C 750 180, 850 380, 1100 320"
-              stroke="#1E4757"
-              strokeWidth="1.6"
-            />
-            <path
-              d="M -100 280 C 180 230, 320 420, 600 360 C 880 300, 920 480, 1150 440"
-              stroke="#1E4757"
-              strokeWidth="1.6"
-              strokeDasharray="6 8"
-            />
-          </svg>
-        </div>
+    <div className="flex min-h-screen flex-col bg-cloud text-carbon selection:bg-silver selection:text-carbon">
+      <Navbar />
 
-        <Navbar />
-
-        <div className="relative z-10 mx-auto max-w-4xl px-4 pt-8 pb-16 text-center sm:px-6 sm:pt-12 sm:pb-20">
-          <p className="text-3xl font-bold text-brand-361 lg:text-6xl">Reach out</p>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Let&apos;s build with you
-          </h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
-            Questions, support, or partnership enquiries, our team replies within one business day.
-          </p>
-        </div>
-      </div>
-
-      <section className="relative z-10 w-full bg-surface py-16 text-slate-900 sm:py-20 lg:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-8 lg:px-14">
-          <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-16">
-            <div className="lg:col-span-6 xl:col-span-6">
-              <div className="w-full max-w-[500px] rounded-3xl border border-slate-200/60 bg-tone-56 px-6 pt-10 pb-20 shadow-xs sm:px-10 sm:pt-12 sm:pb-28">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl mb-8">
-                  Contact our team
-                </h2>
-
-                {isSubmitted ? (
-                  <div className="my-8 rounded-2xl bg-surface p-8 text-center shadow-xs">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                      <CheckCircle2 className="h-8 w-8 stroke-[2.5]" />
-                    </div>
-                    <h3 className="mt-4 text-lg font-bold text-slate-900">
-                      Message Sent Successfully!
-                    </h3>
-                    <p className="mt-1.5 text-xs text-slate-600 sm:text-sm">
-                      Thank you for reaching out, {submittedName || 'there'}. Our team will review
-                      your enquiry and get back to you within one business day.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setIsSubmitted(false)}
-                      className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-brand-318 px-5 py-2.5 text-xs font-bold text-on-brand shadow transition hover:bg-brand-385"
-                    >
-                      <span>Send Another Message</span>
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <Formik
-                    initialValues={initialValues}
-                    validationSchema={contactSchema}
-                    onSubmit={async (values, helpers) => {
-                      await new Promise((r) => setTimeout(r, 900));
-                      setSubmittedName(values.businessName);
-                      setIsSubmitted(true);
-                      helpers.resetForm();
-                    }}
-                  >
-                    <Form className="space-y-6" noValidate>
-                      <TextField
-                        name="businessName"
-                        label="Business Name"
-                        placeholder="Enter your business name"
-                      />
-
-                      <TextField
-                        name="email"
-                        type="email"
-                        label="Email"
-                        placeholder="Enter your email address"
-                        autoComplete="email"
-                      />
-
-                      <PhoneField
-                        name="phone"
-                        label="Phone number"
-                        placeholder="80-000-0000"
-                      />
-
-                      <TextAreaField
-                        name="message"
-                        label="Message"
-                        placeholder="Leave us a message..."
-                        rows={5}
-                      />
-
-                      <div className="pt-2">
-                        <SubmitButton
-                          className="w-full rounded-xl bg-brand-318 py-3.5 text-center text-sm font-bold text-on-brand shadow-md transition-all duration-200 hover:bg-brand-385 hover:shadow-lg active:scale-[0.99] disabled:opacity-50"
-                          loadingLabel="Sending Message..."
-                        >
-                          Send Message
-                        </SubmitButton>
-                      </div>
-                    </Form>
-                  </Formik>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-12 pt-4 lg:col-span-6 xl:col-span-6 lg:pt-8 lg:pl-6">
-              <div>
-                <p className="text-sm font-normal text-slate-600">
-                  Interested in switching? Speak to our friendly team
-                </p>
-                <a
-                  href="mailto:Xnett@untitledUI.com"
-                  className="mt-1.5 block text-base font-bold text-slate-900 underline underline-offset-4 decoration-slate-400 transition-colors hover:text-brand-318 hover:decoration-brand-318"
-                >
-                  Xnett@untitledUI.com
-                </a>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Email support</h3>
-                <p className="mt-1 text-sm font-normal text-slate-600">
-                  Email us and we&apos;ll get back to you within 24 hours.
-                </p>
-                <a
-                  href="mailto:Support@untitledUI.com"
-                  className="mt-1.5 block text-base font-bold text-slate-900 underline underline-offset-4 decoration-slate-400 transition-colors hover:text-brand-318 hover:decoration-brand-318"
-                >
-                  Support@untitledUI.com
-                </a>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Call us</h3>
-                <p className="mt-1 text-sm font-normal text-slate-600">
-                  Mon- Fri, 9:00 AM - 5:00 PM (UTC/GMT +10:00)
-                </p>
-                <a
-                  href="tel:091358489339"
-                  className="mt-1.5 block text-base font-bold text-slate-900 underline underline-offset-4 decoration-slate-400 transition-colors hover:text-brand-318 hover:decoration-brand-318"
-                >
-                  09 1358 4893 39
-                </a>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Location</h3>
-                <p className="mt-1 text-sm font-normal text-slate-600">
-                  View our office Mon - Fri, 9:00 AM - 5:00 PM
-                </p>
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4 text-slate-900" />
-                  <a
-                    href="https://maps.google.com/?q=Lagos,+Nigeria"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-base font-bold text-slate-900 underline underline-offset-4 decoration-slate-400 transition-colors hover:text-brand-318 hover:decoration-brand-318"
-                  >
-                    Lagos, Nigeria
-                  </a>
-                </div>
-              </div>
-            </div>
+      {/* Hero */}
+      <section className="bg-carbon text-cloud">
+        <div className="mx-auto flex max-w-7xl justify-center px-[clamp(16px,4vw,56px)] pt-[clamp(64px,9vw,128px)] pb-[clamp(64px,8vw,112px)]">
+          <div className="flex w-full max-w-[820px] flex-col items-center gap-6 text-center">
+            <p className="hz-rise hz-eyebrow text-grey-400">Contact</p>
+            <h1
+              className="hz-rise max-w-[760px] text-[clamp(40px,6vw,76px)] leading-[1.04] font-semibold tracking-[-0.035em] text-balance"
+              style={rise(1)}
+            >
+              Talk to a person, <span className="text-highlight">not a bot.</span>
+            </h1>
+            <p className="hz-rise max-w-[580px] text-[clamp(16px,1.4vw,18px)] leading-[1.6] text-pretty text-silver" style={rise(2)}>
+              A payment that didn&apos;t land, a question about your account, or a business that wants to sell on
+              Hatiso. Tell us what&apos;s going on and our team will get back to you.
+            </p>
+            <a
+              href="#message"
+              className="hz-rise hz-press inline-flex min-h-[52px] items-center gap-2.5 rounded-[10px] bg-cloud px-[26px] text-[15px] font-medium text-carbon hover:bg-white"
+              style={rise(3)}
+            >
+              Send a message
+              <ArrowDown className="h-4 w-4" aria-hidden="true" />
+            </a>
           </div>
         </div>
       </section>
 
-      <div className="bg-ink-662">
-        <CtaBanner secondaryButtonText="Sign in" secondaryButtonHref="/auth/login" />
-        <Footer />
-      </div>
+      {/* Ways to reach us */}
+      <section>
+        <div className="mx-auto max-w-7xl px-[clamp(16px,4vw,56px)] pt-[clamp(48px,6vw,80px)]">
+          <div className="hz-stagger grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-4">
+            {CHANNELS.map(({ Icon, title, line, value, href, external }) => (
+              <a
+                key={title}
+                href={href}
+                {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                className="hz-lift flex min-h-[196px] flex-col gap-6 rounded-xl border border-grey-100 bg-white p-6"
+              >
+                <span className="flex items-center justify-between">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-carbon text-cloud">
+                    <Icon className="h-5 w-5" strokeWidth={1.8} aria-hidden="true" />
+                  </span>
+                  <ArrowUpRight className="hz-arrow h-5 w-5 text-grey-500" aria-hidden="true" />
+                </span>
+                <span className="flex flex-col gap-1.5">
+                  <span className="text-[19px] font-semibold tracking-[-0.01em]">{title}</span>
+                  <span className="text-sm leading-normal text-grey-600">{line}</span>
+                  <span className="pt-1.5 text-[15px] font-medium">{value}</span>
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Form */}
+      <section id="message" className="flex-1 scroll-mt-6">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-start gap-6 px-[clamp(16px,4vw,56px)] pt-6 pb-[clamp(64px,8vw,112px)]">
+          <div className="hz-reveal min-w-0 flex-[999_1_560px] rounded-[14px] border border-grey-100 bg-white p-[clamp(20px,3vw,36px)]">
+            {sent ? (
+              <div role="status" className="hz-stagger flex min-h-[420px] flex-col items-start justify-center gap-4">
+                <span aria-hidden="true" className="inline-flex h-14 w-14 items-center justify-center rounded-[10px] bg-status-success text-white">
+                  <Check className="h-6 w-6" strokeWidth={2.6} />
+                </span>
+                <span className="text-[13px] font-medium text-status-success">Message sent</span>
+                <h2 className="text-[32px] font-semibold tracking-[-0.02em]">Thanks, we&apos;ve got it.</h2>
+                <p className="max-w-[440px] text-base leading-[1.6] text-grey-600">
+                  Our team will reply to the email you gave us. If it&apos;s about a payment, keep your receipt handy.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSent(false)}
+                  className="hz-press mt-2 min-h-12 rounded-[10px] border border-grey-150 bg-white px-[22px] text-[15px] font-medium hover:border-grey-400"
+                >
+                  Send another message
+                </button>
+              </div>
+            ) : (
+              <Formik
+                initialValues={initialValues}
+                validationSchema={contactSchema}
+                onSubmit={async (_values, helpers) => {
+                  await new Promise((r) => setTimeout(r, 900));
+                  setSent(true);
+                  helpers.resetForm();
+                }}
+              >
+                {({ values, setFieldValue }) => {
+                  const topic = TOPICS.find((t) => t.id === values.topic) ?? TOPICS[0];
+                  const biz = values.topic === 'business' || values.topic === 'bank';
+                  return (
+                    <Form className="flex flex-col gap-6" noValidate>
+                      <div className="flex flex-col gap-2">
+                        <h2 className="text-[28px] font-semibold tracking-[-0.02em]">Send us a message</h2>
+                        <p className="text-[15px] text-grey-600">Fields marked optional can be left blank.</p>
+                      </div>
+
+                      <fieldset className="flex flex-col gap-3">
+                        <legend className="mb-3 text-sm font-medium">What&apos;s it about?</legend>
+                        <div className="flex flex-wrap gap-2">
+                          {TOPICS.map((t) => {
+                            const on = values.topic === t.id;
+                            return (
+                              <button
+                                key={t.id}
+                                type="button"
+                                aria-pressed={on}
+                                onClick={() => setFieldValue('topic', t.id)}
+                                className={`hz-press min-h-10 rounded-[10px] border px-4 text-sm font-medium transition-colors ${
+                                  on ? 'border-carbon bg-carbon text-cloud' : 'border-grey-150 bg-white text-carbon hover:border-grey-400'
+                                }`}
+                              >
+                                {t.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </fieldset>
+
+                      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-5">
+                        <TextField
+                          name="businessName"
+                          label={biz ? 'Business name' : 'Full name'}
+                          placeholder={biz ? 'e.g. Okafor Stores' : 'e.g. Ada Okafor'}
+                          autoComplete={biz ? 'organization' : 'name'}
+                        />
+                        <TextField name="email" type="email" label="Email address" placeholder="e.g. ada@example.com" autoComplete="email" />
+                      </div>
+
+                      <PhoneField
+                        name="phone"
+                        label={
+                          <>
+                            Phone number <span className="font-normal text-grey-600">(optional)</span>
+                          </>
+                        }
+                        dialCode="+234"
+                        placeholder="803 123 4567"
+                      />
+
+                      <TextAreaField name="message" label="Message" placeholder={topic.placeholder} rows={5} />
+
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <span className="text-[13px] text-grey-600">We&apos;ll only use your details to reply to this message.</span>
+                        <SubmitButton
+                          className="hz-press inline-flex min-h-[52px] items-center gap-2.5 rounded-[10px] bg-carbon px-7 text-[15px] font-medium text-cloud hover:bg-graphite"
+                          loadingLabel="Sending…"
+                        >
+                          Send message
+                          <ArrowRight className="hz-arrow h-4 w-4" aria-hidden="true" />
+                        </SubmitButton>
+                      </div>
+                    </Form>
+                  );
+                }}
+              </Formik>
+            )}
+          </div>
+
+          <aside className="hz-reveal flex min-w-0 flex-[1_1_320px] flex-col gap-4">
+            <div className="flex flex-col gap-[18px] rounded-[14px] bg-carbon p-7 text-cloud">
+              <p className="hz-eyebrow text-grey-400">Before you write</p>
+              <ul className="flex flex-col border-t border-grey-800">
+                {TIPS.map((tip) => (
+                  <li key={tip.title} className="flex flex-col gap-1 border-b border-grey-800 py-3.5 last:border-b-0">
+                    <span className="text-[15px] font-medium">{tip.title}</span>
+                    <span className="text-sm leading-normal text-grey-400">{tip.body}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Link
+              href="/auth/login"
+              className="hz-lift flex items-center justify-between gap-3 rounded-xl border border-grey-100 bg-white px-6 py-5 text-[15px] font-medium"
+            >
+              Sign in to see your receipts
+              <ArrowRight className="hz-arrow h-4 w-4" aria-hidden="true" />
+            </Link>
+          </aside>
+        </div>
+      </section>
+
+      <Footer />
     </div>
   );
 }

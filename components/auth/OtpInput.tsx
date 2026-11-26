@@ -85,7 +85,7 @@ export default function OtpInput({
   };
 
   return (
-    <div className="flex items-center justify-center gap-2 sm:gap-3">
+    <div className="flex items-center justify-between gap-2 sm:gap-3">
       {Array.from({ length }).map((_, idx) => (
         <input
           key={idx}
@@ -99,11 +99,11 @@ export default function OtpInput({
           onPaste={handlePaste}
           onFocus={(e) => e.target.select()}
           aria-label={`OTP digit ${idx + 1}`}
-          className={`h-12 w-10 rounded-xl sm:h-14 sm:w-12 border-2 text-center text-xl font-bold text-slate-900 transition-all focus:outline-none ${hasError
-              ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
+          className={`h-14 w-full min-w-0 max-w-14 rounded-lg border bg-white text-center text-2xl font-semibold text-carbon tabular-nums transition-colors focus:outline-none focus:ring-3 ${hasError
+              ? 'border-status-error focus:ring-status-error/15'
               : filled[idx]
-                ? 'border-brand-361 bg-tone-49 focus:border-brand-361 focus:ring-2 focus:ring-brand-361/20'
-                : 'border-tone-95 bg-surface focus:border-brand-361 focus:ring-2 focus:ring-brand-361/20'
+                ? 'border-carbon focus:ring-silver/60'
+                : 'border-grey-150 focus:border-carbon focus:ring-silver/60'
             }`}
         />
       ))}

@@ -39,15 +39,15 @@ export function bankStatus(bank: Pick<Bank, 'status'>): { label: string; tone: B
 }
 
 export const STATUS_DOT: Record<BankStatusTone, string> = {
-  online: 'bg-emerald-500',
-  warning: 'bg-amber-500',
-  down: 'bg-red-500',
+  online: 'bg-status-success',
+  warning: 'bg-status-warning',
+  down: 'bg-status-error',
 };
 
 export const STATUS_TEXT: Record<BankStatusTone, string> = {
-  online: 'text-emerald-700',
-  warning: 'text-amber-700',
-  down: 'text-red-700',
+  online: 'text-status-success',
+  warning: 'text-status-warning',
+  down: 'text-status-error',
 };
 
 /** Up to two initials, for banks without a logo. */

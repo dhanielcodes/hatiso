@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createDigitalServiceOrder,
   createDigitalServiceOrderAuthenticated,
@@ -13,6 +13,7 @@ import {
   verifyGuestPayment,
   verifyGuestPaymentAuthenticated,
   type CreateDigitalServiceOrderInput,
+  type DigitalServiceBiller,
   type DigitalServiceCategory,
 } from '@/lib/api/digitalServices';
 
@@ -36,6 +37,32 @@ export function useDigitalServiceCatalogues(category: DigitalServiceCategory, pa
     select: (response) => response.data,
     staleTime: 5 * 60 * 1000,
     enabled: Boolean(category),
+  });
+}
+
+/**
+ * Providers for several categories (Pay bills "All"), keyed by category.
+ * Fetched one category at a time so the API's rate limit isn't hit, and through the same cache entries as
+ * useDigitalServiceCatalogues, so a category that's already loaded isn't fetched again.
+ */
+export function useAllDigitalServiceCatalogues(categories: DigitalServiceCategory[], size: number = 20) {
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: [...digitalServiceCataloguesQueryKey, 'all', categories, size],
+    queryFn: async () => {
+      const byCategory: Partial<Record<DigitalServiceCategory, DigitalServiceBiller[]>> = {};
+      for (const category of categories) {
+        const response = await queryClient.fetchQuery({
+          queryKey: [...digitalServiceCataloguesQueryKey, category, 0, size],
+          queryFn: () => getDigitalServiceCatalogues(category, 0, size),
+          staleTime: 5 * 60 * 1000,
+        });
+        byCategory[category] = response.data;
+      }
+      return byCategory;
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: categories.length > 0,
   });
 }
 

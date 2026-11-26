@@ -2,10 +2,17 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import HatisoLogo from '@/components/brand/HatisoLogo';
 
 const SHOWN_KEY = 'hasito_invite_shown';
+
+/** InvitePopup board perks. "100 welcome points" stays off while Rewards is switched off. */
+const INVITE_PERKS = [
+  'Faster checkout with saved numbers',
+  'Every receipt in one place',
+  // '100 welcome points',
+];
 
 /**
  * True when a guest should be invited to sign up: not logged in, and not already invited in this
@@ -46,56 +53,63 @@ export default function CustomerInvitePopup({ onClose }: { onClose: () => void }
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-ink-729/60 p-4 backdrop-blur-[2px]" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-carbon/60 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="invite-title"
         aria-describedby="invite-body"
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-[446px] rounded-2xl bg-surface text-center shadow-[0_24px_60px_-12px_rgba(16,42,54,0.45)] animate-in fade-in zoom-in-95 duration-200"
+        className="hz-pop relative w-full max-w-[440px] overflow-hidden rounded-[14px] bg-white text-carbon shadow-[0_40px_80px_-30px_rgba(0,0,0,0.6)]"
       >
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-tone-53 text-tone-612 transition hover:bg-tone-89"
+          className="hz-press absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-lg bg-cloud hover:bg-grey-100"
         >
-          <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+          <X className="h-4.5 w-4.5" />
         </button>
 
-        <div className="border-b border-tone-72 px-6 pb-5 pt-9 sm:px-8">
-          <div className="flex justify-center">
-            <HatisoLogo variant="carbon" height={36} href={null} />
+        <div className="flex flex-col gap-4 px-7 pt-8 pb-2">
+          <div className="flex">
+            <HatisoLogo variant="carbon" height={26} href={null} />
           </div>
-          <h2 id="invite-title" className="mt-3 text-[19px] font-semibold leading-snug tracking-tight text-tone-732 sm:text-[21px]">
-            Hey there! Ready to make it <span className="whitespace-nowrap">official? <span aria-hidden="true">👋</span></span>
+          <h2 id="invite-title" className="text-[28px] leading-[1.15] font-semibold tracking-[-0.02em]">
+            Ready to make it official?
           </h2>
-          <p id="invite-body" className="mx-auto mt-2 max-w-[370px] text-[13px] leading-5 text-tone-405">
-            Pop in your details and become a QApp member. You&apos;ll get easy access to your purchases, quick checkout
-            next time, and a little something special just for joining.
+          <p id="invite-body" className="text-[15px] leading-[1.6] text-grey-600">
+            Create a free account to keep your receipts and save numbers for next time.
           </p>
+          <ul className="flex flex-col gap-2.5 text-sm">
+            {INVITE_PERKS.map((perk) => (
+              <li key={perk} className="flex items-center gap-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-carbon text-cloud">
+                  <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
+                </span>
+                {perk}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div className="px-6 pb-8 pt-8 sm:px-8">
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-center sm:gap-3.5">
-            <Link
-              href="/auth/login"
-              className="inline-flex h-[38px] items-center justify-center whitespace-nowrap rounded-lg border border-ink-662 px-6 text-sm font-medium text-ink-662 transition hover:bg-ink-662/5 sm:w-[148px]"
-            >
-              Sign in
-            </Link>
-            <Link
-              ref={createRef}
-              href="/auth/register"
-              className="inline-flex h-[38px] items-center justify-center whitespace-nowrap rounded-lg bg-ink-660 px-6 text-sm font-medium text-white transition hover:bg-ink-662 sm:w-[152px]"
-            >
-              Create Account
-            </Link>
-          </div>
-          <p className="mx-auto mt-5 max-w-[310px] text-xs leading-[18px] text-brand-361">
-            An account gives you access to all features and helps you to track and keep data safe and secure.
-          </p>
+        <div className="flex flex-col gap-2.5 px-7 pt-5 pb-7">
+          <Link
+            ref={createRef}
+            href="/auth/register"
+            className="hz-press inline-flex min-h-[50px] items-center justify-center rounded-[10px] bg-carbon text-[15px] font-medium text-cloud hover:bg-graphite"
+          >
+            Create free account
+          </Link>
+          <Link
+            href="/auth/login"
+            className="hz-press inline-flex min-h-[50px] items-center justify-center rounded-[10px] border border-grey-150 bg-white text-[15px] font-medium hover:border-grey-400"
+          >
+            Sign in
+          </Link>
+          <button type="button" onClick={onClose} className="p-2 text-center text-sm font-medium text-grey-600 hover:text-carbon">
+            Not now
+          </button>
         </div>
       </div>
     </div>

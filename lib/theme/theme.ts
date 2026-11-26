@@ -5,8 +5,9 @@ import { useLayoutEffect, useSyncExternalStore } from 'react';
 /**
  * App colour themes. The colours live in app/theme.css: Classic is the base set of tokens,
  * and every other theme overrides them under `html[data-theme="<id>"]`.
- * Themes only apply inside the signed-in dashboard (THEMED_PATH), which uses Hatiso Monochrome
- * until the user picks another; the landing, marketing and auth pages always use Classic. The choice is stored in this browser only (localStorage) and applied
+ * The landing, marketing and auth pages always use Hatiso Monochrome (BASE_THEME). The theme picker
+ * only applies inside the signed-in dashboard (THEMED_PATH), which also uses Hatiso Monochrome until
+ * the user picks another. The choice is stored in this browser only (localStorage) and applied
  * before first paint by the inline script in app/layout.tsx (THEME_INIT_SCRIPT) on a full page load,
  * and by useDashboardTheme() when the dashboard is reached by client-side navigation.
  */
@@ -52,7 +53,7 @@ export const THEMES = [
 export type ThemeId = (typeof THEMES)[number]['id'];
 
 /** The look of every page outside the dashboard (and what the server renders). */
-export const BASE_THEME: ThemeId = 'classic';
+export const BASE_THEME: ThemeId = 'hatiso';
 /** The dashboard's theme until the user chooses one in Appearance. */
 export const DEFAULT_THEME: ThemeId = 'hatiso';
 export const THEME_STORAGE_KEY = 'hatiso_theme';
@@ -100,7 +101,7 @@ export function setTheme(theme: ThemeId) {
 
 /**
  * Mount in the dashboard layout: applies the saved theme while the dashboard is open and puts
- * Classic back when the user leaves it (e.g. the logo link to the landing page).
+ * Hatiso back when the user leaves it (e.g. the logo link to the landing page).
  */
 export function useDashboardTheme() {
   useLayoutEffect(() => {
@@ -126,6 +127,17 @@ function subscribe(onChange: () => void) {
 /** The active theme; re-renders when it changes (here or in another tab). */
 export function useTheme(): ThemeId {
   return useSyncExternalStore(subscribe, readTheme, () => BASE_THEME);
+}
+
+/**
+ * Chart series colours in Hatiso Monochrome: the brand allows no added colours, so categories are told apart by
+ * Carbon and the supporting greys (and always carry a text label). Other themes keep their own chart colours.
+ */
+export const HATISO_SERIES = ['#12151A', '#616366', '#919397', '#C9CACB', '#393C40', '#79797A', '#B8BCC2', '#484B52'];
+
+/** The colour for the `index`th chart series: Hatiso greys in Hatiso Monochrome, otherwise `color`. */
+export function seriesColor(theme: ThemeId, color: string, index: number): string {
+  return theme === 'hatiso' ? HATISO_SERIES[index % HATISO_SERIES.length] : color;
 }
 
 /** Resolves a theme colour token (e.g. `brand-361`) to its current value, for canvas charts that can't use CSS. */

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import Providers from "./providers";
 import { BASE_THEME, THEME_INIT_SCRIPT } from "@/lib/theme/theme";
+import { SITE_ACCENT, accentStyle } from "@/lib/theme/accent";
 import "./globals.css";
 
 // Brand typeface (from the Hatiso colour palette). Variable font, so every weight from 100 to 900 is available.
@@ -30,6 +31,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       data-theme={BASE_THEME}
       className={`${outfit.variable} h-full antialiased`}
+      // White-label deployments set NEXT_PUBLIC_ACCENT_COLOR to re-skin the accent site-wide.
+      style={SITE_ACCENT ? accentStyle(SITE_ACCENT) : undefined}
       // The inline script below may switch data-theme to the saved theme before React hydrates.
       suppressHydrationWarning
     >

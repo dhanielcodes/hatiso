@@ -13,6 +13,7 @@ This README is for frontend developers joining the project. It covers how to run
 - [Folder structure](#folder-structure)
 - [Routing and authentication](#routing-and-authentication)
 - [Unfinished sign-ups (verification resume)](#unfinished-sign-ups-verification-resume)
+- [Accent colour](#accent-colour)
 - [Dashboard overview](#dashboard-overview)
 - [Digital services](#digital-services)
 - [Banks](#banks)
@@ -24,6 +25,7 @@ This README is for frontend developers joining the project. It covers how to run
 - [State management](#state-management)
 - [Errors and notifications](#errors-and-notifications)
 - [Styling](#styling)
+- [Brand redesign](#brand-redesign)
 - [Conventions checklist](#conventions-checklist)
 
 ---
@@ -111,7 +113,7 @@ Only run one `next dev` per checkout. A second one in the same folder won't star
 │   ├── dashboard/              # Dashboard page bodies (ProfilePage, SupportPage, …) + sidebar, charts, PromoCarousel
 │   ├── services/               # Service checkout pieces (payment form, selectors, Paystack)
 │   ├── support/                # Support enquiry form, transaction support modal, display helpers
-│   ├── marketplace/            # Public site sections (Navbar, Hero, Footer, …)
+│   ├── marketplace/            # Public site sections (Navbar, Hero, Solutions, Footer, …)
 │   ├── brand/HatisoLogo.tsx    # The Hatiso wordmark (use this for every logo)
 │   └── auth/                   # Auth UI pieces (brand panel, OTP input, step indicator, …)
 │
@@ -193,6 +195,17 @@ Someone who started signing up but never verified their email or phone is sent b
 
 ---
 
+## Accent colour
+
+The public pages follow the brand palette strictly (Brand Essentials and Colour Palette PDFs): Carbon, Graphite, Cloud, white, the supporting greys, and Silver as the only accent. No other colours are added. Status colours (success, warning, error) always come with a text label, and a bank's own colour appears only inside that bank's area.
+
+- **Accent token:** `--color-accent` (Silver `#B8BCC2`, the brand accent) and `--color-on-accent` (text on it, Carbon), in `app/theme.css`. Utilities: `bg-accent`, `text-accent`, `border-accent`, `text-on-accent`. In Hatiso the `highlight` token points at the accent, so the highlighted headline words ("One platform.", "Every bank.", the service hero words, "in one place." and the 404 heading) and text selection are Silver. As text it only works on dark surfaces; on light ones use it as a fill. Silver is never a large fill or a gradient.
+- **White-label (a bank's own deployment):** set `NEXT_PUBLIC_ACCENT_COLOR=#0055A4` (see `.env.example`). `app/layout.tsx` applies it on `<html>`, so every accent use above takes the bank's colour. Unset keeps Silver.
+- **Each bank on the shared site:** bank cards and the "Continue to bank" dialogs (banks page, landing Banks section, dashboard Banking page) are wrapped in `bankAccentStyle(bank.primaryColor)`. The card border turns the bank's colour on hover and the card arrow uses it; the dialog gets a stripe of it on top, and on the public pages the main button is filled with it. Banks without a `primaryColor` stay neutral (Carbon).
+- **Helpers** (`lib/theme/accent.ts`): `accentStyle(color, { surface, fallback })` sets `--color-accent` and `--color-on-accent`. It accepts `#0055A4`, `0055A4` or `#05A`, and ignores anything else. It nudges the colour, keeping its hue, until it has at least 3:1 contrast with its surface: lightened on Carbon (a navy still shows), darkened on white (a yellow still shows). `on-accent` is Carbon or white, whichever reads better.
+
+---
+
 ## Dashboard overview
 
 `app/dashboard/page.tsx` follows the dashboard design:
@@ -229,6 +242,8 @@ Someone who started signing up but never verified their email or phone is sent b
 The banks page (`/banks`), the home "Banks" section and the dashboard banking page (`/dashboard/banking`) all list banks from `GET /banks` through `useBanks` (`lib/queries/useBanks.ts`). Each shows a loading skeleton and a "Try again" message if the request fails. Shared helpers are in `lib/banks/bankDisplay.ts`:
 
 - **Logo:** `components/banks/BankLogo.tsx` shows `logoUrl`. With no logo, it shows the bank's initials on its `primaryColor` (or dark teal).
+- **"Continue to bank" dialog:** `components/banks/BankOpenDialog.tsx` is the dialog the home Banks section opens (closes on Escape, the ✕ or the backdrop). The `/banks` page keeps its own dialog with the gateway status, official domain and channels. Both carry the bank's colour only in the top stripe and the main button.
+- **Status colours:** `STATUS_DOT` and `STATUS_TEXT` use the brand status tokens (`status-success`, `status-warning`, `status-error`), always next to the status label.
 - **Status:** `ACTIVE` reads as "Online". `MAINTENANCE` or `DEGRADED` is amber, and any other status is red and shown as the API sends it. The status filters on `/banks` and the dashboard tabs are built from the statuses the API returns.
 - **Channels:** `channels` (e.g. `INTERNET_BANKING`) are shown as "Internet banking", and the `/banks` "Channels" filter is built from them.
 - **Website:** the API doesn't return a website URL yet. "Continue to bank" uses `BANK_WEBSITES` (keyed by `bankIdentifier`), or `DEFAULT_BANK_URL` when a bank isn't listed there. Replace this once the API sends a URL.
@@ -390,7 +405,7 @@ Import them from `@/components/forms`:
 | `PhoneField` | Phone numbers. `dialCode="+234"` shows a fixed prefix; `showCountryAffix` shows the NG flag. |
 | `TextAreaField` | Multi-line text |
 | `SelectField` | Native select. Takes `options: { value, label }[]` and `placeholder`. |
-| `DateField` | Date picker (`minDate`, `maxDate`) |
+| `DateField` | Date picker (`minDate`, `maxDate`). The browser's own calendar button is hidden under our icon, so there is only one icon and clicking it still opens the picker. |
 | `NumberField` | Numbers (stored as a `number` by default) |
 | `AmountField` | Naira amounts, formatted while typing |
 | `MinorAmountField` | Naira entered by the user, stored in kobo |
@@ -616,16 +631,17 @@ The React Query defaults in `app/providers.tsx` are: retry once, no refetch on w
   - Third-party logo colours (`BillerLogo`: MTN, Glo, Airtel…) are tokens too, but no theme overrides them.
   - On a button filled with an accent colour, use `text-on-brand` for the label, not `text-white`. It stays white, except in Hatiso on dark surfaces, where the button turns Cloud and the label turns Carbon.
   - Slate greys and the few Tailwind orange/cyan classes are re-pointed for Hatiso in `globals.css`.
-- **Themes** (Profile → **Appearance**), defined in `lib/theme/theme.ts`. They only change the signed-in dashboard (`/dashboard/*`). The dashboard uses Hatiso Monochrome until the user picks another theme (`DEFAULT_THEME`); the landing, marketing and auth pages always use Classic (`BASE_THEME`, also what the server renders).
+- **Themes** (Profile → **Appearance**), defined in `lib/theme/theme.ts`. The picker only changes the signed-in dashboard (`/dashboard/*`), which uses Hatiso Monochrome until the user picks another theme (`DEFAULT_THEME`). The landing, marketing, auth and 404 pages always use Hatiso Monochrome (`BASE_THEME`, also what the server renders), whatever is picked in the dashboard.
   - **Hatiso Monochrome** (the dashboard default, marked "Default" in Appearance): the brand palette from Hatiso Brand Essentials. Carbon is the accent and dark surface, Graphite is used for hover and secondary surfaces, Cloud for light backgrounds, the supporting greys for text and borders, and the brand status colours for success, error and warning. Inside dark areas (any element with a dark `ink`/`tone` background), accents turn Cloud so they stay visible.
-  - **Classic**: the original teal-and-orange look, identical to before themes existed. Still selectable on the dashboard.
+  - **Classic**: the original teal-and-orange look, identical to before themes existed. Still selectable on the dashboard; the public pages no longer use it.
+  - **Public pages in Hatiso** (see also [Accent colour](#accent-colour)): on dark areas, buttons that were orange are Cloud (`bg-brand-359`/`bg-brand-361` turn Cloud inside dark surfaces), and the coloured headline words ("One platform.", "Every bank.", "in one place.", the service hero words and the 404 heading) use the `highlight` token, which is the accent in Hatiso (orange in Classic). The 404 card is Graphite (`bg-ink-674`) with an outlined secondary button. Text selection is the accent with Carbon text. Bank tiles without a brand colour use `ink-662`. Photos on the auth, banks and services pages keep their own colours.
   - **Dark**: Classic flipped to dark backgrounds with light text. Page backgrounds, cards (`surface`), borders and text change lightness on a curve that keeps borders visible. The orange accent stays the same, pale tints become dark tints of the same hue, and status colours are brightened so they read on dark. Panels that are already dark in Classic (sidebar, banners: any element with a dark `ink`/`tone` background) keep their Classic colours. Slate, `red-50`/`rose-50` and `color-scheme` are switched too.
   - **Ocean** (blue), **Forest** (green) and **Plum** (violet): Classic with the accent (`brand-*`) and surface (`ink-*`) colours shifted to a new hue. Lightness and saturation stay the same, so contrast matches Classic. Warm neutral tints follow the surface hue; status and info colours don't change.
   - The choice is saved per browser in `localStorage` (`hatiso_theme`) and applied as `<html data-theme>`:
     - On a full page load under `/dashboard`, the inline script in `app/layout.tsx` (`THEME_INIT_SCRIPT`) sets it before the first paint (the saved theme, or Hatiso if nothing valid is saved), so there's no flash.
-    - On client-side navigation, `useDashboardTheme()` in `app/dashboard/layout.tsx` applies the saved theme (or Hatiso) when the dashboard opens and puts Classic back when the user leaves it.
+    - On client-side navigation, `useDashboardTheme()` in `app/dashboard/layout.tsx` applies the saved theme (or Hatiso) when the dashboard opens and puts Hatiso back when the user leaves it.
     - Other open dashboard tabs follow along.
-  - `useTheme()` returns the active theme. Canvas charts can't read CSS variables, so `SpendingChart` and the Analytics heatmap pick colours per theme (hand-picked for Classic and Hatiso, read from the accent tokens with `themeColor()` for the hue themes). Categorical chart colours (one per service) and bank brand colours don't change.
+  - `useTheme()` returns the active theme. Canvas charts can't read CSS variables, so `SpendingChart` and the Analytics heatmap pick colours per theme (hand-picked for Classic and Hatiso, read from the accent tokens with `themeColor()` for the hue themes). Categorical chart colours (one per service) use `seriesColor(theme, color, index)`: in Hatiso they become Carbon and the supporting greys (`HATISO_SERIES` in `lib/theme/theme.ts`), and every other theme keeps the original colours. The Analytics "This month vs last month" lines are Carbon and Grey 400 in Hatiso (green and orange elsewhere). Bank brand colours don't change.
   - Adding a theme: add it to `THEMES` (id, name, description, preview swatches) and add a `[data-theme="<id>"]` block of token values in `theme.css`. The hue-theme blocks at the end of `theme.css` were generated by rotating the Classic `brand-*`/`ink-*` values in OKLCH, which is the quickest way to make another one.
 - **Form and button styles live in `components/forms/styles.ts`** (`fieldControlClass`, `fieldLabelClass`, `buttonClass`, …). Use these rather than copying class strings.
 - **Charts** are Chart.js wrappers in `components/dashboard/DashboardCharts.tsx`:
@@ -648,6 +664,126 @@ The React Query defaults in `app/providers.tsx` are: retry once, no refetch on w
 - **Remote images** must come from a host listed under `images.remotePatterns` in `next.config.ts`.
 
 ---
+
+## Brand redesign
+
+The public pages, auth screens, service pages, dashboard and popups were rebuilt to the Hatiso redesign (Claude Design boards), keeping every existing feature, link and API call. Nothing new was added to the app; the boards are the visual guide only.
+
+- **Rules:** the brand palette only (Carbon, Graphite, Cloud, white, the supporting greys, Silver as the single accent), Outfit, status colours only with a text label, and bank colours only inside that bank's tile or dialog. Utilities for the fixed brand colours: `bg-carbon`, `bg-graphite`, `bg-cloud`, `text-silver`, `text-grey-100` to `text-grey-900`, `text-status-success`, `text-status-warning`, `text-status-error` (tokens in `app/theme.css`).
+- **Corners** are tighter everywhere (public pages and dashboard): `globals.css` overrides Tailwind's `rounded-xl` (10px), `rounded-2xl` (12px), `rounded-3xl` (14px) and `rounded-4xl` (16px). Inputs are 8px (`rounded-lg`), chips and status tags 6px.
+- **Motion** classes live at the end of `app/globals.css`: `hz-rise` (entrance; set `--d` for a 90ms step delay), `hz-stagger` (children one after another), `hz-reveal` (rises as it scrolls into view where supported), `hz-card` (pops in then floats), `hz-ping` (live dot), `hz-zoom` (photo settle), `hz-swap` (content that changes in place), `hz-fill` (a progress bar; `--fill-ms` sets its length), `hz-pop` (dialogs and menus), `hz-lift` and `hz-lift-dark` (cards that rise on hover), `hz-press` (buttons that press in) and `hz-arrow` (an arrow that nudges on hover). All of them switch off when the device asks for reduced motion. Tailwind compiles `translate` in keyframes to `transform`, so put a moving class on an inner element when the outer one already has a `transform`.
+- **Section headings** use an eyebrow label (`hz-eyebrow`, no leading dash), a semibold headline with tight tracking, and the `highlight` (Silver) word on dark sections.
+- **Landing (`/`):**
+  - `HeroSection`: a centred headline that cycles through the three hero messages every 4.5s (`SLIDE_MS`) above three tiles (services, a photo with a paid receipt, the bank hand-off). The tile for the current message is lit, with a progress bar along its top edge, and clicking a tile switches to its message.
+  - `PopularCategories` (services from the API as white cards with a Carbon icon, plus the "Pay instantly" card), `BanksSection` (dark, with the promise list and bank tiles), `SolutionsSection` (Personal/Business tabs and slides; its mock-up images are shown in greyscale), `CtaBanner` and `Footer`.
+- **Navbar:** Carbon bar with a Silver underline on the active link; the language and profile menus are white dropdowns.
+- **Banks (`/banks`):** hero with the first banks fanned out in monochrome, then the filters (search, banks, channels, status) and bank cards on Cloud.
+- **Contact (`/contact`):** centred text hero, four contact cards (sales, support, phone, location: the app's own details), then the form. The success state confirms with a green tick and "Message sent".
+- **Forms:** `components/forms/styles.ts` gives the public and auth fields a white field with a Grey 150 border, Carbon border and Silver ring on focus, and the brand error red. Dashboard fields keep their theme tokens with the same focus ring.
+- **Auth (`/auth/*`):** every screen sits in `components/auth/AuthLayout.tsx`: the Carbon brand panel (`AuthBrandPanel`, with a photo cross-fade and a paid-receipt card) on the left, and the form on Cloud with a sign-in or sign-up link in the top-right corner. `AuthHeading` is the eyebrow, title and intro at the top of each screen, and `AUTH_PRIMARY`, `AUTH_SECONDARY`, `AUTH_LINK` and `AUTH_ERROR` are the shared class strings. Sign-up shows a three-part progress bar (`StepIndicator`) with "Step n of 3" eyebrows; the code boxes (`OtpInput`) and the password checklist (`PasswordStrength`) are white with Carbon for filled or met. Success dialogs use a Carbon tick.
+- **Service pages (`/categories/[slug]`):** Carbon hero with a breadcrumb, the service headline (first part in Silver), two promise lines and the service photo (greyscale) on a dotted Graphite panel. The service picker is a row of Graphite tiles; the selected one turns Cloud. The payment form, the review card and the receipt dialog are white with Carbon buttons.
+- **Popups:** the guest invite (`CustomerInvitePopup`), the "Continue to bank" dialog, the transaction help modal and the dashboard logout confirm all use a Carbon 60% backdrop, a white or surface card that pops in (`hz-pop`) and full-width buttons.
+- **Dashboard:** keeps the theme tokens (so the Appearance themes still work) with the tighter corners, the brand status colours and the Hatiso chart greys described in [Styling](#styling).
+  - Pages sit on `bg-tone-44` (Cloud in the Hatiso theme) with white `bg-surface` cards. Each page opens with an eyebrow, a 28–36px semibold title whose second half is muted (`text-tone-414`), and a short intro; there's no divider under the header.
+  - Sidebar: sentence-case group labels, 40px rows, and the active row has a `highlight` bar on its left edge and a `highlight` icon. The help card and log-out row use the same quiet greys.
+  - Header: a "Section / Page" breadcrumb, a bordered notification button and the profile chip.
+  - Overview promo carousel: every slide uses the same brand tone (no green or blue slides), sits in a bordered white card, and its text stops short of the round badge.
+  - Digital services: every service tile has the same neutral icon square (`bg-tone-44`), with no per-service colours.
+  - Banking: the hand-off banner and the "Verified banks only" card are white with grey text; the decorative card graphic is shown in greyscale (the CBN mark is unchanged).
+  - Raw `slate-*` and `black` classes were replaced with theme tokens (`text-tone-414` muted text, `text-tone-714` strong text, `bg-tone-44` soft fills, `border-tone-80` lines) so they follow the dark theme too.
+- **404:** heavy weights became semibold, big radii were reduced, and leftover colours use the brand status tokens or greys. Third-party biller logos are unchanged.
+
+---
+
+
+### Board rebuild
+
+Every screen has been rebuilt from the Claude Design boards, including the sections the boards added.
+
+Every dashboard page is wrapped in `flex w-full flex-col gap-6 p-[clamp(20px,3vw,40px)]`. The page always fills the full width beside the sidebar, with no maximum. Use the same wrapper for new dashboard pages.
+
+**Public pages**
+
+- **Landing:** Services grid, "How it works" (`#how-it-works`) and "For business" (`#business`) sections, bank tiles with status, and new CTA copy. The old Solutions section is gone.
+- **Header:** links to Services, Banks, For business and Contact, with the current page on a Graphite pill. Signed out, it shows Sign in and Create account. Signed in, it shows a language menu and an initials avatar menu (Dashboard, Transactions, Profile and security, Sign out). Menus close on outside click or Escape. Phones get a full-height menu sheet. Sign out asks first with the shared `components/auth/LogoutDialog.tsx`.
+- **Footer:** tagline, four columns (Services, Banking, Business, Company) and the © row.
+- **Banks (`/banks`):** hero with bank search, Channel and Status filters, partner bank tiles, and `BankOpenDialog` ("Continue to {bank}"). `BankOpenDialog` takes an optional `onContinue(bank)`.
+- **Contact (`/contact`):** three channel cards, topic chips (the name label switches between Full name and Business name), optional phone, a "Before you write" aside and a success state. `contactSchema` now has `topic` and `businessName`, and phone is optional.
+- **404:** "This page took a wrong turn." with Home and Pay a bill buttons.
+
+**Auth**
+
+- `AuthLayout` takes a `back` prop that puts a top-left back link in place of the mobile logo.
+- The step labels are now "Your details / Password / Verify".
+- `PasswordStrength` is an always-visible rules list: 8 characters, uppercase, number, and symbol (optional).
+- Login has a "Keep me signed in" checkbox.
+- **Register:** the contact field has a hint ("We'll send a code to this email…" / "We'll text a code to this number…"). On the password step the rules list sits between Password and Confirm password, and Continue has an arrow.
+- **Forgot password (`/auth/forgot-password`)** follows the Forgot and ResetPassword boards in four steps:
+  1. Email.
+  2. "Code sent / Check your inbox." with Enter code and Use a different email.
+  3. Code, new password, rules and confirm on one screen, with a "Reset password" button. A wrong or expired code shows its error under the code boxes.
+  4. An inline "Password updated / You're all set." with Sign in.
+- **Verify (`VerifyContactPanel`):** a square icon tile, a "Verification code" legend and a "Verify account" button. The resend countdown ("Resend in 0:42") and the Change email link share one row, with a "Can't find it?" note underneath.
+
+**Paying**
+
+- **Service page (`/categories/[slug]`):** breadcrumb hero with a live receipt preview (biller circles, amount, masked recipient), tab pills, provider cards (`ProviderSelector`), quick amounts (₦100 to ₦2,000), and a Carbon summary aside with "Continue to payment".
+- **Payment dialogs:** live in `components/services/PayFlowDialogs.tsx`.
+  - `ConfirmPaymentDialog` includes the "Pay with" choice of card or bank transfer.
+  - `ProcessingDialog` shows while the payment is being prepared or confirmed.
+  - `PaymentSuccessDialog` follows a completed payment.
+  - The chosen method is passed to Paystack as `channels`. `PaystackCheckout` accepts `channels?: string[]`.
+- **Pay bills (`/dashboard/services`):** provider search and service chips. "All" lists every provider of every service (`useAllDigitalServiceCatalogues`, which fetches one category at a time so the API's rate limit isn't hit). A chip narrows it to one service. Clicking a provider opens QuickPay at Details. Provider tiles (on Pay bills, in QuickPay and in `ProviderSelector`) show the logo through `ProviderLogo` / `providerLogoSrc` in `components/services/ProviderSelector.tsx`. It uses the API's `logoUrl` first, then a local image in `public/images` keyed by biller code, then the initials if there's no logo or it fails to load. The logos are `unoptimized` because they come from the provider's CDN. Queries retry once on failure, but never after a 429 (rate limit), because retrying straight away only uses up more of the limit (`app/providers.tsx`). QuickPay is a stepped modal (Service, Details, Review), then a success step.
+- **Invite popup:** "Ready to make it official?" with a perks checklist.
+
+**Dashboard**
+
+- **Shell:** Carbon sidebar with search, grouped nav and an account card. The overview has a greeting, Pay again, metrics, spending bars, where the money went and recent payments. Pay again deep-links with `/dashboard/services?service=<slug>`.
+- **Transactions:**
+  - Status chips with counts, plus Service, Sort and Period selects.
+  - Rows grouped by day, with Load more.
+  - "Download statement" exports a client-side CSV.
+  - Each row opens a receipt drawer with Pay again, Open full details, Share receipt and Report a problem.
+- **Transaction detail (`/dashboard/transactions/[id]`):**
+  - Carbon amount card, a token card with copy, a Details list, a Progress timeline, and a "Need help with this payment?" card.
+  - "Download receipt" prints the page; print hides the actions.
+- **Get help with this payment (`TransactionSupportModal`):** Question/Complaint toggle, topic (labelled "What went wrong?"), payment reference, and a "We're on it." success view. `SupportEnquiryForm` takes `onCancel` and `hideReceipt`, and has an optional payment reference field.
+- **Banking:** "Your banks" (recently opened, kept in this browser under `hatiso_recent_banks`), all partner banks with search, a "How banking works" card and a "Bank not listed?" card.
+- **Analytics:**
+  - 6 / 12 month toggle, Export, and Custom range, which opens `components/ui/DateRangeDialog.tsx` (presets plus a calendar).
+  - Four KPI tiles: Total spent, Monthly average, Payments, Busiest day.
+  - "Spending over time" chart with a dashed previous-period line, fetched as a second `useAnalytics` call.
+  - The analytics API always sends 12 monthly buckets, even for a shorter range or `bucket=DAY`. The page keeps only the buckets inside the chosen dates (`inRange`). For a month range, the previous period is the same number of whole calendar months just before it.
+  - By category donut, Top providers, and a "biggest bill" insight card.
+- **Notifications:**
+  - All / Unread / Payments / Account / Offers tabs and Mark all as read.
+  - Read state is kept in this browser (`hatiso_read_notifications`) because the API has none.
+  - "How we reach you" switches: Email and SMS set the receipt channel (`purchaseChannel`).
+- **Profile and security:**
+  - Tabs: Personal details, Security, Notifications, Appearance, Payment methods.
+  - Change password and Delete account open dialogs built on `components/ui/DialogFrame.tsx`.
+- **Help and support:**
+  - Get help: send a request, plus "Your requests" and "Reach us directly".
+  - Questions: search, category chips and an accordion.
+  - Feedback: a 1 to 5 score.
+  - Request pages (`/dashboard/support/tickets/[ticketId]`) show one thread (messages plus status updates), a reply box, and Reopen or "Rate this help" once resolved. Rating opens the Feedback dialog.
+- **Empty and error states:** `components/ui/StateBlock.tsx` is the States board's Empty / Error ("Couldn't load" + Try again) / Not found block. It's used on Transactions (No payments yet, Nothing matches, unavailable) and Pay bills (providers unavailable).
+- **Toasts:** sonner is styled as the States board's Carbon message cards, with a coloured status circle (`app/providers.tsx`).
+
+**Not connected yet (no backend)**
+
+- The Verify board's "It expires in 10 minutes" is left out because the API doesn't say how long a code lasts.
+- Daily and weekly analytics charts: the API ignores `bucket` and returns months, so a 30-day custom range shows month points.
+- The contact form only shows the confirmation.
+- "Keep me signed in" is UI only.
+- Privacy and Terms have no pages.
+- Sidebar search filters nothing, and there's no notifications badge.
+- "Your banks" and notification read state are per browser.
+- The payment-method choice only limits Paystack channels; there are no saved cards, so Payment methods shows an empty state.
+- Profile has no photo upload, two-step verification, other-device sessions or member-since date. The Push, sign-in alert, weekly summary and offers switches don't save.
+- Delete account sends you to support, since there's no delete endpoint.
+- Request pages can't attach files or "Mark as resolved". Feedback isn't linked to a request, so the reference goes in the remark.
+- The BankVerify phone/OTP flow and the "Add a card" dialog aren't built, because there are no endpoints for them.
 
 ## Conventions checklist
 

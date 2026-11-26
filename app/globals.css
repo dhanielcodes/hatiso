@@ -6,6 +6,18 @@
   --font-outfit: var(--font-outfit);
 }
 
+/*
+ * Corner radius: the Hatiso redesign keeps corners tight. Panels and photos 14 to 16px, cards 10 to 14px,
+ * inputs 8px, buttons 10px, chips and status tags 6px. These override Tailwind's larger defaults everywhere.
+ */
+@theme {
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 0.875rem;
+  --radius-4xl: 1rem;
+  --ease-out-soft: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
 :root {
   /* Follow the active theme (app/theme.css). */
   --brand-bg: var(--color-ink-662);
@@ -60,12 +72,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #234654;
+  background: #484B52;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-orange);
+  background: #919397;
 }
 
 /* Hide scrollbar utility across all modern browsers */
@@ -135,3 +147,68 @@ body {
     radial-gradient(circle at 20% 80%, rgba(255, 90, 31, 0.05) 0%, transparent 45%),
     var(--brand-bg);
 }
+
+/* ---------------------------------------------------------------------------
+ * Hatiso motion. Entrances: hz-rise (set --d for a 90ms step delay), hz-stagger (children one after another),
+ * hz-reveal (rises as it scrolls into view, where the browser supports scroll-driven animation).
+ * Accents: hz-card (pops in, then floats), hz-ping (live dot), hz-unveil + hz-zoom (photo reveal),
+ * hz-swap (content that changes in place), hz-fill (progress bar, set --fill-ms), hz-pop (dialogs, menus),
+ * hz-lift (cards that rise on hover). Everything is switched off when the device asks for reduced motion.
+ * ------------------------------------------------------------------------- */
+@keyframes hz-rise { from { opacity: 0; translate: 0 16px; } to { opacity: 1; translate: 0 0; } }
+@keyframes hz-pop { from { opacity: 0; translate: 0 10px; scale: 0.96; } to { opacity: 1; translate: 0 0; scale: 1; } }
+@keyframes hz-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+@keyframes hz-ping { 0% { box-shadow: 0 0 0 0 currentColor; } 100% { box-shadow: 0 0 0 7px transparent; } }
+@keyframes hz-unveil { from { clip-path: inset(100% 0 0 0 round 16px); } to { clip-path: inset(0 0 0 0 round 16px); } }
+@keyframes hz-zoom { from { scale: 1.12; } to { scale: 1; } }
+@keyframes hz-swap { from { opacity: 0; transform: translateY(14px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes hz-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.hz-rise { animation: hz-rise 0.7s var(--ease-out-soft) both; animation-delay: calc(var(--d, 0) * 90ms); }
+.hz-stagger > * { animation: hz-rise 0.6s var(--ease-out-soft) both; }
+.hz-stagger > *:nth-child(2) { animation-delay: 0.06s; }
+.hz-stagger > *:nth-child(3) { animation-delay: 0.12s; }
+.hz-stagger > *:nth-child(4) { animation-delay: 0.18s; }
+.hz-stagger > *:nth-child(5) { animation-delay: 0.24s; }
+.hz-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+.hz-stagger > *:nth-child(7) { animation-delay: 0.36s; }
+.hz-stagger > *:nth-child(n + 8) { animation-delay: 0.42s; }
+.hz-card { animation: hz-pop 0.8s var(--ease-out-soft) 0.55s both, hz-float 6s ease-in-out 1.4s infinite; }
+.hz-float { animation: hz-float 6s ease-in-out infinite; }
+.hz-ping { animation: hz-ping 1.8s ease-out infinite; }
+.hz-unveil { animation: hz-unveil 1.1s var(--ease-out-soft) 0.15s both; }
+.hz-zoom { animation: hz-zoom 1.6s var(--ease-out-soft) 0.15s both; }
+.hz-swap { animation: hz-swap 0.6s var(--ease-out-soft) both; }
+.hz-fill { transform-origin: left; animation: hz-fill var(--fill-ms, 4500ms) linear forwards; }
+.hz-pop { animation: hz-pop 0.28s var(--ease-out-soft) both; }
+/* Chart bars grow up from the baseline; progress bars draw from the left. */
+@keyframes hz-bar { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes hz-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.hz-bar { transform-origin: bottom; animation: hz-bar 0.7s var(--ease-out-soft) both; }
+.hz-grow { transform-origin: left; animation: hz-grow 0.6s var(--ease-out-soft) 0.15s both; }
+.hz-lift { transition: transform 0.3s var(--ease-out-soft), box-shadow 0.3s var(--ease-out-soft), border-color 0.2s ease; }
+.hz-lift:active { transform: scale(0.98); }
+.hz-press { transition: transform 0.16s var(--ease-out-soft), background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+.hz-press:active { transform: scale(0.97); }
+.hz-press svg.hz-arrow, .hz-lift .hz-arrow { transition: transform 0.25s var(--ease-out-soft); }
+@supports (animation-timeline: view()) {
+  .hz-reveal { animation: hz-rise linear both; animation-timeline: view(); animation-range: entry 5% cover 30%; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .hz-lift:hover { transform: translateY(-4px); box-shadow: 0 22px 44px -22px rgba(18, 21, 26, 0.45); }
+  .hz-lift-dark:hover { border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 22px 44px -22px rgba(0, 0, 0, 0.9); }
+  .hz-press:hover svg.hz-arrow { transform: translateX(3px); }
+  .hz-lift:hover .hz-arrow { transform: translate(2px, -2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hz-rise, .hz-stagger > *, .hz-card, .hz-float, .hz-ping, .hz-unveil, .hz-zoom, .hz-swap, .hz-pop, .hz-reveal, .hz-bar, .hz-grow { animation: none; }
+  .hz-fill { animation: none; transform: scaleX(1); }
+  .hz-lift, .hz-press { transition: none; }
+}
+
+/* Eyebrow label above section headings (no leading dash). */
+.hz-eyebrow { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; }
+
+/* Receipt drawer (Transactions board): slides in from the right. */
+@keyframes hz-drawer { from { transform: translateX(100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { [class*="animate-[hz-drawer"] { animation: none; } }

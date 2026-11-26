@@ -197,13 +197,13 @@ export default function RewardPage() {
     const showingTo = Math.min(startIndex + pageSize, filteredRows.length);
 
     return (
-        <div className="min-h-full bg-tone-12 text-tone-760">
+        <div className="min-h-full bg-tone-44 text-tone-760">
             {/* ── Page header ── */}
 
-            <section className="border-b border-tone-80 px-5 py-7 sm:px-8">
-                <p className="text-xs font-semibold uppercase tracking-wide text-brand-361">Rewards</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-tone-744 sm:text-3xl">Good habits deserve <span className="text-brand-305">good rewards.</span></h2>
-                <p className="mt-2 text-sm text-tone-432 sm:text-base">Earn points whenever you pay, refer friends, and complete simple challenges.</p>
+            <section className="hz-rise px-5 pt-8 pb-2 sm:px-8">
+                <p className="hz-eyebrow text-tone-414">Rewards</p>
+                <h2 className="mt-3 text-[clamp(28px,3vw,36px)] leading-[1.1] font-semibold tracking-[-0.025em] text-tone-744">Good habits deserve <span className="text-tone-414">good rewards.</span></h2>
+                <p className="mt-2.5 text-[15px] text-tone-432">Earn points whenever you pay, refer friends, and complete simple challenges.</p>
             </section>
 
             <main className="mx-auto space-y-6 px-5 py-6 sm:px-8 lg:py-7">
@@ -347,7 +347,7 @@ export default function RewardPage() {
                                     aria-pressed={tab === name}
                                     className={`rounded-full border px-5 py-2.5 text-sm font-medium transition ${tab === name
                                         ? 'border-ink-660 bg-ink-660 text-white'
-                                        : 'border-tone-114 bg-surface text-tone-678 hover:bg-slate-50'
+                                        : 'border-tone-114 bg-surface text-tone-678 hover:bg-tone-44'
                                         }`}
                                 >
                                     {name}
@@ -397,7 +397,7 @@ export default function RewardPage() {
                                 })}
                                 {visibleRows.length === 0 && (
                                     <tr>
-                                        <td colSpan={COLUMNS.length} className="px-4 py-16 text-center text-sm text-slate-500">
+                                        <td colSpan={COLUMNS.length} className="px-4 py-16 text-center text-sm text-tone-414">
                                             No {tab.toLowerCase()} rewards found.
                                         </td>
                                     </tr>
@@ -429,7 +429,7 @@ export default function RewardPage() {
                                                 </option>
                                             ))}
                                         </select>
-                                        <ChevronDown className="pointer-events-none absolute right-2 h-3.5 w-3.5 text-slate-500" />
+                                        <ChevronDown className="pointer-events-none absolute right-2 h-3.5 w-3.5 text-tone-414" />
                                     </label>
                                     entries
                                 </span>
@@ -440,7 +440,7 @@ export default function RewardPage() {
                                         onClick={() => setPage(Math.max(1, currentPage - 1))}
                                         disabled={currentPage === 1}
                                         aria-label="Previous page"
-                                        className="flex h-7 w-7 items-center justify-center rounded-md border border-tone-98 bg-surface transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="flex h-7 w-7 items-center justify-center rounded-md border border-tone-98 bg-surface transition hover:bg-tone-44 disabled:cursor-not-allowed disabled:opacity-40"
                                     >
                                         <ChevronLeft className="h-4 w-4" />
                                     </button>
@@ -450,7 +450,7 @@ export default function RewardPage() {
                                         onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
                                         disabled={currentPage === totalPages}
                                         aria-label="Next page"
-                                        className="flex h-7 w-7 items-center justify-center rounded-md border border-tone-98 bg-surface transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="flex h-7 w-7 items-center justify-center rounded-md border border-tone-98 bg-surface transition hover:bg-tone-44 disabled:cursor-not-allowed disabled:opacity-40"
                                     >
                                         <ChevronRight className="h-4 w-4" />
                                     </button>

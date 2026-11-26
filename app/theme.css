@@ -270,6 +270,8 @@
 }
 
 [data-theme="hatiso"] {
+  /* Headline highlight words and text selection use the accent (a white-label bank's colour when set). */
+  --color-highlight: var(--color-accent);
   --color-success-57: #F1F2F4;
   --color-success-96: #D3D4D5;
   --color-success-326: #23272F;
@@ -500,6 +502,17 @@
   --color-warning-336: #9B6200;
   --color-warning-374: #9B6200;
   --color-warning-492: #9B6200;
+  /* Status tints and info greys that had no Hatiso value (they fell back to amber and teal). */
+  --color-warning-35: #F5EFE5;
+  --color-warning-64: #EFE4D1;
+  --color-warning-79: #E6D6BA;
+  --color-warning-185: #9B6200;
+  --color-warning-187: #9B6200;
+  --color-danger-90: #F1D3D0;
+  --color-info-450: #484B52;
+  --color-info-454: #616366;
+  --color-info-455: #616366;
+  --color-info-458: #616366;
 }
 
 
@@ -510,6 +523,39 @@
  * their label (text-on-brand) to Carbon. A light card nested inside a dark area switches it back.
  */
 @theme {
+  /*
+   * Hatiso brand palette (Brand Essentials), fixed in every theme: Carbon/Graphite surfaces, Cloud for
+   * light areas and text on dark, Silver for dividers and focus. The greys are the supporting greys.
+   * (Public pages use the themed tokens with data-theme="hatiso"; these are for code that needs the
+   * brand colours whatever the theme.)
+   */
+  --color-carbon: #12151A;
+  --color-graphite: #23272F;
+  --color-cloud: #F1F2F4;
+  --color-silver: #B8BCC2;
+  --color-grey-100: #D3D4D5;
+  --color-grey-150: #C9CACB;
+  --color-grey-400: #919397;
+  --color-grey-500: #79797A;
+  --color-grey-600: #616366;
+  --color-grey-700: #484B52;
+  --color-grey-800: #393C40;
+  --color-grey-900: #303031;
+  /*
+   * Hatiso's accent is Silver, the brand palette's only accent (no added colours). An onboarded bank
+   * swaps in its brand colour by overriding these two variables on a wrapper (see lib/theme/accent.ts).
+   * Use sparingly: headline highlight words (via `highlight` in Hatiso), text selection, bank cards and dialogs.
+   * As text it is only readable on dark surfaces; on light ones use it as a fill with `on-accent` text.
+   * Bank colours appear only inside that bank's own area (its card or dialog), never in the Hatiso frame.
+   */
+  --color-accent: #B8BCC2;
+  --color-on-accent: #12151A;
+  /* Brand status colour (always shown with a text label). */
+  --color-status-success: #287A4B;
+  --color-status-warning: #9B6200;
+  --color-status-error: #B42318;
+  /* Highlighted words in headlines on dark public pages (hero, auth panel, 404). The accent in Hatiso. */
+  --color-highlight: #FF6500;
   --color-on-brand: #FFFFFF;
   /* Card and panel background: white in every theme except Dark. */
   --color-surface: #FFFFFF;
@@ -572,7 +618,7 @@
   --color-brand-326: #D3D4D5;
   --color-brand-333: #D3D4D5;
   --color-brand-334: #D3D4D5;
-  --color-brand-359: #D3D4D5;
+  --color-brand-359: #F1F2F4;
   --color-brand-361: #F1F2F4;
   --color-brand-365: #D3D4D5;
   --color-brand-366: #D3D4D5;

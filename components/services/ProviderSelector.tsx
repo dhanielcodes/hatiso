@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { Check } from 'lucide-react';
 
@@ -20,6 +20,55 @@ interface ProviderSelectorProps {
   type?: ProviderSelectorType;
 }
 
+/** Up to three letters for a provider without a logo ("MTN", "9M", "AT"). */
+export function providerShort(name: string) {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+  return words
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+}
+
+/** Local logos for providers the API sends without a `logoUrl`, keyed by biller code. */
+const LOCAL_PROVIDER_LOGOS: Record<string, string> = {
+  mtn: '/images/network_mtn.png',
+  airtel: '/images/network_airtel.png',
+  glo: '/images/network_glo.png',
+  '9mobile': '/images/network_9mobile.png',
+  dstv: '/images/tv_dstv.png',
+  gotv: '/images/tv_gotv.png',
+  startimes: '/images/tv_startimes.png',
+  showmax: '/images/tv_showmax.png',
+  ikeja: '/images/elec_ikeja.png',
+  'ikeja-electric': '/images/elec_ikeja.png',
+  ibedc: '/images/elec_ibedc.png',
+  'ibadan-electric': '/images/elec_ibedc.png',
+  ekedc: '/images/elec_ekedc.png',
+  'eko-electric': '/images/elec_ekedc.png',
+  jos: '/images/elec_jos.png',
+  'jos-electric': '/images/elec_jos.png',
+  kaduna: '/images/elec_kaduna.png',
+  'kaduna-electric': '/images/elec_kaduna.png',
+};
+
+/** The provider's logo: the API's `logoUrl` first, then a local image, otherwise nothing (show initials). */
+export function providerLogoSrc(biller: { billerCode: string; logoUrl?: string }) {
+  return biller.logoUrl || LOCAL_PROVIDER_LOGOS[biller.billerCode.toLowerCase()];
+}
+
+/**
+ * A provider's logo inside its square tile, falling back to its initials when there's no logo
+ * or the image fails to load. `unoptimized` because the logos come from the provider's CDN.
+ */
+export function ProviderLogo({ name, src, sizes = '44px' }: { name: string; src?: string; sizes?: string }) {
+  const [failed, setFailed] = useState<string | null>(null);
+  if (!src || failed === src) return <>{providerShort(name)}</>;
+  return <Image src={src} alt="" fill sizes={sizes} unoptimized className="object-contain" onError={() => setFailed(src)} />;
+}
+
+/** Service board "Network" picker: white cards with a logo square, a check when picked, and the name. */
 export default function ProviderSelector({
   label = 'Select biller',
   providers,
@@ -28,71 +77,36 @@ export default function ProviderSelector({
   type = 'image',
 }: ProviderSelectorProps) {
   return (
-    <div className="w-full">
-      <label className="mb-2 block text-xs font-semibold text-slate-700">
-        {label}
-      </label>
-
-      {/* Light ice-blue container matching the Figma mockup */}
-      <div className="rounded-2xl bg-tone-32 p-3 sm:p-4">
-        <div
-          className={`grid items-center gap-2 sm:gap-3 ${providers.length === 5 ? 'grid-cols-5' : 'grid-cols-4'
-            }`}
-        >
-          {providers.map((item) => {
-            const isSelected = selectedId.toLowerCase() === item.id.toLowerCase();
-
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onSelect(item.id, item.name)}
-                className={`relative flex flex-col items-center justify-center transition-all duration-200 focus:outline-none ${isSelected
-                  ? 'rounded-2xl border border-brand-361 bg-tone-42 py-3 px-1.5 sm:px-2 shadow-xs'
-                  : 'rounded-2xl border border-transparent py-3 px-1.5 sm:px-2 hover:bg-surface/60'
-                  }`}
-              >
-                {type === 'image' ? (
-                  <>
-                    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface text-xs font-bold text-ink-626 sm:h-12 sm:w-12">
-                      {item.imageSrc ? (
-                        <Image
-                          src={item.imageSrc}
-                          alt={`${item.name} provider`}
-                          fill
-                          sizes="48px"
-                          className="object-contain transition-transform duration-200 hover:scale-105"
-                        />
-                      ) : (
-                        item.name.slice(0, 2).toUpperCase()
-                      )}
-                    </div>
-                    <span className="mt-1.5 text-center text-[11px] font-bold text-ink-729 line-clamp-1 sm:text-xs">
-                      {item.name}
-                    </span>
-                  </>
-                ) : (
-                  <span className="flex min-h-12 items-center text-center text-xs font-bold leading-snug text-ink-729 sm:text-sm">
-                    {item.name}
+    <fieldset className="flex w-full flex-col gap-3">
+      <legend className="mb-3 text-sm font-medium text-tone-744">{label}</legend>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(120px,100%),1fr))] gap-2.5">
+        {providers.map((item) => {
+          const isSelected = selectedId.toLowerCase() === item.id.toLowerCase();
+          return (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => onSelect(item.id, item.name)}
+              className={`hz-press flex flex-col items-start gap-3.5 rounded-lg bg-surface p-3.5 text-left text-tone-744 transition-colors ${
+                isSelected ? 'border-2 border-brand-305 p-[13px]' : 'border border-tone-100 hover:border-tone-414'
+              }`}
+            >
+              <span className="flex w-full items-start justify-between">
+                <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-tone-44 text-xs font-bold text-tone-714">
+                  {type === 'image' ? <ProviderLogo name={item.name} src={item.imageSrc} sizes="36px" /> : providerShort(item.name)}
+                </span>
+                {isSelected && (
+                  <span className="hz-pop flex h-[22px] w-[22px] items-center justify-center rounded-full bg-brand-305 text-on-brand">
+                    <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
                   </span>
                 )}
-
-                {/* Bottom Selection Checkmark or Equal-Height Spacer */}
-                <div className="mt-1 flex h-4 w-4 items-center justify-center">
-                  {isSelected ? (
-                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-361 text-on-brand shadow-xs">
-                      <Check className="h-2.5 w-2.5 stroke-[3]" />
-                    </div>
-                  ) : (
-                    <div className="h-4 w-4 opacity-0" aria-hidden="true" />
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+              </span>
+              <span className="line-clamp-1 text-[15px] font-medium">{item.name}</span>
+            </button>
+          );
+        })}
       </div>
-    </div>
+    </fieldset>
   );
 }
-

@@ -1,569 +1,271 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import {
-  ShieldCheck,
-  Building2,
-  FileText,
-  CreditCard,
-  ArrowLeftRight,
-  Menu,
-  ExternalLink,
-  X,
-  Search,
-  ArrowUpRight,
-} from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { ArrowUpRight, Building2, Lock, Search, X } from "lucide-react";
 import Navbar from "@/components/marketplace/Navbar";
 import Footer from "@/components/marketplace/Footer";
 import BankLogo from "@/components/banks/BankLogo";
+import BankOpenDialog from "@/components/banks/BankOpenDialog";
 import { useBanks } from "@/lib/queries/useBanks";
 import type { Bank } from "@/lib/api/banks";
-import {
-  bankDomain,
-  bankStatus,
-  bankWebsite,
-  channelLabels,
-  STATUS_DOT,
-  STATUS_TEXT,
-} from "@/lib/banks/bankDisplay";
+import { bankInitials, bankStatus, channelLabels, STATUS_DOT } from "@/lib/banks/bankDisplay";
 
+const rise = (d: number) => ({ "--d": d }) as React.CSSProperties;
+
+/** Banks board: dark hero with search and the secure hand-off visual, then filters and partner bank tiles. */
 export default function BanksPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBankNames, setSelectedBankNames] = useState<string[]>([]);
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [selectedBankModal, setSelectedBankModal] = useState<Bank | null>(null);
+  const [query, setQuery] = useState("");
+  const [channels, setChannels] = useState<string[]>([]);
+  const [onlineOnly, setOnlineOnly] = useState(false);
+  const [picked, setPicked] = useState<Bank | null>(null);
   const { data: banks = [], isLoading, isError, refetch } = useBanks();
 
-  // Filter options come from the banks the API returns.
-  const allChannels = useMemo(
-    () => Array.from(new Set(banks.flatMap(channelLabels))),
-    [banks],
-  );
-  const allStatuses = useMemo(
-    () => Array.from(new Set(banks.map((b) => bankStatus(b).label))),
-    [banks],
-  );
+  const allChannels = useMemo(() => Array.from(new Set(banks.flatMap(channelLabels))), [banks]);
 
-  // Toggle bank checkbox
-  const toggleBank = (name: string) => {
-    setSelectedBankNames((prev) =>
-      prev.includes(name) ? prev.filter((b) => b !== name) : [...prev, name],
-    );
-  };
-
-  // Toggle service checkbox
-  const toggleService = (srv: string) => {
-    setSelectedServices((prev) =>
-      prev.includes(srv) ? prev.filter((s) => s !== srv) : [...prev, srv],
-    );
-  };
-
-  // Toggle status checkbox
-  const toggleStatus = (st: string) => {
-    setSelectedStatuses((prev) =>
-      prev.includes(st) ? prev.filter((s) => s !== st) : [...prev, st],
-    );
-  };
-
-  const clearAllFilters = () => {
-    setSearchQuery("");
-    setSelectedBankNames([]);
-    setSelectedServices([]);
-    setSelectedStatuses([]);
-  };
-
-  // Filtered Banks
-  const filteredBanks = useMemo(() => {
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
     return banks.filter((bank) => {
-      // 1. Search Query
-      if (
-        searchQuery &&
-        !bank.name.toLowerCase().includes(searchQuery.toLowerCase())
-      ) {
-        return false;
-      }
-
-      // 2. Bank Name checkbox filter
-      if (
-        selectedBankNames.length > 0 &&
-        !selectedBankNames.includes(bank.name)
-      ) {
-        return false;
-      }
-
-      // 3. Service Supported filter (bank must support all checked services)
-      if (
-        selectedServices.length > 0 &&
-        !selectedServices.every((srv) => channelLabels(bank).includes(srv))
-      ) {
-        return false;
-      }
-
-      // 4. Status filter
-      if (
-        selectedStatuses.length > 0 &&
-        !selectedStatuses.includes(bankStatus(bank).label)
-      ) {
-        return false;
-      }
-
+      if (q && !bank.name.toLowerCase().includes(q)) return false;
+      if (channels.length && !channels.every((c) => channelLabels(bank).includes(c))) return false;
+      if (onlineOnly && bankStatus(bank).tone !== "online") return false;
       return true;
     });
-  }, [
-    banks,
-    searchQuery,
-    selectedBankNames,
-    selectedServices,
-    selectedStatuses,
-  ]);
+  }, [banks, query, channels, onlineOnly]);
 
-  const hasActiveFilters =
-    searchQuery ||
-    selectedBankNames.length > 0 ||
-    selectedServices.length > 0 ||
-    selectedStatuses.length > 0;
+  const hasFilters = !!query || channels.length > 0 || onlineOnly;
+  const clear = () => {
+    setQuery("");
+    setChannels([]);
+    setOnlineOnly(false);
+  };
+  const toggleChannel = (c: string) =>
+    setChannels((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
+
+  const [heroA, heroB, heroC] = [banks[0], banks[1], banks[2]];
+  const heroChannel = (bank?: Bank) => (bank ? channelLabels(bank)[0] ?? "Official website" : "Mobile app");
 
   return (
-    <div className="min-h-screen bg-ink-662 text-white selection:bg-brand-361 selection:text-white flex flex-col justify-between">
-      {/* ========================================================= */}
-      {/* 1. TOP HERO SECTION (Dark Brand Theme)                    */}
-      {/* ========================================================= */}
-      <div className="relative overflow-hidden bg-ink-662 pb-16 sm:pb-20">
-        <Navbar />
+    <div className="flex min-h-screen flex-col bg-cloud text-carbon selection:bg-silver selection:text-carbon">
+      <Navbar />
 
-        <div className="relative z-10 mx-auto max-w-7xl px-4 xl:px-0 pt-6">
-          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-14">
-            {/* Left Column: Heading & Description */}
-            <div className="flex flex-col lg:col-span-7">
-              <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-                <span className="text-brand-361">Every bank.</span>
-                <span className="block text-white mt-1">
-                  One place to choose from.
-                </span>
-              </h1>
-
-              <p className="mt-4 text-sm leading-relaxed text-slate-300 sm:text-base max-w-xl">
-                Discover digital services from trusted providers, manage your
-                banking. Browse banks and fintechs, then tap any one to visit
-                its official website. Hatiso takes you straight to the
-                bank&apos;s own domain.
-              </p>
-            </div>
-
-            {/* Right Column: Visual 3x2 Icon Tiles Grid */}
-            <div className="flex justify-center lg:col-span-5 lg:justify-end">
-              <div className="grid grid-cols-3 gap-3 w-full max-w-[280px]">
-                {/* Tile 1: Lock/Shield (Orange) */}
-                <div className="aspect-square rounded-2xl bg-brand-428 border border-orange-400/30 flex items-center justify-center p-3.5 shadow-md">
-                  <ShieldCheck className="h-8 w-8 text-ink-662 stroke-[2.2]" />
-                </div>
-
-                {/* Tile 2: Bank Pillars (Orange) */}
-                <div className="aspect-square rounded-2xl bg-brand-428 border border-orange-400/30 flex items-center justify-center p-3.5 shadow-md">
-                  <Building2 className="h-8 w-8 text-ink-662 stroke-[2.2]" />
-                </div>
-
-                {/* Tile 3: Statement/Menu (Dark Outline) */}
-                <div className="aspect-square rounded-2xl bg-ink-680 border border-white/20 flex items-center justify-center p-3.5 shadow-sm">
-                  <Menu className="h-8 w-8 text-white stroke-[2.2]" />
-                </div>
-
-                {/* Tile 4: Document (Dark Outline) */}
-                <div className="aspect-square rounded-2xl bg-ink-680 border border-white/20 flex items-center justify-center p-3.5 shadow-sm">
-                  <FileText className="h-8 w-8 text-white stroke-[2.2]" />
-                </div>
-
-                {/* Tile 5: Credit Card (Orange) */}
-                <div className="aspect-square rounded-2xl bg-brand-428 border border-orange-400/30 flex items-center justify-center p-3.5 shadow-md">
-                  <CreditCard className="h-8 w-8 text-ink-662 stroke-[2.2]" />
-                </div>
-
-                {/* Tile 6: Exchange Arrows (Orange) */}
-                <div className="aspect-square rounded-2xl bg-brand-428 border border-orange-400/30 flex items-center justify-center p-3.5 shadow-md">
-                  <ArrowLeftRight className="h-8 w-8 text-ink-662 stroke-[2.2]" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================= */}
-      {/* 2. CHOOSE A BANK SECTION (Pure Crisp White Section)        */}
-      {/* ========================================================= */}
-      <section className="relative z-10 w-full bg-surface py-14 sm:py-20 text-slate-900 flex-1">
-        <div className="mx-auto max-w-7xl px-4 xl:px-0">
-          {/* Section Header */}
-          <div className="mb-10">
-            <h2 className="text-2xl font-black text-slate-900 sm:text-3xl">
-              Choose a bank
-            </h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Filter by service supported, status and reliability before you tap
-              to visit its official website
+      {/* Hero */}
+      <section className="bg-carbon text-cloud">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-[clamp(40px,6vw,80px)] px-[clamp(16px,4vw,56px)] pt-[clamp(48px,7vw,96px)] pb-[clamp(48px,6vw,80px)]">
+          <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-6">
+            <p className="hz-rise hz-eyebrow text-grey-400" style={rise(0)}>Banks</p>
+            <h1
+              className="hz-rise max-w-[820px] text-[clamp(38px,5.5vw,68px)] leading-[1.04] font-semibold tracking-[-0.035em] text-balance"
+              style={rise(1)}
+            >
+              Your bank&apos;s own app, <span className="text-highlight">one tap away.</span>
+            </h1>
+            <p className="hz-rise max-w-[580px] text-[clamp(16px,1.4vw,18px)] leading-[1.6] text-silver" style={rise(2)}>
+              Choose your bank and we open its official app or internet banking. You sign in with your bank, so Hatiso
+              never sees your login.
             </p>
+            <label
+              className="hz-rise mt-2 flex min-h-14 max-w-[560px] items-center gap-3 rounded-[10px] border border-grey-800 bg-graphite px-5 transition-colors focus-within:border-grey-500"
+              style={rise(3)}
+            >
+              <Search className="h-5 w-5 shrink-0 text-grey-400" aria-hidden="true" />
+              <span className="sr-only">Search banks</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && document.getElementById("partner-banks")?.scrollIntoView({ behavior: "smooth" })}
+                placeholder="Search for your bank"
+                className="min-w-0 flex-1 bg-transparent text-base text-cloud placeholder:text-grey-500 focus:outline-none"
+              />
+            </label>
           </div>
 
-          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-10">
-            {/* ---------------------------------------------------- */}
-            {/* LEFT COLUMN: Filter Sidebar                          */}
-            {/* ---------------------------------------------------- */}
-            <aside className="lg:col-span-4 xl:col-span-3 rounded-2xl border border-slate-200 bg-surface p-5 shadow-xs space-y-6">
-              {/* Header with Clear button */}
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-sm font-bold text-slate-900">
-                  Filters
+          {/* Partner banks fanned out (monochrome), with the secure hand-off */}
+          <div
+            aria-hidden="true"
+            className="hz-rise relative h-[400px] max-w-[520px] min-w-0 flex-[1_1_400px] overflow-hidden rounded-2xl bg-graphite bg-[radial-gradient(var(--color-grey-800)_1px,transparent_1px)] bg-[length:22px_22px]"
+            style={rise(2)}
+          >
+            <div className="absolute top-14 left-1/2 -ml-[125px] flex h-[156px] w-[250px] -translate-x-16 -rotate-12 flex-col justify-between rounded-xl bg-grey-700 p-[18px] text-cloud shadow-[0_24px_48px_-24px_rgba(0,0,0,0.8)]">
+              <span className="text-[15px] font-bold">{heroC ? bankInitials(heroC.name) : "FB"}</span>
+              <span className="text-[13px] text-grey-400">{heroChannel(heroC)}</span>
+            </div>
+            <div className="absolute top-[72px] left-1/2 -ml-[125px] flex h-[156px] w-[250px] -rotate-2 flex-col justify-between rounded-xl border border-grey-800 bg-carbon p-[18px] text-cloud shadow-[0_24px_48px_-24px_rgba(0,0,0,0.8)]">
+              <span className="text-[15px] font-bold">{heroB ? bankInitials(heroB.name) : "GT"}</span>
+              <span className="text-[13px] text-grey-400">{heroChannel(heroB)}</span>
+            </div>
+            <div className="absolute top-[92px] left-1/2 -ml-[125px] flex h-[156px] w-[250px] translate-x-16 rotate-[9deg] flex-col justify-between rounded-xl bg-cloud p-[18px] text-carbon shadow-[0_24px_48px_-24px_rgba(0,0,0,0.8)]">
+              <span className="flex items-center justify-between">
+                <span className="text-[15px] font-bold">{heroA ? bankInitials(heroA.name) : "AB"}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-grey-100 bg-white px-2 py-0.5 text-[11px] font-medium text-status-success">
+                  <span className="h-1.5 w-1.5 rounded-full bg-status-success" />
+                  Online
                 </span>
-                {hasActiveFilters && (
-                  <button
-                    type="button"
-                    onClick={clearAllFilters}
-                    className="text-xs font-semibold text-brand-361 hover:underline"
-                  >
-                    Clear all
-                  </button>
-                )}
-              </div>
+              </span>
+              <span className="flex flex-col gap-0.5">
+                <span className="truncate text-base font-semibold">{heroA?.name ?? "Your bank"}</span>
+                <span className="text-[13px] text-grey-600">{heroChannel(heroA)}</span>
+              </span>
+            </div>
 
-              {/* 1. Banks Search & Checkbox List */}
-              <div>
-                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5">
-                  Banks
-                </h3>
+            <div className="hz-card absolute right-6 bottom-6 left-6 flex max-w-[340px] flex-col gap-3 rounded-[10px] bg-cloud p-4 text-carbon shadow-[0_30px_60px_-20px_rgba(0,0,0,0.7)]">
+              <span className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-carbon text-cloud">
+                  <Lock className="h-4 w-4" />
+                </span>
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="truncate text-sm font-semibold">Opening {heroA?.name ?? "your bank"}</span>
+                  <span className="text-xs text-grey-600">Official app · verified by Hatiso</span>
+                </span>
+              </span>
+              <span className="block h-1 overflow-hidden rounded-full bg-grey-100">
+                <span className="hz-fill block h-full rounded-full bg-carbon" style={{ "--fill-ms": "2600ms" } as React.CSSProperties} />
+              </span>
+            </div>
 
-                {/* Search Input */}
-                <div className="relative mb-3 flex items-center rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs focus-within:border-brand-361 focus-within:ring-1 focus-within:ring-brand-361">
-                  <Search className="mr-2 h-3.5 w-3.5 text-slate-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search banks"
-                    className="w-full bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-none"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery("")}
-                      className="text-slate-400 hover:text-slate-600"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Scrollable Checkbox List */}
-                <div className="max-h-48 overflow-y-auto space-y-2 pr-1 no-scrollbar text-xs">
-                  {Array.from(new Set(banks.map((b) => b.name))).map(
-                    (bName) => {
-                      const isChecked = selectedBankNames.includes(bName);
-                      return (
-                        <label
-                          key={bName}
-                          className="flex items-center gap-2.5 cursor-pointer select-none py-0.5 hover:text-brand-361 transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => toggleBank(bName)}
-                            className="h-4 w-4 rounded border-slate-300 text-brand-361 focus:ring-brand-361"
-                          />
-                          <span className="font-medium text-slate-700">
-                            {bName}
-                          </span>
-                        </label>
-                      );
-                    },
-                  )}
-                </div>
-              </div>
-
-              {/* 2. Service Supported */}
-              <div className="pt-4 border-t border-slate-100">
-                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5">
-                  Channels
-                </h3>
-                <div className="space-y-2 text-xs">
-                  {allChannels.map((srv) => {
-                    const isChecked = selectedServices.includes(srv);
-                    return (
-                      <label
-                        key={srv}
-                        className="flex items-center gap-2.5 cursor-pointer select-none py-0.5 hover:text-brand-361 transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleService(srv)}
-                          className="h-4 w-4 rounded border-slate-300 text-brand-361 focus:ring-brand-361"
-                        />
-                        <span className="font-medium text-slate-700">
-                          {srv}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 3. Bank Status */}
-              <div className="pt-4 border-t border-slate-100">
-                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5">
-                  Bank Status
-                </h3>
-                <div className="space-y-2 text-xs">
-                  {allStatuses.map((status) => {
-                    const isChecked = selectedStatuses.includes(status);
-                    const tone = banks.find(
-                      (b) => bankStatus(b).label === status,
-                    );
-                    const dotColor = tone
-                      ? STATUS_DOT[bankStatus(tone).tone]
-                      : STATUS_DOT.down;
-
-                    return (
-                      <label
-                        key={status}
-                        className="flex items-center justify-between cursor-pointer select-none py-0.5"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => toggleStatus(status)}
-                            className="h-4 w-4 rounded border-slate-300 text-brand-361 focus:ring-brand-361"
-                          />
-                          <span className="font-medium text-slate-700">
-                            {status}
-                          </span>
-                        </div>
-                        <span className={`h-2 w-2 rounded-full ${dotColor}`} />
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            </aside>
-
-            {/* ---------------------------------------------------- */}
-            {/* RIGHT COLUMN: Banks Grid                             */}
-            {/* ---------------------------------------------------- */}
-            <div className="lg:col-span-8 xl:col-span-9">
-              {/* Header Count */}
-              <div className="mb-5 flex items-center justify-between">
-                <h3 className="text-base font-bold text-slate-900">
-                  {isLoading
-                    ? "Loading banks…"
-                    : `${filteredBanks.length} ${filteredBanks.length === 1 ? "Bank" : "Banks"}`}
-                </h3>
-              </div>
-
-              {/* Grid of Bank Cards */}
-              {isLoading ? (
-                <div
-                  aria-busy="true"
-                  className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
-                >
-                  {Array.from({ length: 3 }, (_, i) => (
-                    <div
-                      key={i}
-                      className="h-[260px] animate-pulse rounded-2xl border border-slate-200 bg-slate-50"
-                    />
-                  ))}
-                </div>
-              ) : isError ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center">
-                  <Building2 className="mx-auto h-12 w-12 text-slate-300" />
-                  <h4 className="mt-4 text-base font-bold text-slate-900">
-                    We couldn&apos;t load the banks
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={() => refetch()}
-                    className="mt-4 rounded-xl bg-brand-361 px-4 py-2 text-xs font-bold text-on-brand shadow-xs transition hover:bg-brand-385"
-                  >
-                    Try again
-                  </button>
-                </div>
-              ) : filteredBanks.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center">
-                  <Building2 className="mx-auto h-12 w-12 text-slate-300" />
-                  <h4 className="mt-4 text-base font-bold text-slate-900">
-                    No matching banks found
-                  </h4>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Try adjusting your filters or search terms.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={clearAllFilters}
-                    className="mt-4 rounded-xl bg-brand-361 px-4 py-2 text-xs font-bold text-on-brand shadow-xs transition hover:bg-brand-385"
-                  >
-                    Reset all filters
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {filteredBanks.map((bank, index) => {
-                    const status = bankStatus(bank);
-                    const dotColor = STATUS_DOT[status.tone];
-
-                    return (
-                      <div
-                        key={`${bank.id}-${index}`}
-                        onClick={() => setSelectedBankModal(bank)}
-                        className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-surface shadow-xs cursor-pointer transition-shadow duration-200 hover:shadow-md hover:border-slate-300"
-                      >
-                        {/* Top Area: Logo taking full space + Status badge */}
-                        <div className="relative h-44 w-full bg-surface p-5 flex items-center justify-center">
-                          {/* Status Badge floating at top-left */}
-                          <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-surface/95 px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-xs border border-slate-200/80 backdrop-blur-sm">
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${dotColor}`}
-                            />
-                            <span>{status.label}</span>
-                          </div>
-
-                          {/* Full space Bank Logo */}
-                          {bank.logoUrl ? (
-                            <BankLogo
-                              bank={bank}
-                              className="h-full w-full p-2"
-                            />
-                          ) : (
-                            <BankLogo
-                              bank={bank}
-                              className="h-24 w-24 rounded-3xl"
-                              textClassName="text-3xl"
-                            />
-                          )}
-                        </div>
-
-                        {/* Middle Area: Opaque Bar with Name and Arrow */}
-                        <div className="w-full bg-slate-50/95 border-t border-slate-100 px-4 py-2.5 flex items-center justify-between backdrop-blur-xs">
-                          <h4 className="text-sm font-bold text-slate-900 tracking-tight truncate">
-                            {bank.name}
-                          </h4>
-                          <div className="flex-shrink-0 ml-1.5 text-brand-318">
-                            <ArrowUpRight className="h-4 w-4 stroke-[2.2]" />
-                          </div>
-                        </div>
-
-                        {/* Bottom Area: Service Supported Pills */}
-                        <div className="px-4 py-3 bg-surface border-t border-slate-100 flex flex-wrap gap-1.5">
-                          {channelLabels(bank).map((srv) => (
-                            <span
-                              key={srv}
-                              className="rounded-lg bg-tone-66 px-2.5 py-1 text-[11px] font-medium text-slate-800"
-                            >
-                              {srv}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            <div className="absolute top-5 right-5 inline-flex items-center gap-2 rounded-md border border-grey-800 bg-carbon px-3.5 py-2 text-xs font-medium text-cloud">
+              <span className="hz-ping h-1.5 w-1.5 rounded-full bg-highlight text-highlight" />
+              Your login stays with your bank
             </div>
           </div>
         </div>
       </section>
 
-      {/* ========================================================= */}
-      {/* 3. EXTERNAL BANK REDIRECTION MODAL                        */}
-      {/* ========================================================= */}
-      {selectedBankModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-surface p-6 text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-2.5">
-                <BankLogo
-                  bank={selectedBankModal}
-                  className="h-7 w-7 flex-shrink-0 rounded-lg"
-                  textClassName="text-[10px]"
+      {/* List */}
+      <section id="partner-banks" className="flex-1 scroll-mt-4 bg-cloud">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-start gap-8 px-[clamp(16px,4vw,56px)] pt-[clamp(40px,6vw,72px)] pb-[clamp(64px,8vw,112px)]">
+          <aside
+            aria-label="Filters"
+            className="hz-rise flex max-w-full flex-[1_1_240px] flex-col gap-7 rounded-xl border border-grey-100 bg-white p-6 lg:sticky lg:top-6"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[17px] font-semibold">Filters</span>
+              <button
+                type="button"
+                onClick={clear}
+                disabled={!hasFilters}
+                className="py-2 text-sm font-medium text-grey-600 hover:text-carbon disabled:opacity-50"
+              >
+                Clear
+              </button>
+            </div>
+            {allChannels.length > 0 && (
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-medium tracking-[0.14em] text-grey-600 uppercase">Channel</p>
+                <div className="flex flex-wrap gap-2">
+                  {allChannels.map((c) => {
+                    const on = channels.includes(c);
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => toggleChannel(c)}
+                        className={`hz-press min-h-10 rounded-[10px] border px-4 text-sm font-medium transition-colors ${
+                          on ? "border-carbon bg-carbon text-cloud" : "border-grey-150 bg-white text-carbon hover:border-grey-400"
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            <div className="h-px bg-grey-100" />
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-medium tracking-[0.14em] text-grey-600 uppercase">Status</p>
+              <label className="flex cursor-pointer items-center gap-2.5 text-[15px]">
+                <input
+                  type="checkbox"
+                  checked={onlineOnly}
+                  onChange={(e) => setOnlineOnly(e.target.checked)}
+                  className="h-[18px] w-[18px] accent-carbon"
                 />
-                <h3 className="text-base font-bold text-slate-900">
-                  {selectedBankModal.name}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedBankModal(null)}
-                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
+                Online now
+              </label>
+            </div>
+          </aside>
+
+          <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-5">
+            <div className="flex items-baseline justify-between gap-4">
+              <h2 className="text-2xl font-semibold tracking-[-0.02em]">Partner banks</h2>
+              <span className="text-sm text-grey-600" aria-live="polite">
+                {isLoading ? "Loading…" : `${filtered.length} ${filtered.length === 1 ? "bank" : "banks"}`}
+              </span>
             </div>
 
-            <div className="my-5 space-y-3.5 text-xs text-slate-600">
-              <p className="text-sm text-slate-700 leading-relaxed">
-                {selectedBankModal.name} is a verified partner bank on Hatiso.
-                You&apos;ll continue to its own secure banking service.
-              </p>
-
-              <div className="rounded-xl bg-tone-32 p-3.5 space-y-2">
-                <div className="flex justify-between">
-                  <span className="font-semibold text-slate-500">
-                    Gateway Status:
-                  </span>
-                  <span
-                    className={`font-bold ${STATUS_TEXT[bankStatus(selectedBankModal).tone]}`}
-                  >
-                    {bankStatus(selectedBankModal).label}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-slate-500">
-                    Official Domain:
-                  </span>
-                  <span className="font-mono font-medium text-slate-800">
-                    {bankDomain(selectedBankModal)}
-                  </span>
-                </div>
+            {isLoading ? (
+              <div aria-busy="true" className="grid grid-cols-[repeat(auto-fit,minmax(min(250px,100%),1fr))] gap-4">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div key={i} className="h-[214px] animate-pulse rounded-xl border border-grey-100 bg-white" />
+                ))}
               </div>
-
-              <div>
-                <span className="font-bold text-slate-800 block mb-1.5">
-                  Channels:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {channelLabels(selectedBankModal).map((s) => (
-                    <span
-                      key={s}
-                      className="rounded-md bg-tone-36 px-2 py-0.5 text-[11px] font-medium text-slate-800"
+            ) : isError ? (
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-grey-150 bg-white p-12 text-center">
+                <Building2 className="h-10 w-10 text-grey-400" aria-hidden="true" />
+                <h3 className="text-lg font-semibold">We couldn&apos;t load the banks</h3>
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  className="hz-press mt-1 inline-flex min-h-11 items-center rounded-[10px] bg-carbon px-5 text-sm font-medium text-cloud hover:bg-graphite"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-grey-150 bg-white p-12 text-center">
+                <Building2 className="h-10 w-10 text-grey-400" aria-hidden="true" />
+                <h3 className="mt-2 text-lg font-semibold">No matching banks</h3>
+                <p className="text-sm text-grey-600">Try another name or clear the filters.</p>
+                <button
+                  type="button"
+                  onClick={clear}
+                  className="hz-press mt-3 inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-carbon px-5 text-sm font-medium text-cloud hover:bg-graphite"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                  Clear filters
+                </button>
+              </div>
+            ) : (
+              <div className="hz-stagger grid grid-cols-[repeat(auto-fit,minmax(min(250px,100%),1fr))] gap-4">
+                {filtered.map((bank) => {
+                  const status = bankStatus(bank);
+                  return (
+                    <button
+                      key={bank.id}
+                      type="button"
+                      onClick={() => setPicked(bank)}
+                      className="hz-lift flex flex-col gap-5 rounded-xl border border-grey-100 bg-white p-5 text-left text-carbon"
                     >
-                      {s}
-                    </span>
-                  ))}
-                </div>
+                      <span className="flex w-full items-start justify-between">
+                        <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-grey-100 bg-cloud p-1.5">
+                          <BankLogo bank={bank} className="h-full w-full" textClassName="text-[17px]" />
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-md bg-cloud px-2.5 py-1 text-xs font-medium text-grey-800">
+                          <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[status.tone]}`} />
+                          {status.label}
+                        </span>
+                      </span>
+                      <span className="flex flex-col gap-1.5">
+                        <span className="text-[17px] font-semibold">{bank.name}</span>
+                        <span className="text-sm text-grey-600">{channelLabels(bank).join(" · ") || "Official website"}</span>
+                      </span>
+                      <span className="flex w-full items-center justify-between border-t border-grey-100 pt-3.5 text-sm font-medium">
+                        Open bank
+                        <ArrowUpRight className="hz-arrow h-4 w-4" aria-hidden="true" />
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <a
-                href={bankWebsite(selectedBankModal)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-361 py-3 text-center text-xs sm:text-sm font-bold text-on-brand shadow transition hover:bg-brand-385"
-              >
-                <span>Visit Bank&apos;s Official Website</span>
-                <ExternalLink className="h-4 w-4" />
-              </a>
-              <button
-                type="button"
-                onClick={() => setSelectedBankModal(null)}
-                className="w-full rounded-xl py-2 text-center text-xs font-semibold text-slate-500 hover:text-slate-800"
-              >
-                Close
-              </button>
-            </div>
+            )}
           </div>
         </div>
-      )}
+      </section>
 
-      {/* Footer */}
+      {picked && <BankOpenDialog bank={picked} onClose={() => setPicked(null)} />}
+
       <Footer />
     </div>
   );

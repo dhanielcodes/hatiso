@@ -2,14 +2,12 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'sonner';
-import { Check, ArrowLeft } from 'lucide-react';
+import { Check, KeyRound, Mail } from 'lucide-react';
 import { PasswordField, SubmitButton, TextField } from '@/components/forms';
-import AuthBrandPanel from '@/components/auth/AuthBrandPanel';
-import HatisoLogo from '@/components/brand/HatisoLogo';
+import AuthLayout, { AUTH_ERROR, AUTH_LINK, AUTH_PRIMARY, AUTH_SECONDARY, AuthHeading } from '@/components/auth/AuthLayout';
 import OtpInput from '@/components/auth/OtpInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { useForgotPassword, useRecoverPassword } from '@/lib/queries/useAuth';
@@ -47,13 +45,12 @@ const getErrorMessage = (err: unknown) =>
 const looksLikeCodeError = (message: string) => /code|otp|expired|invalid/i.test(message);
 
 /* ─── Button Style ──────────────────────────────────────────────── */
-const ORANGE_BTN =
-  'w-full rounded-xl bg-brand-305 py-3.5 text-sm font-semibold text-on-brand shadow-[0_8px_20px_rgba(255,101,0,0.3)] transition-colors hover:bg-brand-249 active:scale-[0.99] disabled:opacity-50';
+const ORANGE_BTN = AUTH_PRIMARY;
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  // 1 email · 2 code sent · 3 code + new password · 4 done (Forgot and ResetPassword boards)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
@@ -63,7 +60,6 @@ export default function ForgotPasswordPage() {
   const recover = useRecoverPassword();
   const isSending = sendCode.isPending || recover.isPending;
   const isResending = resendCode.isPending;
-  const [showSuccess, setShowSuccess] = useState(false);
 
   /* Countdown timer (single interval, cleaned up on unmount) */
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -89,16 +85,6 @@ export default function ForgotPasswordPage() {
 
   useEffect(() => stopCountdown, [stopCountdown]);
 
-  /* Step 2: the code is verified together with the new password in step 3 */
-  const handleContinue = () => {
-    if (otp.length < OTP_LENGTH) {
-      setOtpError(`Please enter the ${OTP_LENGTH}-digit code sent to your email.`);
-      return;
-    }
-    setOtpError('');
-    setStep(3);
-  };
-
   const handleResend = async () => {
     if (resendCount > 0 || isResending) return;
     try {
@@ -113,29 +99,15 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="grid min-h-screen bg-tone-35 lg:grid-cols-2">
-      {/* ── Left Brand Panel ── */}
-      <AuthBrandPanel />
-
-      {/* ── Right Content Panel ── */}
-      <main className="flex min-h-screen flex-col bg-tone-35 px-5 py-6 sm:px-10 lg:px-16 xl:px-24">
-        <div className="mb-8 lg:hidden">
-          <HatisoLogo variant="carbon" height={28} />
-        </div>
-
-        <div className="flex flex-1 flex-col items-center justify-center py-6">
-          <div className="w-full max-w-[420px]">
+      <AuthLayout back={{ label: 'Back to sign in', href: '/auth/login' }}>
             {/* ══ STEP 1: ENTER EMAIL ════════════════════════════ */}
             {step === 1 && (
               <>
-                <div className="mb-7 text-center">
-                  <h1 className="text-[1.75rem] font-bold tracking-tight text-tone-822 sm:text-[2rem]">
-                    Reset your password
-                  </h1>
-                  <p className="mx-auto mt-2 max-w-[340px] text-[13px] leading-relaxed text-slate-500">
-                    Enter your account email and we&apos;ll send you a 6-digit code to reset your
-                    password.
-                  </p>
+                <div className="flex flex-col gap-2.5">
+                  <span aria-hidden="true" className="mb-1.5 inline-flex h-[52px] w-[52px] items-center justify-center rounded-lg bg-carbon text-cloud"><KeyRound className="h-6 w-6" /></span>
+                  <AuthHeading title="Reset your password.">
+                    Enter the email on your account and we&apos;ll send you a code to set a new one.
+                  </AuthHeading>
                 </div>
 
                 <Formik
@@ -150,13 +122,12 @@ export default function ForgotPasswordPage() {
                       setOtpError('');
                       setStep(2);
                       startCountdown();
-                      toast.success('We sent a code to your email.');
                     } catch (err) {
                       toast.error(getErrorMessage(err));
                     }
                   }}
                 >
-                  <Form className="space-y-5" noValidate>
+                  <Form className="flex flex-col gap-5" noValidate>
                     <TextField
                       name="email"
                       type="email"
@@ -165,7 +136,7 @@ export default function ForgotPasswordPage() {
                       variant="auth"
                       inputMode="email"
                       autoComplete="email"
-                      placeholder="you@example.com"
+                      placeholder="e.g. ada@example.com"
                     />
 
                     <SubmitButton
@@ -173,82 +144,33 @@ export default function ForgotPasswordPage() {
                       className={ORANGE_BTN}
                       loadingLabel={
                         <span className="inline-flex items-center justify-center gap-2">
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-cloud border-t-transparent" />
                           Sending...
                         </span>
                       }
                     >
-                      Send Code
+                      Send code
                     </SubmitButton>
                   </Form>
                 </Formik>
-
-                <p className="mt-6 text-center text-[13px] text-slate-500">
-                  Already have an account?{' '}
-                  <Link
-                    href="/auth/login"
-                    className="font-semibold text-brand-361 transition-colors hover:text-brand-370"
-                  >
-                    Sign In
-                  </Link>
-                </p>
               </>
             )}
 
-            {/* ══ STEP 2: ENTER CODE ═════════════════════════════ */}
+            {/* ══ STEP 2: CODE SENT ══════════════════════════════ */}
             {step === 2 && (
               <>
-                <div className="mb-8 text-center">
-                  <h1 className="text-[1.75rem] font-bold tracking-tight text-tone-822 sm:text-[2rem]">
-                    Check your email
-                  </h1>
-                  <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-relaxed text-slate-500">
-                    We sent a 6-digit code to <span className="font-medium text-slate-700">{email}</span>.
-                    <br />
-                    Enter it below to continue.
-                  </p>
+                <div className="flex flex-col gap-2.5">
+                  <span aria-hidden="true" className="mb-1.5 inline-flex h-[52px] w-[52px] items-center justify-center rounded-lg bg-carbon text-cloud"><Mail className="h-6 w-6" /></span>
+                  <span className="text-[13px] font-medium text-status-success">Code sent</span>
+                  <AuthHeading title="Check your inbox.">
+                    If there&apos;s an account for that email, a 6-digit code is on its way. Enter it on the next screen to
+                    choose a new password.
+                  </AuthHeading>
                 </div>
-
-                {otpError && (
-                  <div
-                    role="alert"
-                    className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-center text-xs text-rose-600"
-                  >
-                    {otpError}
-                  </div>
-                )}
-
-                <OtpInput
-                  value={otp}
-                  onChange={(val) => {
-                    setOtp(val);
-                    setOtpError('');
-                  }}
-                  hasError={Boolean(otpError)}
-                />
-
-                <button
-                  type="button"
-                  disabled={otp.length < OTP_LENGTH}
-                  onClick={handleContinue}
-                  className={`${ORANGE_BTN} mt-8`}
-                >
-                  Continue
-                </button>
-
-                <p className="mt-5 text-center text-[13px] text-slate-500">
-                  {resendCount > 0 ? `Resend code in ${resendCount}s ? ` : "Didn't get it? "}
-                  <button
-                    type="button"
-                    disabled={resendCount > 0 || isResending}
-                    onClick={handleResend}
-                    className="font-semibold text-brand-361 hover:text-brand-370 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isResending ? 'Sending...' : 'Click to resend code'}
+                <div className="flex flex-col gap-3">
+                  <button type="button" onClick={() => setStep(3)} className={ORANGE_BTN}>
+                    Enter code
                   </button>
-                </p>
-
-                <div className="mt-5 text-center">
                   <button
                     type="button"
                     onClick={() => {
@@ -257,30 +179,30 @@ export default function ForgotPasswordPage() {
                       setOtpError('');
                       setStep(1);
                     }}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800"
+                    className={AUTH_SECONDARY}
                   >
-                    <ArrowLeft className="h-3.5 w-3.5" /> Change email
+                    Use a different email
                   </button>
                 </div>
               </>
             )}
 
-            {/* ══ STEP 3: CREATE NEW PASSWORD ════════════════════ */}
+            {/* ══ STEP 3: CODE + NEW PASSWORD ════════════════════ */}
             {step === 3 && (
               <>
-                <div className="mb-6 text-center">
-                  <h1 className="text-[1.75rem] font-bold tracking-tight text-tone-822 sm:text-[2rem]">
-                    Create New Password
-                  </h1>
-                  <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-relaxed text-slate-500">
-                    Choose a password that you will use to log in to your Hatiso account
-                  </p>
-                </div>
+                <AuthHeading title="Choose a new password.">
+                  Enter the 6-digit code we sent to <span className="font-medium text-carbon">{email}</span>, then set a new
+                  password.
+                </AuthHeading>
 
                 <Formik
                   initialValues={{ password: '', confirmPassword: '' }}
                   validationSchema={step3Schema}
                   onSubmit={async (values) => {
+                    if (otp.length < OTP_LENGTH) {
+                      setOtpError(`Enter all ${OTP_LENGTH} digits of the code.`);
+                      return;
+                    }
                     try {
                       await recover.mutateAsync({
                         email,
@@ -288,14 +210,12 @@ export default function ForgotPasswordPage() {
                         newPassword: values.password,
                       });
                       stopCountdown();
-                      setShowSuccess(true);
+                      setStep(4);
                     } catch (err) {
                       const message = getErrorMessage(err);
                       if (looksLikeCodeError(message)) {
-                        // Bad or expired code: send the user back to re-enter it
                         setOtp('');
                         setOtpError(message);
-                        setStep(2);
                       } else {
                         toast.error(message);
                       }
@@ -303,71 +223,96 @@ export default function ForgotPasswordPage() {
                   }}
                 >
                   {({ values }) => (
-                    <Form className="space-y-4" noValidate>
+                    <Form className="flex flex-col gap-5" noValidate>
+                      <fieldset className="flex flex-col gap-2">
+                        <legend className="mb-2 text-sm font-medium text-carbon">Code</legend>
+                        <OtpInput
+                          value={otp}
+                          onChange={(val) => {
+                            setOtp(val);
+                            setOtpError('');
+                          }}
+                          hasError={Boolean(otpError)}
+                        />
+                        {otpError && (
+                          <div role="alert" className={AUTH_ERROR}>
+                            {otpError}
+                          </div>
+                        )}
+                        <p className="text-sm text-grey-600">
+                          {resendCount > 0 ? `Didn't get it? Resend in 0:${String(resendCount).padStart(2, '0')}` : "Didn't get it? "}
+                          {resendCount === 0 && (
+                            <button
+                              type="button"
+                              disabled={isResending}
+                              onClick={handleResend}
+                              className="font-medium text-carbon underline underline-offset-4 disabled:cursor-not-allowed disabled:text-grey-400 disabled:no-underline"
+                            >
+                              {isResending ? 'Sending...' : 'Resend code'}
+                            </button>
+                          )}
+                        </p>
+                      </fieldset>
+
                       <PasswordField
                         name="password"
-                        label="New Password"
+                        label="New password"
                         required
                         variant="auth"
-                        placeholder="••••••••••"
                         autoComplete="new-password"
                       />
+
+                      <PasswordStrength password={values.password} />
 
                       <PasswordField
                         name="confirmPassword"
-                        label="Confirm Password"
+                        label="Confirm new password"
                         required
                         variant="auth"
-                        placeholder="••••••••••"
+                        placeholder="Type it again"
                         autoComplete="new-password"
                       />
 
-                      {/* Password strength */}
-                      {values.password && <PasswordStrength password={values.password} />}
-
                       <SubmitButton
                         disabled={isSending}
-                        className={`${ORANGE_BTN} mt-4`}
+                        className={`${ORANGE_BTN} mt-1`}
                         loadingLabel={
                           <span className="inline-flex items-center justify-center gap-2">
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-cloud border-t-transparent" />
                             Updating password...
                           </span>
                         }
                       >
-                        Create Password
+                        Reset password
                       </SubmitButton>
                     </Form>
                   )}
                 </Formik>
               </>
             )}
-          </div>
-        </div>
-      </main>
 
-      {/* ══ SUCCESS MODAL ═══════════════════════════════════════════ */}
-      {showSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-surface p-8 text-center shadow-2xl">
-            <h2 className="flex items-center justify-center gap-2 text-xl font-bold text-tone-822">
-              Password Reset Successful
-              <Check className="h-5 w-5 text-emerald-500 stroke-[3]" />
-            </h2>
-            <p className="mx-auto mt-2 max-w-[280px] text-[13px] leading-relaxed text-slate-500">
-              Your password has been updated. You can now log in with your new password.
-            </p>
+            {/* ══ STEP 4: DONE ═══════════════════════════════════ */}
+            {step === 4 && (
+              <div className="hz-pop flex flex-col gap-2.5">
+                <span aria-hidden="true" className="mb-1.5 inline-flex h-[52px] w-[52px] items-center justify-center rounded-lg bg-carbon text-cloud"><Check className="h-6 w-6" strokeWidth={2.5} /></span>
+                <span className="text-[13px] font-medium text-status-success">Password updated</span>
+                <AuthHeading title="You're all set.">
+                  Sign in with your new password. We&apos;ve signed you out on your other devices to keep your account safe.
+                </AuthHeading>
+                <Link href="/auth/login" className={`${ORANGE_BTN} mt-4`}>
+                  Sign in
+                </Link>
+              </div>
+            )}
 
-            <button
-              type="button"
-              onClick={() => router.push('/auth/login')}
-              className={`${ORANGE_BTN} mt-7`}
-            >
-              Continue to Login
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+            {step !== 4 && (
+              <p className="text-center text-sm text-grey-600">
+                Remembered it?{' '}
+                <Link href="/auth/login" className={AUTH_LINK}>
+                  Sign in
+                </Link>
+              </p>
+            )}
+      </AuthLayout>
   );
 }

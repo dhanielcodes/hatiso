@@ -1,24 +1,23 @@
 "use client";
 
-import Image from "next/image";
+import { seriesColor, useTheme } from "@/lib/theme/theme";
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import React, { useMemo, useState, useSyncExternalStore } from "react";
 import {
   ArrowUpRight,
+  Bell,
   CalendarDays,
-  ChevronDown,
-  ChevronRight,
-  Gift, // Gift, Sparkles and Trophy are used by the commented-out Reward points card.
-  Lightbulb,
+  GraduationCap,
+  Plus,
   ReceiptText,
-  Sparkles,
+  ShieldCheck,
+  Smartphone,
   Trophy,
   Tv,
+  Wifi,
+  Zap,
+  type LucideIcon,
 } from "lucide-react";
-import {
-  ServiceUsageChart,
-  SpendingChart,
-} from "@/components/dashboard/DashboardCharts";
 import PromoCarousel from "@/components/dashboard/PromoCarousel";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useDashboard } from "@/lib/queries/useDashboard";
@@ -30,9 +29,6 @@ import {
 } from "@/components/ui/Skeleton";
 import type { DashboardBucket } from "@/lib/api/dashboard";
 import moment from "moment";
-
-// Hero photo. The design's photo (a couple in a blob frame) isn't in the repo yet; swap the file here.
-const HERO_IMAGE = "/images/bills_hero.png";
 
 // Name and colour per serviceType, as in the dashboard design. Unknown types get a palette colour.
 const SERVICE_META: Record<string, { name: string; color: string }> = {
@@ -166,56 +162,52 @@ function bucketForRange(from: string, to: string): DashboardBucket {
 const SUCCESS_STATUSES = new Set(["SUCCESSFUL", "FULFILLED", "SUCCESS", "COMPLETED"]);
 const PENDING_STATUSES = new Set(["PENDING", "INITIATED", "PROCESSING", "AWAITING_PAYMENT", "IN_PROGRESS"]);
 
-// SUCCESS / PENDING / FAILED pill, as in the design.
-function StatusBadge({ status }: { status: string }) {
-  const kind = SUCCESS_STATUSES.has(status) ? "success" : PENDING_STATUSES.has(status) ? "pending" : "failed";
-  const tone =
-    kind === "success"
-      ? "bg-tone-58 text-success-445"
-      : kind === "pending"
-        ? "bg-tone-39 text-brand-333"
-        : "bg-tone-73 text-danger-404";
-  const label = kind === "success" ? "Success" : kind === "pending" ? "Pending" : status === "FAILED" ? "Failed" : status.replace(/_/g, " ");
-  return (
-    <span
-      className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide ${tone}`}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {label}
-    </span>
-  );
+// Successful / Pending / Failed: a status dot plus its label (Dashboard board).
+function statusFor(status: string) {
+  if (SUCCESS_STATUSES.has(status)) return { label: "Successful", text: "text-status-success", dot: "bg-status-success" };
+  if (PENDING_STATUSES.has(status)) return { label: "Pending", text: "text-status-warning", dot: "bg-status-warning" };
+  return { label: status === "FAILED" ? "Failed" : status.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase()), text: "text-status-error", dot: "bg-status-error" };
 }
 
-function ProviderLogo({ provider, label }: { provider?: Provider; label: string }) {
-  if (provider?.logo) {
-    return (
-      <Image
-        src={provider.logo}
-        alt=""
-        width={56}
-        height={56}
-        className="h-14 w-14 shrink-0 rounded-full object-cover"
-      />
-    );
-  }
-  if (provider?.badge) {
-    return (
-      <div
-        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-base font-bold italic text-white shadow-sm"
-        style={{ backgroundColor: provider.badge.bg }}
-      >
-        {provider.badge.label}
-      </div>
-    );
-  }
-  return (
-    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-tone-37 text-sm font-bold text-ink-626">
-      {label.slice(0, 2).toUpperCase()}
-    </div>
-  );
+const SERVICE_ICONS: Record<string, LucideIcon> = {
+  AIRTIME: Smartphone,
+  DATA: Wifi,
+  ELECTRICITY: Zap,
+  TV: Tv,
+  CABLE_TV: Tv,
+  BETTING: Trophy,
+  INTERNET: Wifi,
+  EDUCATION: GraduationCap,
+  INSURANCE: ShieldCheck,
+};
+
+// serviceType → the Pay bills slug, so "Pay again" opens the right service.
+const SERVICE_SLUGS: Record<string, string> = {
+  AIRTIME: "airtime",
+  DATA: "data",
+  ELECTRICITY: "electricity",
+  TV: "tv",
+  CABLE_TV: "tv",
+  BETTING: "betting",
+  INTERNET: "internet-services",
+  EDUCATION: "education",
+  INSURANCE: "insurance",
+};
+
+/** "08031234512" → "0803 ••• 4512" */
+function maskRecipient(value: string) {
+  const v = value.replace(/\s+/g, "");
+  return v.length > 8 ? `${v.slice(0, 4)} ••• ${v.slice(-4)}` : value;
 }
+
+const PERIODS: [string, string][] = [
+  ["Last 7 days", "7 days"],
+  ["Last 30 days", "30 days"],
+  ["Last 6 months", "6 months"],
+];
 
 export default function DashboardPage() {
+  const theme = useTheme();
   const { user } = useAuthStore();
   const [period, setPeriod] = useState("Last 7 days");
   const [isRangePickerOpen, setIsRangePickerOpen] = useState(false);
@@ -226,6 +218,8 @@ export default function DashboardPage() {
   } | null>(null);
   const [pendingFrom, setPendingFrom] = useState("");
   const [pendingTo, setPendingTo] = useState("");
+  // Which spending bar is picked; null means the latest one.
+  const [selectedBucket, setSelectedBucket] = useState<number | null>(null);
   const today = useClientDate();
   const { from, to, bucket } = useMemo(() => {
     if (customRange) return customRange;
@@ -332,350 +326,370 @@ export default function DashboardPage() {
   const usageData = (data?.digitalServicesUsage ?? []).map((item, index) => ({
     name: serviceName(item.serviceType),
     value: item.percentage ?? 0,
-    color:
+    color: seriesColor(
+      theme,
       SERVICE_META[item.serviceType]?.color ??
-      FALLBACK_COLORS[index % FALLBACK_COLORS.length],
+        FALLBACK_COLORS[index % FALLBACK_COLORS.length],
+      index,
+    ),
   }));
   const spendingChange = data?.summary.spending.changePercent;
+  const maxBucket = Math.max(1, ...spendingData.map((item) => item.amountMinor));
+  const selectedBar = spendingData[selectedBucket ?? spendingData.length - 1];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const periodLabel = period === "Custom range" && from && to ? formatRange(from, to) : period;
+  const successPercent = data?.summary.successRate.percent;
+  // Pay again: the most recent distinct product + recipient pairs.
+  const payAgain = (data?.recentTransactions ?? [])
+    .filter((item, index, all) =>
+      all.findIndex((other) => other.productCode === item.productCode && other.recipient === item.recipient) === index,
+    )
+    .slice(0, 4);
 
   return (
-    <div className="min-h-full bg-tone-12 text-tone-760">
-      <section className="border-b border-tone-75 px-5 py-5 sm:px-8 sm:py-6">
-        <p className="text-[13px] text-brand-325">
-          {today ? moment(today).format("dddd, Do MMMM YYYY") : "\u00a0"}
-        </p>
-        <h1 className="mt-3 text-2xl font-medium tracking-[-0.02em] text-tone-744 sm:text-[25px]">
-          Welcome Back, {displayName} 👋
-        </h1>
-        <p className="mt-2 text-[15px] text-tone-426">
-          Here&apos;s a clear look at your spending this month.
-        </p>
-      </section>
+    <div className="min-h-full bg-tone-44 text-tone-760">
+      <div className="flex w-full flex-col gap-6 p-[clamp(20px,3vw,40px)]">
+        {/* Greeting */}
+        <div className="hz-rise flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm text-tone-426">
+              {today ? moment(today).format("dddd, D MMMM") : "\u00a0"}
+            </span>
+            <h1 className="text-[clamp(28px,3vw,36px)] leading-[1.1] font-semibold tracking-[-0.025em] text-tone-744">
+              {greeting}, {displayName}.
+            </h1>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/dashboard/notifications"
+              aria-label="Notifications"
+              className="hz-press relative flex h-12 w-12 items-center justify-center rounded-full border border-tone-100 bg-surface text-tone-744"
+            >
+              <Bell className="h-[18px] w-[18px]" strokeWidth={1.9} />
+            </Link>
+            <Link
+              href="/dashboard/services"
+              className="hz-press inline-flex min-h-12 items-center gap-2 rounded-[10px] bg-brand-305 px-[22px] text-[15px] font-medium text-on-brand hover:bg-brand-361"
+            >
+              <Plus className="h-4 w-4" strokeWidth={2} />
+              New payment
+            </Link>
+          </div>
+        </div>
 
-      <main className="mx-auto space-y-5 px-5 py-6 sm:px-8 lg:py-7">
-        <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
-          <div className="relative min-h-[247px] overflow-hidden rounded-xl bg-ink-626 px-7 py-8 text-white sm:px-7">
-            {/* Photo in a soft blob shape with floating service icons (design). */}
-            <div className="absolute right-[5%] top-1/2 hidden h-[180px] w-[250px] -translate-y-1/2 md:block xl:right-[6%] 2xl:w-[290px]">
-              <div className="absolute inset-0 overflow-hidden rounded-[44%_56%_40%_60%/58%_46%_54%_42%]">
-                <Image
-                  src={HERO_IMAGE}
-                  alt="Paying a bill from a phone at home"
-                  fill
-                  sizes="300px"
-                  className="object-cover object-top"
-                  priority
-                />
-              </div>
-              <span className="absolute -left-3 top-6 flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 text-brand-333 shadow-md">
-                <ReceiptText className="h-4 w-4" />
-              </span>
-              <span className="absolute -right-4 top-10 flex h-7 w-7 items-center justify-center rounded-full bg-brand-333/25 text-brand-249">
-                <Lightbulb className="h-3.5 w-3.5" />
-              </span>
-              <span className="absolute -bottom-1 right-6 flex h-11 w-11 items-center justify-center rounded-full bg-surface text-brand-333 shadow-lg">
-                <Tv className="h-5 w-5" />
-              </span>
-            </div>
-            <div className="relative z-10 max-w-[400px] md:max-w-[calc(95%-270px)] 2xl:max-w-[400px]">
-              <span className="inline-flex rounded-full bg-white/20 px-3 py-1.5 text-[10px] font-semibold tracking-wide">
-                ALL YOUR BILLS. ONE PLACE.
-              </span>
-              <h2 className="mt-7 text-[29px] font-semibold leading-[1.17] tracking-[-0.02em] sm:text-[33px]">
-                Let&apos;s get your{" "}
-                <span className="text-brand-305">bills out of the way.</span>
-              </h2>
-              <p className="mt-5 max-w-[390px] text-[13px] leading-5 text-tone-86">
-                Skip the stress and the back and forth. Pay electricity,
-                airtime, TV and more in one safe place, anytime you like.
-              </p>
+        {/* Pay again */}
+        {(isLoading || payAgain.length > 0) && (
+          <div className="hz-rise flex flex-col gap-3" style={{ "--d": 1 } as React.CSSProperties}>
+            <span className="text-sm font-medium text-tone-714">Pay again</span>
+            <div className="hz-stagger grid grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-3">
+              {isLoading
+                ? Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-[72px] rounded-[10px]" />)
+                : payAgain.map((item) => {
+                    const provider = providerFor(item.productCode, item.productName);
+                    const Icon = SERVICE_ICONS[item.serviceType] ?? ReceiptText;
+                    const slug = SERVICE_SLUGS[item.serviceType];
+                    return (
+                      <Link
+                        key={`${item.productCode}-${item.recipient}`}
+                        href={slug ? `/dashboard/services?service=${slug}` : "/dashboard/services"}
+                        className="hz-lift flex items-center gap-3.5 rounded-[10px] border border-tone-100 bg-surface px-4 py-3.5"
+                      >
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-305 text-on-brand">
+                          <Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />
+                        </span>
+                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className="truncate text-[15px] font-medium text-tone-744">
+                            {provider?.name ?? item.productName} {serviceName(item.serviceType).toLowerCase()}
+                          </span>
+                          <span className="truncate text-[13px] text-tone-426">
+                            {item.recipient ? maskRecipient(item.recipient) : item.productName}
+                          </span>
+                        </span>
+                        <ArrowUpRight className="hz-arrow h-4 w-4 shrink-0 text-tone-380" aria-hidden="true" />
+                      </Link>
+                    );
+                  })}
             </div>
           </div>
-          <PromoCarousel />
-        </section>
+        )}
 
-        <section>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg text-tone-405">Metrics</h2>
-            <div className="flex flex-wrap gap-2">
-              <label className="relative">
-                <span className="sr-only">Select period</span>
-                <select
-                  value={period}
-                  onChange={(event) => {
-                    if (event.target.value !== "Custom range") {
-                      setPeriod(event.target.value);
-                      setCustomRange(null);
-                    }
-                  }}
-                  className="appearance-none rounded-xl border border-tone-114 bg-surface py-2.5 pl-3 pr-9 text-xs text-tone-678 outline-none"
+        <div className="hz-rise" style={{ "--d": 2 } as React.CSSProperties}>
+          <PromoCarousel />
+        </div>
+
+        {/* Metrics */}
+        <div className="hz-stagger grid grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-3">
+          {isLoading
+            ? Array.from({ length: 4 }, (_, index) => <MetricCardSkeleton key={index} />)
+            : metrics.map((metric, index) => (
+                <article
+                  key={metric.label}
+                  className={`flex flex-col gap-3.5 rounded-xl p-5 ${index === 0 ? "bg-ink-724 text-cloud" : "border border-tone-100 bg-surface"}`}
                 >
-                  <option>Last 7 days</option>
-                  <option>Last 30 days</option>
-                  <option>Last 6 months</option>
-                  {customRange && <option>Custom range</option>}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-slate-500" />
-              </label>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={openRangePicker}
-                  className="flex items-center gap-2 rounded-xl border border-tone-114 bg-surface px-3 py-2.5 text-xs text-tone-678 transition hover:border-brand-361/50 active:scale-[0.98]"
-                >
-                  <CalendarDays className="h-4 w-4 text-tone-415" />
-                  {from && to ? formatRange(from, to) : "Choose range"}
-                </button>
-                {isRangePickerOpen && (
-                  <div className="absolute right-0 z-20 mt-2 w-[min(22rem,calc(100vw-2.5rem))] rounded-xl border border-tone-98 bg-surface p-4 shadow-xl shadow-slate-900/10">
-                    <p className="text-sm font-semibold text-ink-621">
-                      Custom date range
-                    </p>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <label className="text-xs font-medium text-slate-600">
-                        From
-                        <input
-                          type="date"
-                          value={pendingFrom}
-                          max={pendingTo || today || undefined}
-                          onChange={(event) =>
-                            setPendingFrom(event.target.value)
-                          }
-                          className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-brand-361"
-                        />
-                      </label>
-                      <label className="text-xs font-medium text-slate-600">
-                        To
-                        <input
-                          type="date"
-                          value={pendingTo}
-                          min={pendingFrom || undefined}
-                          max={today || undefined}
-                          onChange={(event) => setPendingTo(event.target.value)}
-                          className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm outline-none focus:border-brand-361"
-                        />
-                      </label>
-                    </div>
-                    {pendingFrom && pendingTo && pendingFrom > pendingTo && (
-                      <p className="mt-3 text-xs text-rose-600">
-                        The end date must be after the start date.
-                      </p>
+                  <span className={`text-sm ${index === 0 ? "text-grey-400" : "text-tone-426"}`}>
+                    {index === 0 ? `Spent · ${periodLabel}` : metric.label}
+                  </span>
+                  <span className="text-[32px] leading-none font-semibold tracking-[-0.02em] tabular-nums">
+                    {metric.value}
+                  </span>
+                  {metric.label === "Success rate" && isNum(successPercent) ? (
+                    <span className="flex h-1.5 overflow-hidden rounded-full bg-tone-100">
+                      <span className="rounded-full bg-brand-305" style={{ width: `${Math.min(100, Math.max(0, successPercent))}%` }} />
+                    </span>
+                  ) : (
+                    <span className={`text-[13px] ${index === 0 ? "text-silver" : "text-tone-426"}`}>
+                      <span className={index === 0 ? "" : metric.positive ? "text-status-success" : "text-status-error"}>{metric.change}</span>
+                      {metric.detail && <span> {metric.detail}</span>}
+                    </span>
+                  )}
+                </article>
+              ))}
+        </div>
+        {isError && (
+          <p className="text-sm text-status-error">
+            We couldn&apos;t load dashboard data. Please try again.
+          </p>
+        )}
+
+        {/* Chart + breakdown */}
+        <div className="flex flex-wrap items-stretch gap-4">
+          <section className="hz-rise flex min-w-0 flex-[999_1_520px] flex-col gap-6 rounded-[14px] border border-tone-100 bg-surface p-6" style={{ "--d": 3 } as React.CSSProperties}>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex flex-col gap-1.5">
+                <h2 className="text-lg font-semibold text-tone-744">Spending</h2>
+                {isLoading ? (
+                  <Skeleton className="h-4 w-40" />
+                ) : (
+                  <span className="text-sm text-tone-426">
+                    {selectedBar ? selectedBar.title : periodLabel} ·{" "}
+                    <span className="font-semibold text-tone-744 tabular-nums">
+                      {formatNaira(selectedBar ? selectedBar.amountMinor : data?.summary.spending.amountMinor)}
+                    </span>
+                    {isNum(spendingChange) && !selectedBar && (
+                      <span> · {spendingChange >= 0 ? "up" : "down"} {Math.abs(spendingChange).toFixed(0)}%</span>
                     )}
-                    <div className="mt-4 flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setIsRangePickerOpen(false)}
-                        className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={applyCustomRange}
-                        disabled={
-                          !pendingFrom || !pendingTo || pendingFrom > pendingTo
-                        }
-                        className="rounded-lg bg-brand-361 px-4 py-2 text-xs font-semibold text-on-brand transition hover:bg-brand-361 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Apply range
-                      </button>
-                    </div>
-                  </div>
+                  </span>
                 )}
               </div>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {isLoading
-              ? Array.from({ length: 4 }, (_, index) => (
-                  <MetricCardSkeleton key={index} />
-                ))
-              : metrics.map((metric) => (
-                  <article
-                    key={metric.label}
-                    className="rounded-xl border border-tone-98 bg-surface px-5 py-6"
-                  >
-                    <p className="text-[15px] text-ink-510">{metric.label}</p>
-                    <p className="mt-3 text-[26px] tracking-[-0.02em] text-ink-622">
-                      {metric.value}
-                    </p>
-                    <p className="mt-2 text-[15px]">
-                      <span
-                        className={metric.positive ? "text-success-417" : "text-danger-404"}
+              <div className="flex flex-wrap items-center gap-2">
+                <div role="radiogroup" aria-label="Period" className="flex rounded-xl border border-tone-100 bg-tone-44 p-1">
+                  {PERIODS.map(([value, label]) => {
+                    const on = period === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => {
+                          setPeriod(value);
+                          setCustomRange(null);
+                          setSelectedBucket(null);
+                        }}
+                        className={`min-h-9 rounded-lg px-3.5 text-[13px] font-medium transition-colors ${on ? "bg-brand-305 text-on-brand" : "text-tone-714 hover:text-tone-744"}`}
                       >
-                        {metric.change}
-                      </span>
-                      {metric.detail && <span className="text-tone-304"> {metric.detail}</span>}
-                    </p>
-                  </article>
-                ))}
-          </div>
-          {isError && (
-            <p className="mt-3 text-sm text-rose-600">
-              We couldn&apos;t load dashboard data. Please try again.
-            </p>
-          )}
-        </section>
-
-        <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
-          <article className="rounded-xl border border-tone-98 bg-surface p-5 sm:p-6">
-            <div>
-              <h2 className="text-xl text-ink-504">Spending overview</h2>
-              {isLoading ? (
-                <>
-                  <Skeleton strong className="mt-2 h-8 w-40" />
-                  <Skeleton className="mt-2 h-3.5 w-48" />
-                </>
-              ) : (
-                <>
-                  <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-tone-744">
-                    {data
-                      ? formatNaira(data.summary.spending.amountMinor)
-                      : "—"}
-                  </p>
-                  {data && (
-                    <p className="mt-2 flex items-center gap-2.5 text-xs text-tone-321">
-                      {isNum(spendingChange) && (
-                        <span
-                          className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium ${spendingChange >= 0 ? "bg-tone-57 text-success-392" : "bg-tone-73 text-danger-404"}`}
-                        >
-                          {Math.abs(spendingChange).toFixed(0)}%
-                          <ArrowUpRight
-                            className={`h-3 w-3 ${spendingChange < 0 ? "rotate-90" : ""}`}
-                          />
-                        </span>
-                      )}
-                      vs {period === "Custom range" ? "previous period" : period}
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-            <div className="relative mt-6 h-[300px] sm:h-[350px]">
-              {isLoading ? (
-                <ChartSkeleton shape="bars" label="Loading spending overview" />
-              ) : spendingData.length ? (
-                <SpendingChart data={spendingData} variant="overview" />
-              ) : (
-                <p className="pt-24 text-center text-sm text-slate-500">
-                  No spending data for this period.
-                </p>
-              )}
-            </div>
-          </article>
-          <article className="rounded-xl border border-tone-98 bg-surface p-5 sm:p-6">
-            <h2 className="text-xl font-medium text-tone-744">Digital Services usage</h2>
-            <div className="relative mx-auto mt-2 h-[290px] max-w-[400px]">
-              {isLoading ? (
-                <ChartSkeleton shape="donut" label="Loading service usage" />
-              ) : usageData.length ? (
-                <ServiceUsageChart data={usageData} callouts />
-              ) : (
-                <p className="pt-24 text-center text-sm text-slate-500">
-                  No service usage yet.
-                </p>
-              )}
-            </div>
-            <div className="mt-4 space-y-3">
-              {usageData.map((service) => (
-                <div
-                  key={service.name}
-                  className="flex items-center gap-3 text-sm"
-                >
-                  <span
-                    className="h-[18px] w-[18px] rounded"
-                    style={{ backgroundColor: service.color }}
-                  />
-                  <span className="flex-1 text-tone-744">{service.name}</span>
-                  <span className="text-info-454">
-                    {formatFixed(service.value, 0, "%")}
-                  </span>
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          </article>
-        </section>
-
-        <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
-          <article className="rounded-xl border border-tone-98 bg-surface p-5 sm:p-6">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-medium text-tone-744">Recent Transaction</h2>
-              <Link
-                href="/dashboard/transactions"
-                className="inline-flex items-center gap-2 text-[17px] text-brand-333"
-              >
-                View all transaction <ChevronRight className="h-4 w-4" />
-              </Link>
-            </div>
-            <div className="mt-5 divide-y divide-tone-92">
-              {isLoading ? (
-                <ListSkeleton rows={3} label="Loading recent transactions" />
-              ) : data?.recentTransactions.length ? (
-                data.recentTransactions.slice(0, 5).map((transaction) => {
-                  const provider = providerFor(transaction.productCode, transaction.productName);
-                  return (
-                    <div
-                      key={transaction.txnRef}
-                      className="flex items-center gap-4 py-5 first:pt-3"
-                    >
-                      <ProviderLogo provider={provider} label={transaction.productName} />
-                      <div className="min-w-0 flex-1">
-                        {/* Design shows the recipient (phone/meter/smartcard); fall back to the product name. */}
-                        <p className="truncate text-lg font-medium leading-6 text-tone-744">
-                          {transaction.recipient || transaction.productName}
-                        </p>
-                        <p className="mt-1 truncate text-[15px] text-tone-405">
-                          {serviceName(transaction.serviceType)} - {provider?.name ?? transaction.productName}
-                        </p>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={openRangePicker}
+                    aria-pressed={period === "Custom range"}
+                    className={`hz-press flex min-h-11 items-center gap-2 rounded-xl border px-3 text-[13px] font-medium transition-colors ${period === "Custom range" ? "border-brand-305 bg-brand-305 text-on-brand" : "border-tone-100 bg-surface text-tone-714 hover:border-tone-178"}`}
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    {period === "Custom range" ? periodLabel : "Custom"}
+                  </button>
+                  {isRangePickerOpen && (
+                    <div className="hz-pop absolute right-0 z-20 mt-2 w-[min(22rem,calc(100vw-2.5rem))] rounded-xl border border-tone-100 bg-surface p-4 shadow-[0_24px_48px_-24px_rgba(18,21,26,0.35)]">
+                      <p className="text-sm font-semibold text-tone-744">Custom date range</p>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <label className="text-xs font-medium text-tone-414">
+                          From
+                          <input
+                            type="date"
+                            value={pendingFrom}
+                            max={pendingTo || today || undefined}
+                            onChange={(event) => setPendingFrom(event.target.value)}
+                            className="mt-1.5 h-11 w-full rounded-lg border border-tone-100 bg-surface px-2 text-sm text-tone-744 outline-none focus:border-tone-744"
+                          />
+                        </label>
+                        <label className="text-xs font-medium text-tone-414">
+                          To
+                          <input
+                            type="date"
+                            value={pendingTo}
+                            min={pendingFrom || undefined}
+                            max={today || undefined}
+                            onChange={(event) => setPendingTo(event.target.value)}
+                            className="mt-1.5 h-11 w-full rounded-lg border border-tone-100 bg-surface px-2 text-sm text-tone-744 outline-none focus:border-tone-744"
+                          />
+                        </label>
                       </div>
-                      <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4">
-                        <span className="text-lg font-semibold text-ink-604">
-                          {formatNaira(transaction.totalMinor)}
-                        </span>
-                        <StatusBadge status={transaction.fulfilmentStatus} />
+                      {pendingFrom && pendingTo && pendingFrom > pendingTo && (
+                        <p className="mt-3 text-xs text-status-error">The end date must be after the start date.</p>
+                      )}
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <button type="button" onClick={() => setIsRangePickerOpen(false)} className="hz-press min-h-10 rounded-lg border border-tone-100 text-[13px] font-medium text-tone-714 hover:bg-tone-44">
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            applyCustomRange();
+                            setSelectedBucket(null);
+                          }}
+                          disabled={!pendingFrom || !pendingTo || pendingFrom > pendingTo}
+                          className="hz-press min-h-10 rounded-lg bg-brand-305 text-[13px] font-medium text-on-brand disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Apply range
+                        </button>
                       </div>
                     </div>
-                  );
-                })
-              ) : (
-                <p className="py-10 text-center text-sm text-slate-500">
-                  No recent transactions yet.
-                </p>
-              )}
-            </div>
-          </article>
-          {/*  <aside className="overflow-hidden rounded-xl border border-tone-98 bg-surface">
-            <div className="relative bg-tone-33 p-5">
-              <h2 className="text-xl font-semibold">Reward points</h2>
-              <p className="mt-7 text-sm text-info-458">Your reward points</p>
-              <p className="mt-1 text-[31px] font-medium leading-none tracking-[-0.04em] text-ink-622">
-                {data?.rewards.available && data.rewards.points !== null
-                  ? data.rewards.points.toLocaleString()
-                  : "—"}{" "}
-                <span className="text-xl">points</span>
-              </p>
-              <p className="mt-2 text-sm text-tone-324">
-                {data?.rewards.available
-                  ? "Available to redeem"
-                  : "Rewards are not available yet"}
-              </p>
-              <div className="absolute right-4 top-8 flex h-24 w-32 rotate-[-27deg] items-center justify-center rounded-full bg-success-397 shadow-[14px_8px_0_#F8AF00]">
-                <Trophy className="h-10 w-10 text-white" />
-                <Sparkles className="absolute -right-4 -top-3 h-5 w-5 text-success-397" />
+                  )}
+                </div>
               </div>
             </div>
-            <div className="p-5">
-              <span className="inline-flex items-center gap-1 rounded-full bg-tone-39 px-3 py-1.5 text-sm text-brand-333">
-                <Gift className="h-3.5 w-3.5" /> Reward program
-              </span>
-              <p className="mt-5 text-sm leading-6 text-tone-417">
-                Complete digital-service payments to earn rewards when they
-                become available.
-              </p>
+
+            {/* Bar chart: one bar per day, week or month; tap a bar to read its amount */}
+            <div className="relative h-60">
+              {isLoading ? (
+                <ChartSkeleton shape="bars" label="Loading spending" />
+              ) : spendingData.length ? (
+                <>
+                  <div aria-hidden="true" className="absolute inset-x-0 top-0 bottom-7 flex flex-col justify-between">
+                    <span className="border-t border-dashed border-tone-100" />
+                    <span className="border-t border-dashed border-tone-100" />
+                    <span className="border-t border-dashed border-tone-100" />
+                    <span className="border-t border-tone-178" />
+                  </div>
+                  <div className="absolute inset-0 flex items-stretch gap-[clamp(4px,1.2vw,16px)]">
+                    {spendingData.map((item, index) => {
+                      const on = index === (selectedBucket ?? spendingData.length - 1);
+                      return (
+                        <button
+                          key={`${item.title}-${index}`}
+                          type="button"
+                          aria-pressed={on}
+                          aria-label={`${item.title}, ${formatNaira(item.amountMinor)}`}
+                          onClick={() => setSelectedBucket(index)}
+                          className="group flex min-w-0 flex-1 flex-col items-center gap-2.5"
+                        >
+                          <span className="flex w-full flex-1 items-end justify-center">
+                            <span
+                              className={`hz-bar block w-[min(44px,100%)] rounded-t-md rounded-b transition-colors ${on ? "bg-brand-305" : "bg-tone-178 group-hover:bg-tone-414"}`}
+                              style={{ height: `${Math.max(3, Math.round((item.amountMinor / maxBucket) * 100))}%`, animationDelay: `${index * 50}ms` }}
+                            />
+                          </span>
+                          <span className={`h-[18px] truncate text-xs ${on ? "font-semibold text-tone-744" : "text-tone-426"}`}>
+                            {item.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <p className="pt-24 text-center text-sm text-tone-414">No spending data for this period.</p>
+              )}
             </div>
-          </aside> */}
+          </section>
+
+          <section className="hz-rise flex min-w-0 flex-[1_1_300px] flex-col gap-5 rounded-[14px] border border-tone-100 bg-surface p-6" style={{ "--d": 4 } as React.CSSProperties}>
+            <h2 className="text-lg font-semibold text-tone-744">Where it went</h2>
+            {isLoading ? (
+              <ListSkeleton rows={4} label="Loading service usage" />
+            ) : usageData.length ? (
+              <ul className="flex flex-col gap-[18px]">
+                {usageData.map((service, index) => (
+                  <li key={service.name} className="flex flex-col gap-2">
+                    <span className="flex justify-between text-sm">
+                      <span className="font-medium text-tone-744">{service.name}</span>
+                      <span className="text-tone-426 tabular-nums">{formatFixed(service.value, 0, "%")}</span>
+                    </span>
+                    <span className="flex h-2 overflow-hidden rounded-full bg-tone-44">
+                      <span
+                        className={`hz-grow rounded-full ${index === 0 ? "bg-brand-305" : "bg-tone-380"}`}
+                        style={{ width: `${Math.min(100, Math.max(0, service.value))}%` }}
+                      />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="py-10 text-center text-sm text-tone-414">No service usage yet.</p>
+            )}
+            <div className="mt-auto flex flex-col gap-3 rounded-[10px] bg-ink-724 p-[18px] text-cloud">
+              <span className="flex items-baseline justify-between">
+                <span className="text-sm text-grey-400">Rewards</span>
+                <span className="text-[13px] text-grey-500">
+                  {data?.rewards.available ? "Available" : "Coming soon"}
+                </span>
+              </span>
+              <span className="text-[15px] leading-normal">
+                {data?.rewards.available && data.rewards.points !== null ? (
+                  <>
+                    You have <span className="font-semibold text-highlight">{data.rewards.points.toLocaleString()} points</span> to redeem.
+                  </>
+                ) : (
+                  <>Earn points on every payment once rewards launch.</>
+                )}
+              </span>
+            </div>
+          </section>
+        </div>
+
+        {/* Recent payments */}
+        <section className="hz-reveal overflow-hidden rounded-[14px] border border-tone-100 bg-surface pt-2">
+          <div className="flex items-center justify-between px-6 py-4">
+            <h2 className="text-lg font-semibold text-tone-744">Recent payments</h2>
+            <Link href="/dashboard/transactions" className="border-b border-tone-744 text-sm font-medium text-tone-744">
+              View all
+            </Link>
+          </div>
+          {isLoading ? (
+            <div className="px-6 pb-4">
+              <ListSkeleton rows={3} label="Loading recent payments" />
+            </div>
+          ) : data?.recentTransactions.length ? (
+            <ul>
+              {data.recentTransactions.slice(0, 5).map((transaction) => {
+                const provider = providerFor(transaction.productCode, transaction.productName);
+                const status = statusFor(transaction.fulfilmentStatus);
+                const Icon = SERVICE_ICONS[transaction.serviceType] ?? ReceiptText;
+                return (
+                  <li key={transaction.txnRef} className="flex items-center gap-4 border-t border-tone-44 px-6 py-3.5">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-tone-44 text-tone-744">
+                      <Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="truncate text-[15px] font-medium text-tone-744">
+                        {serviceName(transaction.serviceType)} · {provider?.name ?? transaction.productName}
+                      </span>
+                      <span className="truncate text-[13px] text-tone-426">
+                        {transaction.recipient || transaction.productName} · {moment(transaction.createdAt).calendar(null, { sameDay: "[Today], HH:mm", lastDay: "[Yesterday], HH:mm", sameElse: "D MMM, HH:mm", lastWeek: "D MMM, HH:mm" })}
+                      </span>
+                    </span>
+                    <span className={`hidden items-center gap-1.5 text-[13px] font-medium sm:inline-flex ${status.text}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
+                      {status.label}
+                    </span>
+                    <span className="w-24 text-right text-[15px] font-semibold text-tone-744 tabular-nums">
+                      {formatNaira(transaction.totalMinor)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="border-t border-tone-44 py-10 text-center text-sm text-tone-414">No recent payments yet.</p>
+          )}
         </section>
-      </main>
+      </div>
     </div>
   );
 }

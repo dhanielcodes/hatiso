@@ -1,361 +1,236 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import {
-  User,
-  Shield,
-  Send,
-  ChevronDown,
+  ArrowRight,
+  BookOpen,
+  Check,
+  Globe,
+  Lock,
+  Dices,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+  Tv,
+  Wifi,
+  Zap,
 } from 'lucide-react';
-import HatisoLogo from '@/components/brand/HatisoLogo';
 
-interface CarouselSlide {
-  id: string;
-  title: string;
-  subtext: string;
-  type: 'avatars' | 'photo' | 'transfer' | 'architecture';
-}
+/** How long each hero message stays before the next one comes in. */
+const SLIDE_MS = 4500;
 
-const CAROUSEL_SLIDES: CarouselSlide[] = [
+/** The three hero messages. Each one lights up its tile below the headline. */
+const SLIDES = [
   {
-    id: 'avatars',
-    title: 'One app, every\nservice you rely on',
-    subtext:
-      'From bills to banking to your favorite merchants access it all without switching apps.',
-    type: 'avatars',
+    id: 'services',
+    title: 'One app, every service',
+    tail: 'you rely on.',
+    body: 'From bills to banking to your favourite merchants, access it all without switching apps.',
   },
   {
-    id: 'photo',
-    title: 'Everything you need,\nright in your hand',
-    subtext:
-      'Buy airtime, pay bills, and access your bank. All from one app, wherever you are.',
-    type: 'photo',
+    id: 'hand',
+    title: 'Everything you need,',
+    tail: 'right in your hand.',
+    body: 'Buy airtime, pay bills and reach your bank, all from one app, wherever you are. You can pay without an account.',
   },
   {
-    id: 'transfer',
-    title: 'Your bank, without\nthe bank queue',
-    subtext:
-      'Check balances, move money, and manage your account securely, right from Atiso.',
-    type: 'transfer',
+    id: 'bank',
+    title: 'Your bank, without',
+    tail: 'the bank queue.',
+    body: 'Check balances, move money and manage your account securely, right from Hatiso.',
   },
-  {
-    id: 'architecture',
-    title: 'Your bank, without\nthe bank queue',
-    subtext:
-      'Check balances, move money, and manage your account securely, right from Atiso.',
-    type: 'architecture',
-  },
+] as const;
+
+/** The services Hatiso offers (see lib/digitalServices/categoryServices.ts). */
+const SERVICES = [
+  { name: 'Airtime', Icon: Smartphone },
+  { name: 'Data', Icon: Wifi },
+  { name: 'Internet', Icon: Globe },
+  { name: 'Electricity', Icon: Zap },
+  { name: 'Cable TV', Icon: Tv },
+  { name: 'Education', Icon: BookOpen },
+  { name: 'Insurance', Icon: ShieldCheck },
+  { name: 'Betting', Icon: Dices },
 ];
 
-export default function HeroSection() {
-  const [activeIndex, setActiveIndex] = useState(0); // Start with Card 1 (or 0)
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+const BANK_STEPS = ['Confirm your phone number', "Sign in on your bank's own app", 'Check balances and move money'];
 
-  const nextSlide = () => {
-    setActiveIndex((prev) => (prev + 1) % CAROUSEL_SLIDES.length);
-  };
+export default function HeroSection() {
+  const [active, setActive] = useState(0);
+  // Bumped on every change so the progress bar restarts even when the same tile is picked again.
+  const [cycle, setCycle] = useState(0);
 
   useEffect(() => {
-    if (!isAutoPlaying) return;
-    timerRef.current = setInterval(() => {
-      nextSlide();
-    }, 4500);
+    const timer = setTimeout(() => {
+      setActive((current) => (current + 1) % SLIDES.length);
+      setCycle((c) => c + 1);
+    }, SLIDE_MS);
+    return () => clearTimeout(timer);
+  }, [cycle]);
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isAutoPlaying]);
+  const pick = (index: number) => {
+    setActive(index);
+    setCycle((c) => c + 1);
+  };
+
+  const slide = SLIDES[active];
+
+  const tileClass = (index: number) =>
+    `hz-lift group relative min-w-0 overflow-hidden rounded-2xl border text-left transition-[opacity,border-color] duration-400 ${
+      index === active ? 'border-silver opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
+    }`;
+
+  const progress = (index: number, light = false) => (
+    <span
+      aria-hidden="true"
+      className={`absolute top-3.5 right-4.5 left-4.5 z-10 h-[3px] overflow-hidden rounded-full ${
+        light ? 'bg-grey-150' : 'bg-cloud/20'
+      }`}
+    >
+      {index === active && (
+        <span
+          key={cycle}
+          className={`hz-fill absolute inset-0 rounded-full ${light ? 'bg-carbon' : 'bg-cloud'}`}
+          style={{ '--fill-ms': `${SLIDE_MS}ms` } as React.CSSProperties}
+        />
+      )}
+    </span>
+  );
 
   return (
-    <section className="relative overflow-hidden px-4 pt-4 pb-12 sm:px-8 lg:px-14">
-      {/* Background ambient lighting */}
-      <div className="pointer-events-none absolute top-1/4 right-1/4 -z-10 h-96 w-96 rounded-full bg-info-203/8 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-10 -z-10 h-80 w-80 rounded-full bg-brand-361/8 blur-3xl" />
-
-      <div className="mx-auto max-w-7xl">
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
-          {/* Left Column: Headline & Value Proposition */}
-          <div className="flex flex-col space-y-6 lg:col-span-6 xl:col-span-6">
-            <div className="space-y-2">
-              <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
-                <span className="block text-brand-305 drop-shadow-sm">
-                  One platform.
-                </span>
-                <span className="block font-extrabold text-white">
-                  Every service you need.
-                </span>
-              </h1>
-            </div>
-
-            <p className="max-w-xl text-base text-slate-300 sm:text-lg sm:leading-relaxed">
-              Discover digital services from trusted providers, manage your banking, and get
-              things done. All from one place. No account required to start.
-            </p>
+    <section id="top" className="overflow-hidden bg-carbon text-cloud">
+      <div className="mx-auto flex max-w-7xl flex-col items-center gap-10 px-4 pt-10 pb-16 sm:px-8 sm:pt-16 sm:pb-24 lg:gap-16 lg:px-14">
+        {/* Headline: changes with the active tile */}
+        <div className="flex w-full flex-col items-center gap-7 text-center">
+          <div key={slide.id} className="hz-swap flex flex-col items-center gap-5" aria-live="polite">
+            <h1 className="max-w-[1000px] text-[clamp(42px,7vw,92px)] leading-none font-semibold tracking-[-0.04em] text-balance">
+              {slide.title} <span className="text-highlight">{slide.tail}</span>
+            </h1>
+            <p className="max-w-[580px] text-base leading-relaxed text-pretty text-silver sm:text-lg">{slide.body}</p>
           </div>
+          <div className="hz-rise flex flex-wrap justify-center gap-3" style={{ '--d': 2 } as React.CSSProperties}>
+            <Link
+              href="#popular-categories"
+              className="hz-press inline-flex min-h-13 items-center gap-2.5 rounded-xl bg-cloud px-6.5 text-[15px] font-medium text-carbon hover:bg-white"
+            >
+              Pay a bill
+              <ArrowRight className="hz-arrow h-4 w-4" aria-hidden="true" />
+            </Link>
+            <Link
+              href="/auth/register"
+              className="hz-press inline-flex min-h-13 items-center rounded-xl border border-grey-700 px-6.5 text-[15px] font-medium text-cloud hover:border-grey-400"
+            >
+              Create a free account
+            </Link>
+          </div>
+        </div>
 
-          {/* Right Column: Straight Cards Carousel with Blurred Out Sides (NO SHADOWS) */}
-          <div
-            className="relative flex flex-col items-center justify-center lg:col-span-6 xl:col-span-6"
-            onMouseEnter={() => setIsAutoPlaying(false)}
-            onMouseLeave={() => setIsAutoPlaying(true)}
+        {/* Three tiles, one per message */}
+        <div className="hz-rise flex w-full flex-wrap items-stretch gap-4" style={{ '--d': 3 } as React.CSSProperties}>
+          <button
+            type="button"
+            aria-label="Every service"
+            aria-pressed={active === 0}
+            onClick={() => pick(0)}
+            className={`${tileClass(0)} flex min-h-[420px] flex-[3_1_280px] flex-col justify-between gap-5 bg-graphite px-5.5 pt-9 pb-5.5`}
           >
-            {/* Carousel Viewport with Side Fade/Blur Masks */}
-            <div className="relative flex h-[500px] w-full max-w-[560px] items-center justify-center overflow-hidden sm:h-[540px]">
-              {/* Left Side Blur & Fade Overlay Mask */}
-              <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-30 w-16 bg-gradient-to-r from-ink-662 via-ink-662/70 to-transparent sm:w-24" />
+            {progress(0)}
+            <span className="flex w-full items-center justify-between text-[13px]">
+              <span className="font-medium text-grey-400">Services</span>
+              <span className="text-grey-500">{SERVICES.length} and counting</span>
+            </span>
+            <span className="grid w-full grid-cols-2 gap-2">
+              {SERVICES.map(({ name, Icon }) => (
+                <span
+                  key={name}
+                  className="flex min-h-13 items-center gap-2.5 rounded-xl border border-grey-900 bg-carbon px-3 text-sm font-medium text-cloud"
+                >
+                  <Icon className="h-4 w-4 shrink-0 text-silver" strokeWidth={1.8} aria-hidden="true" />
+                  {name}
+                </span>
+              ))}
+            </span>
+            <span className="text-[15px] leading-snug font-medium">Bills to banking, without switching apps.</span>
+          </button>
 
-              {/* Right Side Blur & Fade Overlay Mask */}
-              <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-30 w-16 bg-gradient-to-l from-ink-662 via-ink-662/70 to-transparent sm:w-24" />
+          <button
+            type="button"
+            aria-label="Right in your hand"
+            aria-pressed={active === 1}
+            onClick={() => pick(1)}
+            className={`${tileClass(1)} min-h-[420px] flex-[5_1_380px] bg-graphite`}
+          >
+            {progress(1)}
+            <Image
+              src="/images/pink_blazer_phone.jpg"
+              alt="A woman paying for airtime on her phone"
+              fill
+              priority
+              sizes="(min-width: 1024px) 520px, 100vw"
+              className="hz-zoom object-cover object-[58%_30%]"
+            />
+            <span aria-hidden="true" className="absolute inset-0 bg-linear-to-b from-carbon/0 from-45% to-carbon/75" />
+            <span className="hz-card absolute right-4.5 bottom-4.5 left-4.5 flex max-w-[300px] flex-col gap-3 rounded-xl bg-cloud p-4.5 text-carbon shadow-[0_30px_60px_-20px_rgba(0,0,0,0.6)]">
+              <span className="flex items-center justify-between">
+                <span className="text-[13px] font-medium text-grey-600">Airtime · MTN</span>
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-carbon px-2.5 py-1 text-xs font-medium text-cloud">
+                  <span className="hz-ping h-1.5 w-1.5 rounded-full bg-silver text-silver" />
+                  Paid
+                </span>
+              </span>
+              <span className="text-3xl font-semibold tracking-[-0.02em]">
+                ₦2,000<span className="text-[17px] text-grey-500">.00</span>
+              </span>
+              <span className="h-px bg-grey-100" />
+              <span className="flex justify-between text-[13px] text-grey-600">
+                <span>0803 ••• 4512</span>
+                <span>Today, 09:41</span>
+              </span>
+            </span>
+          </button>
 
-              {/* Carousel Slides Container */}
-              {CAROUSEL_SLIDES.map((slide, index) => {
-                const total = CAROUSEL_SLIDES.length;
-                let offset = (index - activeIndex + total) % total;
-                if (offset > total / 2) offset -= total;
-
-                const isCenter = offset === 0;
-                const isLeft = offset === -1 || (total === 4 && offset === -1);
-                const isRight = offset === 1;
-
-                // Straight cards (0deg rotation) with blurred sides matching screenshot, NO SHADOW
-                let transformClass = '';
-                let zIndex = 10;
-                let styleFilters = '';
-                let opacityClass = 'opacity-0 pointer-events-none scale-75';
-
-                if (isCenter) {
-                  // Active Center Card: Straight, Crisp, In Focus, Full Opacity, No Shadow
-                  transformClass = 'translate-x-0 scale-100 rotate-0';
-                  zIndex = 20;
-                  opacityClass = 'opacity-100 z-20 cursor-default';
-                  styleFilters = 'none';
-                } else if (isLeft) {
-                  // Left Card: Straight, Translated left, Blurred out, No Shadow
-                  transformClass =
-                    '-translate-x-[64%] sm:-translate-x-[68%] scale-[0.88] rotate-0 hover:opacity-70';
-                  zIndex = 10;
-                  opacityClass = 'opacity-40 z-10 cursor-pointer';
-                  styleFilters = 'blur(3.5px)';
-                } else if (isRight) {
-                  // Right Card: Straight, Translated right, Blurred out, No Shadow
-                  transformClass =
-                    'translate-x-[64%] sm:translate-x-[68%] scale-[0.88] rotate-0 hover:opacity-70';
-                  zIndex = 10;
-                  opacityClass = 'opacity-40 z-10 cursor-pointer';
-                  styleFilters = 'blur(3.5px)';
-                }
-
-                return (
-                  <div
-                    key={slide.id}
-                    onClick={() => {
-                      if (!isCenter) setActiveIndex(index);
-                    }}
-                    className={`absolute top-4 flex h-[460px] w-[260px] flex-col justify-between overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-ink-674 via-ink-662 to-tone-762 p-6 transition-all duration-700 ease-out sm:h-[490px] sm:w-[280px] ${transformClass} ${opacityClass}`}
-                    style={{
-                      filter: styleFilters,
-                      boxShadow: 'none', // Strictly NO shadow on cards as requested
-                    }}
-                  >
-                    {/* Visual Area (Top 60%) */}
-                    <div className="relative flex flex-1 flex-col items-center justify-center">
-                      {/* CARD 1: Avatars Community */}
-                      {slide.type === 'avatars' && (
-                        <div className="relative flex h-full w-full flex-col justify-between">
-                          {/* Top-left User Silhouette Badge */}
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900/80 text-[10px] text-slate-300">
-                            <User className="h-3 w-3" />
-                          </div>
-
-                          {/* 5 Avatar Bubbles in Constellation */}
-                          <div className="relative my-auto flex h-48 w-full items-center justify-center">
-                            {/* Subtle contour lines */}
-                            <svg
-                              className="pointer-events-none absolute inset-0 h-full w-full opacity-20"
-                              viewBox="0 0 200 200"
-                              fill="none"
-                            >
-                              <circle cx="100" cy="100" r="70" stroke="#22D3EE" strokeWidth="1" />
-                              <circle cx="100" cy="100" r="45" stroke="#22D3EE" strokeWidth="1" strokeDasharray="3 3" />
-                            </svg>
-
-                            {/* Top Left: Professional black woman in blazer */}
-                            <div className="absolute top-2 left-6 h-11 w-11 overflow-hidden rounded-full border border-white/40">
-                              <img
-                                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
-                                alt="User"
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
-
-                            {/* Top Right: Young man looking at camera */}
-                            <div className="absolute top-4 right-8 h-11 w-11 overflow-hidden rounded-full border border-white/40">
-                              <img
-                                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
-                                alt="User"
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
-
-                            {/* Center: Smiling young man in white shirt */}
-                            <div className="relative z-10 h-12 w-12 overflow-hidden rounded-full border-2 border-white ring-2 ring-cyan-500/30">
-                              <img
-                                src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80"
-                                alt="User"
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
-
-                            {/* Orange Network Badge on the right edge */}
-                            <div className="absolute right-3 top-24 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-brand-361 text-on-brand">
-                              <div className="h-1.5 w-1.5 rounded-full bg-surface" />
-                            </div>
-
-                            {/* Bottom Left: Woman with curly hair */}
-                            <div className="absolute bottom-3 left-6 h-11 w-11 overflow-hidden rounded-full border border-white/40">
-                              <img
-                                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
-                                alt="User"
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
-
-                            {/* Bottom Right: Young man */}
-                            <div className="absolute bottom-2 right-9 h-11 w-11 overflow-hidden rounded-full border border-white/40">
-                              <img
-                                src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80"
-                                alt="User"
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* CARD 2: Everything you need (Woman in pink blazer & cap with phone) */}
-                      {slide.type === 'photo' && (
-                        <div className="relative -mx-6 -mt-6 h-[250px] w-[calc(100%+3rem)] overflow-hidden">
-                          <img
-                            src="/images/pink_blazer_phone.jpg"
-                            alt="Everything you need"
-                            className="h-full w-full object-cover object-top"
-                          />
-                          {/* Bottom Gradient Fade into card body */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-ink-662 via-ink-662/40 to-transparent" />
-                        </div>
-                      )}
-
-                      {/* CARD 3: Transfer money card */}
-                      {slide.type === 'transfer' && (
-                        <div className="relative flex h-full w-full flex-col justify-between py-1">
-                          {/* Top-left icon */}
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900/80 text-[10px] text-slate-300">
-                            <Send className="h-3 w-3" />
-                          </div>
-
-                          {/* Floating light Transfer Money widget */}
-                          <div className="relative mx-auto my-auto w-full rounded-xl bg-tone-94 p-3 text-slate-800">
-                            <h4 className="text-center text-xs font-bold text-slate-900">
-                              Transfer money
-                            </h4>
-                            <p className="mt-0.5 text-center text-[9px] text-slate-500">
-                              Choose the currency and amount you want to send?
-                            </p>
-
-                            {/* Amount Input 1 */}
-                            <div className="mt-2.5 flex items-center justify-between rounded-md bg-surface px-2 py-1.5 border border-slate-200">
-                              <span className="text-xs font-bold text-slate-900">2,000</span>
-                              <div className="flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-700">
-                                <span>🇳🇬 NGN</span>
-                                <ChevronDown className="h-2.5 w-2.5 text-slate-400" />
-                              </div>
-                            </div>
-
-                            {/* Separator lines */}
-                            <div className="my-1.5 flex flex-col gap-0.5 px-1 opacity-40">
-                              <div className="h-0.5 w-7 rounded-full bg-slate-400" />
-                              <div className="h-0.5 w-7 rounded-full bg-slate-400" />
-                              <div className="h-0.5 w-7 rounded-full bg-slate-400" />
-                            </div>
-
-                            <p className="text-[9px] text-slate-500">Your recipient will receive</p>
-
-                            {/* Amount Input 2 */}
-                            <div className="mt-1 flex items-center justify-between rounded-md bg-surface px-2 py-1.5 border border-slate-200">
-                              <span className="text-xs font-bold text-slate-900">1,500</span>
-                              <div className="flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-700">
-                                <span>🇳🇬 NGN</span>
-                                <ChevronDown className="h-2.5 w-2.5 text-slate-400" />
-                              </div>
-                            </div>
-
-                            {/* Orange badge on right edge */}
-                            <div className="absolute -right-2 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full bg-brand-361 text-on-brand">
-                              <div className="h-1.5 w-1.5 rounded-full bg-surface" />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* CARD 4: Atiso Banking Integration Architecture */}
-                      {slide.type === 'architecture' && (
-                        <div className="relative flex h-full w-full flex-col items-center justify-center py-2">
-                          <HatisoLogo variant="cloud" height={18} href={null} className="mb-3" />
-
-                          {/* Architecture diagram with central shield and two phones */}
-                          <div className="relative flex w-full items-center justify-between px-1">
-                            {/* Left Phone Wireframe */}
-                            <div className="flex h-20 w-11 flex-col rounded-lg border border-white/30 bg-white/10 p-1 backdrop-blur-sm">
-                              <div className="h-1.5 w-4 rounded-full bg-surface/40 mb-1" />
-                              <div className="h-3 w-full rounded bg-white/20 mb-1" />
-                              <div className="space-y-0.5">
-                                <div className="h-1 w-full rounded bg-white/20" />
-                                <div className="h-1 w-3/4 rounded bg-white/20" />
-                              </div>
-                            </div>
-
-                            {/* Left connecting line */}
-                            <div className="h-0.5 flex-1 bg-white/30" />
-
-                            {/* Center Atiso Secure Vault */}
-                            <div className="relative flex h-14 w-14 items-center justify-center rounded-xl border border-cyan-400/40 bg-ink-749 p-2">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-300">
-                                <Shield className="h-5 w-5" />
-                              </div>
-                            </div>
-
-                            {/* Right connecting line */}
-                            <div className="h-0.5 flex-1 bg-white/30" />
-
-                            {/* Right Phone Wireframe */}
-                            <div className="flex h-20 w-11 flex-col rounded-lg border border-white/30 bg-slate-900/60 p-1">
-                              <div className="h-1.5 w-4 rounded-full bg-white/30 mb-1" />
-                              <div className="h-3 w-full rounded bg-white/10 mb-1" />
-                              <div className="space-y-0.5">
-                                <div className="h-1 w-full rounded bg-white/15" />
-                                <div className="h-1 w-2/3 rounded bg-white/15" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Bottom Card Texts (Matching exact typography) */}
-                    <div className="pt-3 text-center space-y-1.5">
-                      <h3 className="whitespace-pre-line text-base font-bold leading-snug text-white sm:text-lg">
-                        {slide.title}
-                      </h3>
-                      <p className="line-clamp-2 text-[11px] leading-relaxed text-slate-300 px-1">
-                        {slide.subtext}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <button
+            type="button"
+            aria-label="Your bank"
+            aria-pressed={active === 2}
+            onClick={() => pick(2)}
+            className={`${tileClass(2)} flex min-h-[420px] flex-[4_1_300px] flex-col justify-between gap-5 bg-cloud px-5.5 pt-9 pb-5.5 text-carbon`}
+          >
+            {progress(2, true)}
+            <span className="flex w-full items-center justify-between text-[13px] text-grey-600">
+              <span className="font-medium">Banking</span>
+              <span className="inline-flex items-center gap-1.5">
+                <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                Secure hand-off
+              </span>
+            </span>
+            <span className="flex w-full flex-col gap-2.5">
+              <span className="flex items-center gap-3 rounded-xl border border-grey-100 bg-white p-3.5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-carbon text-cloud">
+                  <Sparkles className="h-4.5 w-4.5" aria-hidden="true" />
+                </span>
+                <span className="flex flex-1 flex-col gap-0.5">
+                  <span className="text-[15px] font-semibold">Your bank</span>
+                  <span className="text-[13px] text-grey-600">Opening the bank&apos;s own app</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-status-success">
+                  <span className="h-1.5 w-1.5 rounded-full bg-status-success" />
+                  Ready
+                </span>
+              </span>
+              {BANK_STEPS.map((step) => (
+                <span key={step} className="flex items-center gap-2.5 px-1 text-sm text-grey-800">
+                  <span className="flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full bg-carbon text-cloud">
+                    <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
+                  </span>
+                  {step}
+                </span>
+              ))}
+            </span>
+            <span className="text-[15px] leading-snug font-medium">Your bank, without the bank queue. We never see your login.</span>
+          </button>
         </div>
       </div>
     </section>

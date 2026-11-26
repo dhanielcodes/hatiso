@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Mail, MessageSquare } from 'lucide-react';
 import { useResendVerification, useVerifyUser } from '@/lib/queries/useAuth';
 import { RESEND_WAIT_SECONDS, saveVerificationContext, type VerificationContext } from '@/lib/auth/verification';
 import OtpInput from './OtpInput';
+import { AUTH_ERROR, AUTH_PRIMARY, AuthHeading } from './AuthLayout';
 
-const BTN =
-  'w-full rounded-xl bg-brand-305 py-3.5 text-sm font-semibold text-on-brand shadow-[0_8px_20px_rgba(245,165,107,0.3)] transition-colors hover:bg-brand-249 active:scale-[0.99] disabled:opacity-50';
+const BTN = AUTH_PRIMARY;
 
 function errorMessage(error: unknown, fallback: string) {
   return typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string' ? error.message : fallback;
@@ -93,29 +94,30 @@ export default function VerifyContactPanel({ context, onVerified, footer, eyebro
 
   return (
     <>
-      <div className="mb-8 text-center">
-        {eyebrow && <p className="text-xs font-bold uppercase tracking-widest text-brand-361">{eyebrow}</p>}
-        <h1 className="mt-1 text-[1.6rem] font-bold tracking-tight text-tone-822">Account Verification</h1>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500">
-          An OTP (One-Time Password) has been sent {isEmail ? 'to' : 'by SMS to'}{' '}
-          <span className="font-semibold text-slate-800">{context.contact || `your ${channel}`}</span>.
-          <br />
-          Enter OTP below to verify your account.
-        </p>
-      </div>
+      <span aria-hidden="true" className="-mb-2 inline-flex h-[52px] w-[52px] items-center justify-center rounded-lg bg-carbon text-cloud">
+        {isEmail ? <Mail className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
+      </span>
+      <AuthHeading eyebrow={eyebrow} title={isEmail ? 'Check your email.' : 'Check your messages.'}>
+        We sent a 6-digit code {isEmail ? 'to' : 'by SMS to'}{' '}
+        <span className="font-medium text-carbon">{context.contact || `your ${channel}`}</span>
+        verify your account.
+      </AuthHeading>
 
+      <div className="flex flex-col gap-5">
       {error && (
-        <div role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-center text-xs text-rose-600">
+        <div role="alert" className={AUTH_ERROR}>
           {error}
         </div>
       )}
 
       {feedback && (
-        <div aria-live="polite" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-center text-xs text-emerald-700">
+        <div aria-live="polite" className="rounded-lg border border-status-success/30 bg-status-success/8 px-3.5 py-3 text-sm text-status-success">
           {feedback}
         </div>
       )}
 
+      <fieldset className="flex flex-col gap-2">
+      <legend className="mb-2 text-sm font-medium text-carbon">Verification code</legend>
       <OtpInput
         value={otp}
         onChange={(value) => {
@@ -124,42 +126,44 @@ export default function VerifyContactPanel({ context, onVerified, footer, eyebro
         }}
         hasError={Boolean(error)}
       />
+      </fieldset>
 
-      <button type="button" disabled={verify.isPending || otp.length < 6} onClick={handleVerify} className={`${BTN} mt-8`}>
+      <button type="button" disabled={verify.isPending || otp.length < 6} onClick={handleVerify} className={`${BTN} mt-3`}>
         {verify.isPending ? (
           <span className="inline-flex items-center justify-center gap-2">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-cloud border-t-transparent" />
             Verifying...
           </span>
         ) : (
-          'Verify'
+          'Verify account'
         )}
       </button>
 
-      <p className="mt-5 text-center text-[13px] text-slate-500">
-        {countdown > 0 ? (
-          <>
-            Resend code in {countdown}s?{' '}
-            <button type="button" disabled className="cursor-not-allowed font-semibold text-slate-400 opacity-60">
-              Click to resend code
-            </button>
-          </>
-        ) : (
-          <>
-            Didn&apos;t receive code?{' '}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-grey-600">
+        <span>
+          Didn&apos;t get it?{' '}
+          {countdown > 0 ? (
+            <span className="tabular-nums">Resend in {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}</span>
+          ) : (
             <button
               type="button"
               disabled={resend.isPending}
               onClick={handleResend}
-              className="font-semibold text-brand-361 hover:text-brand-370 disabled:opacity-50"
+              className="font-medium text-carbon underline underline-offset-4 hover:decoration-grey-400 disabled:opacity-50"
             >
-              {resend.isPending ? 'Sending...' : 'Click to resend code'}
+              {resend.isPending ? 'Sending...' : 'Resend code'}
             </button>
-          </>
-        )}
-      </p>
+          )}
+        </span>
+        {footer}
+      </div>
+      </div>
 
-      {footer && <div className="mt-6 text-center">{footer}</div>}
+      <p className="text-sm leading-relaxed text-grey-600">
+        {isEmail
+          ? "Can't find it? Check your spam folder, or go back and sign up with your phone number instead."
+          : "Can't find it? Give it a minute, or go back and sign up with your email instead."}
+      </p>
     </>
   );
 }

@@ -1,80 +1,33 @@
 'use client';
 
 import React from 'react';
-import { UserPlus, Lock, Smartphone } from 'lucide-react';
 
-export interface StepDef {
-  label: string;
-  icon: React.ReactNode;
-}
-
-const STEPS: StepDef[] = [
-  { label: 'Create account', icon: <UserPlus className="h-4 w-4" strokeWidth={2.2} /> },
-  { label: 'Create password', icon: <Lock className="h-4 w-4" strokeWidth={2.2} /> },
-  { label: 'Verify account', icon: <Smartphone className="h-4 w-4" strokeWidth={2.2} /> },
-];
+const STEPS = ['Your details', 'Password', 'Verify'];
 
 interface StepIndicatorProps {
   currentStep: 1 | 2 | 3;
 }
 
+/** Three-part progress bar shown above each sign-up step. Done and current steps fill in Carbon. */
 export default function StepIndicator({ currentStep }: StepIndicatorProps) {
   return (
-    <div className="mb-10 flex items-start justify-center gap-0">
-      {STEPS.map((step, idx) => {
+    <ol aria-label="Sign-up progress" className="grid grid-cols-3 gap-2.5">
+      {STEPS.map((label, idx) => {
         const num = idx + 1;
-        const isCompleted = num < currentStep;
-        const isActive = num === currentStep;
-        const isLast = idx === STEPS.length - 1;
-
+        const reached = num <= currentStep;
         return (
-          <React.Fragment key={step.label}>
-            {/* Step circle + label */}
-            <div className="flex flex-col items-center gap-2">
-              {/* Circle */}
-              <div
-                className={`flex h-11 w-11 items-center justify-center rounded-full border-2 transition-all duration-300 ${isCompleted
-                    ? 'border-brand-212 bg-tone-49 text-brand-361'
-                    : isActive
-                      ? 'border-brand-361 bg-tone-49 text-brand-361'
-                      : 'border-slate-300 bg-transparent text-slate-400'
-                  }`}
-              >
-                {step.icon}
-              </div>
-
-              {/* Step number + label */}
-              <div className="text-center">
-                <p
-                  className={`text-[11px] font-bold ${isCompleted || isActive ? 'text-brand-361' : 'text-slate-400'
-                    }`}
-                >
-                  {num}
-                </p>
-                <p
-                  className={`mt-0.5 text-[11px] leading-tight ${isCompleted || isActive
-                      ? 'font-medium text-brand-361'
-                      : 'text-slate-400'
-                    }`}
-                >
-                  {step.label}
-                </p>
-              </div>
-            </div>
-
-            {/* Connector line between steps */}
-            {!isLast && (
-              <div className="relative mx-1 mt-5 flex-1 min-w-[40px] max-w-[80px]">
-                <div className="h-0 border-t-2 border-dashed border-slate-300" />
-                <div
-                  className={`absolute inset-0 h-0 border-t-2 border-dashed transition-all duration-500 ${isCompleted ? 'border-brand-212 w-full' : 'border-transparent w-0'
-                    }`}
-                />
-              </div>
-            )}
-          </React.Fragment>
+          <li key={label} aria-current={num === currentStep ? 'step' : undefined} className="flex flex-col gap-2">
+            <span className="h-1 overflow-hidden rounded-full bg-grey-100">
+              <span
+                className={`block h-full rounded-full bg-carbon transition-[width] duration-500 ease-out-soft ${reached ? 'w-full' : 'w-0'}`}
+              />
+            </span>
+            <span className={`text-xs font-medium ${reached ? 'text-carbon' : 'text-grey-500'}`}>
+              <span className="tabular-nums">{num}</span> · {label}
+            </span>
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }
