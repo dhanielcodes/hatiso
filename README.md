@@ -32,7 +32,7 @@ This README is for frontend developers joining the project. It covers how to run
 
 | Concern | Library |
 | --- | --- |
-| Framework | [Next.js 16](https://nextjs.org) (App Router, Turbopack) with React 19 |
+| Framework | [Next.js 16](https://nextjs.org) (pinned to 16.4.6; App Router, Turbopack) with React 19 |
 | Language | TypeScript (strict), path alias `@/*` → project root |
 | Styling | Tailwind CSS v4 |
 | Server state / data fetching | [TanStack Query v5](https://tanstack.com/query) on top of an [axios](https://axios-http.com) client |
@@ -42,6 +42,8 @@ This README is for frontend developers joining the project. It covers how to run
 | Icons | [lucide-react](https://lucide.dev) |
 | Charts | chart.js |
 | Payments | Paystack (`react-paystack`) |
+
+> **Version:** Next.js and `eslint-config-next` are pinned to exactly 16.4.6. That upgrade from 16.4.3 was a security fix for a published advisory. `next.config.ts` sets `experimental.agentUpgrade: "security"`, alongside `agentFeedback`, so agent-run upgrades stay on security releases. Route types (`PageProps`, `LayoutProps`) are generated into `.next/types`; in a fresh checkout run `npx next typegen` (or start `next dev`) before `tsc --noEmit`.
 
 > **Next.js 16 note:** this version has breaking changes from older Next.js (for example, route protection lives in `proxy.ts`, not `middleware.ts`). Read the bundled docs in `node_modules/next/dist/docs/` before using an API you haven't used in this version.
 
