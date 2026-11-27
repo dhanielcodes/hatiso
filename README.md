@@ -18,6 +18,7 @@ This README is for frontend developers joining the project. It covers how to run
 - [Digital services](#digital-services)
 - [Banks](#banks)
 - [Support](#support)
+- [Contact form](#contact-form)
 - [Endpoint structure](#endpoint-structure)
 - [Forms](#forms)
 - [Buttons](#buttons)
@@ -275,6 +276,29 @@ The dashboard support module uses the individual support API (`lib/api/support.t
 
 ---
 
+## Contact form
+
+The public Contact form (`/contact`; `/contact-us` redirects there) is sent to `POST /api/public/expressions-of-interest`. No sign-in is needed.
+
+| Field | Form label | Notes |
+| --- | --- | --- |
+| `contactName` | Your name | Required |
+| `contactRole` | Your role | Optional; left out when blank |
+| `email` | Email address | Required |
+| `phone` | Phone number | Optional; left out when blank. Sent in international format: `0803 555 0212` becomes `+2348035550212` |
+| `organisation` | Organisation | Required |
+| `tenantType` | Organisation type | Required select: Bank, Fintech, Microfinance bank, Merchant, Other (`TENANT_TYPES`) |
+| `country` | Country | Required; starts as Nigeria |
+| `website` | Website | Optional; `example.com` is sent as `https://example.com` |
+| `message` | Message | Required, 10 characters or more |
+
+- **Code:** `lib/api/expressionsOfInterest.ts` (`submitExpressionOfInterest`, `buildExpressionOfInterest`, `toInternationalPhone`, `TENANT_TYPES`), the hook `useSubmitExpressionOfInterest` in `lib/queries/useExpressionsOfInterest.ts`, and `contactSchema` in `lib/validation/schemas.ts`.
+- **Success:** the confirmation shows only after the API accepts the form, and the form is cleared.
+- **Errors:** the API client shows the error toast, and the form keeps what was typed so it can be sent again.
+- **Topic chips** (Help with a payment, My account, Sell on Hatiso, Bank partnership) only change the message placeholder; the topic isn't sent.
+
+---
+
 ## Endpoint structure
 
 Every backend call goes through **three layers**. The dashboard page is the reference implementation.
@@ -380,6 +404,7 @@ await updateProfile.mutateAsync({ firstName, lastName, displayName, bio });
 | `useDigitalServices.ts` | `useDigitalServiceCategories`, `useDigitalServiceCatalogues`, `useCreateDigitalServiceOrder`, `useCreatePaymentQuote`, `useCreatePayment`, `useVerifyPayment` |
 | `useNotifications.ts` | `useNotifications`, `useNotificationSettings`, `useUpdateNotificationSettings` |
 | `useOrders.ts` | `useDigitalServiceOrders` |
+| `useExpressionsOfInterest.ts` | `useSubmitExpressionOfInterest` (public `POST /api/public/expressions-of-interest`) |
 | `useSupport.ts` | `useSupportOptions`, `useSupportHistory`, `useSupportTicket`, `useCreateSupportEnquiry`, `useSubmitSupportFeedback`, `useReplyToSupportTicket`, `useReopenSupportTicket` |
 
 The checkout hooks take `authenticated` (default `false`): pass `true` on the dashboard to use the signed-in endpoints, and leave it off for guest checkout.
@@ -714,7 +739,7 @@ Every dashboard page is wrapped in `flex w-full flex-col gap-6 p-[clamp(20px,3vw
 - **Header:** links to Services, Banks, For business and Contact, with the current page on a Graphite pill. Signed out, it shows Sign in and Create account. Signed in, it shows a language menu and an initials avatar menu (Dashboard, Transactions, Profile and security, Sign out). Menus close on outside click or Escape. Phones get a full-height menu sheet. Sign out asks first with the shared `components/auth/LogoutDialog.tsx`.
 - **Footer:** tagline, four columns (Services, Banking, Business, Company) and the © row.
 - **Banks (`/banks`):** hero with bank search, Channel and Status filters, partner bank tiles, and `BankOpenDialog` ("Continue to {bank}"). `BankOpenDialog` takes an optional `onContinue(bank)`.
-- **Contact (`/contact`):** three channel cards, topic chips (the name label switches between Full name and Business name), optional phone, a "Before you write" aside and a success state. `contactSchema` now has `topic` and `businessName`, and phone is optional.
+- **Contact (`/contact`):** three channel cards, topic chips (they change the message hint), optional phone, a "Before you write" aside and a success state. `contactSchema` has `topic`, and phone is optional (the fields now follow the expressions-of-interest API; see [Contact form](#contact-form)).
 - **404:** "This page took a wrong turn." with Home and Pay a bill buttons.
 
 **Auth**
@@ -782,7 +807,6 @@ Every dashboard page is wrapped in `flex w-full flex-col gap-6 p-[clamp(20px,3vw
 
 - The Verify board's "It expires in 10 minutes" is left out because the API doesn't say how long a code lasts.
 - Daily and weekly analytics charts: the API ignores `bucket` and returns months, so a 30-day custom range shows month points.
-- The contact form only shows the confirmation.
 - "Keep me signed in" is UI only.
 - Privacy and Terms have no pages.
 - Sidebar search filters nothing, and there's no notifications badge.

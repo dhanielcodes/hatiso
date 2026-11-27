@@ -6,8 +6,10 @@ import { Formik, Form } from 'formik';
 import { ArrowDown, ArrowRight, ArrowUpRight, Check, Mail, MapPin, Phone } from 'lucide-react';
 import Navbar from '@/components/marketplace/Navbar';
 import Footer from '@/components/marketplace/Footer';
-import { TextField, PhoneField, TextAreaField, SubmitButton } from '@/components/forms';
+import { TextField, PhoneField, TextAreaField, SelectField, SubmitButton } from '@/components/forms';
 import { contactSchema, ContactFormValues } from '@/lib/validation/schemas';
+import { TENANT_TYPES, buildExpressionOfInterest } from '@/lib/api/expressionsOfInterest';
+import { useSubmitExpressionOfInterest } from '@/lib/queries/useExpressionsOfInterest';
 
 const rise = (d: number) => ({ '--d': d }) as React.CSSProperties;
 
@@ -51,15 +53,27 @@ const TIPS = [
 
 const initialValues: ContactFormValues = {
   topic: 'support',
-  businessName: '',
+  contactName: '',
+  contactRole: '',
   email: '',
   phone: '',
+  organisation: '',
+  tenantType: '',
+  country: 'Nigeria',
+  website: '',
   message: '',
 };
 
-/** Contact board. The form has no backend yet, so sending only shows the confirmation. */
+const optional = (label: string) => (
+  <>
+    {label} <span className="font-normal text-grey-600">(optional)</span>
+  </>
+);
+
+/** Contact board. The form is sent to POST /api/public/expressions-of-interest; the confirmation shows once it's accepted. */
 export default function ContactPage() {
   const [sent, setSent] = useState(false);
+  const submit = useSubmitExpressionOfInterest();
 
   return (
     <div className="flex min-h-screen flex-col bg-cloud text-carbon selection:bg-silver selection:text-carbon">
@@ -146,15 +160,18 @@ export default function ContactPage() {
               <Formik
                 initialValues={initialValues}
                 validationSchema={contactSchema}
-                onSubmit={async (_values, helpers) => {
-                  await new Promise((r) => setTimeout(r, 900));
-                  setSent(true);
-                  helpers.resetForm();
+                onSubmit={async (values, helpers) => {
+                  try {
+                    await submit.mutateAsync(buildExpressionOfInterest(values));
+                    setSent(true);
+                    helpers.resetForm();
+                  } catch {
+                    // The error toast comes from the API client; the form keeps what they typed.
+                  }
                 }}
               >
                 {({ values, setFieldValue }) => {
                   const topic = TOPICS.find((t) => t.id === values.topic) ?? TOPICS[0];
-                  const biz = values.topic === 'business' || values.topic === 'bank';
                   return (
                     <Form className="flex flex-col gap-6" noValidate>
                       <div className="flex flex-col gap-2">
@@ -185,25 +202,41 @@ export default function ContactPage() {
                       </fieldset>
 
                       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-5">
+                        <TextField name="contactName" label="Your name" placeholder="e.g. Ada Okafor" autoComplete="name" />
                         <TextField
-                          name="businessName"
-                          label={biz ? 'Business name' : 'Full name'}
-                          placeholder={biz ? 'e.g. Okafor Stores' : 'e.g. Ada Okafor'}
-                          autoComplete={biz ? 'organization' : 'name'}
+                          name="contactRole"
+                          label={optional('Your role')}
+                          placeholder="e.g. Head of Payments"
+                          autoComplete="organization-title"
                         />
-                        <TextField name="email" type="email" label="Email address" placeholder="e.g. ada@example.com" autoComplete="email" />
                       </div>
 
-                      <PhoneField
-                        name="phone"
-                        label={
-                          <>
-                            Phone number <span className="font-normal text-grey-600">(optional)</span>
-                          </>
-                        }
-                        dialCode="+234"
-                        placeholder="803 123 4567"
-                      />
+                      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-5">
+                        <TextField name="email" type="email" label="Email address" placeholder="e.g. ada@example.com" autoComplete="email" />
+                        <PhoneField name="phone" label={optional('Phone number')} dialCode="+234" placeholder="803 123 4567" />
+                      </div>
+
+                      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-5">
+                        <TextField name="organisation" label="Organisation" placeholder="e.g. Okafor Stores" autoComplete="organization" />
+                        <SelectField
+                          name="tenantType"
+                          label="Organisation type"
+                          placeholder="Choose a type"
+                          options={TENANT_TYPES.map((t) => ({ value: t, label: t }))}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-5">
+                        <TextField name="country" label="Country" placeholder="e.g. Nigeria" autoComplete="country-name" />
+                        <TextField
+                          name="website"
+                          type="url"
+                          inputMode="url"
+                          label={optional('Website')}
+                          placeholder="e.g. example.com"
+                          autoComplete="url"
+                        />
+                      </div>
 
                       <TextAreaField name="message" label="Message" placeholder={topic.placeholder} rows={5} />
 

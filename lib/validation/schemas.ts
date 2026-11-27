@@ -144,14 +144,23 @@ export const registerSchema = Yup.object({
     .required(),
 });
 
+/** Contact form, sent to POST /api/public/expressions-of-interest. Role, phone and website are optional. */
 export const contactSchema = Yup.object({
   topic: Yup.string().required(),
-  businessName: requiredString('Name'),
+  contactName: requiredString('Your name'),
+  contactRole: Yup.string().trim().default(''),
   email: emailSchema,
-  /** Optional on the Contact board; checked only when filled in. */
+  /** Checked only when filled in. */
   phone: Yup.string()
     .trim()
-    .test('phone-length', 'Phone number is too short', (v) => !v || v.length >= 7)
+    .test('phone-length', 'Phone number is too short', (v) => !v || v.replace(/\D/g, '').length >= 7)
+    .default(''),
+  organisation: requiredString('Organisation'),
+  tenantType: requiredString('Organisation type'),
+  country: requiredString('Country'),
+  website: Yup.string()
+    .trim()
+    .test('website', 'Enter a valid website, e.g. example.com', (v) => !v || /^(https?:\/\/)?[^\s.]+\.[^\s]{2,}$/i.test(v))
     .default(''),
   message: Yup.string()
     .trim()
