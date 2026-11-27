@@ -296,7 +296,7 @@ What every visitor sees on the home page (`/`) comes from `GET /api/public/marke
 | `BUSINESS` | The Business tab of Solutions. With only one of the two tabs visible, the Personal/Business switcher is hidden and that tab shows alone; with neither, the section is left out. |
 | `CTA` | Call-to-action banner (`CtaBanner`) |
 
-- **The hero always shows.** Every other section is held back until the configuration loads, so a hidden section never flashes in.
+- **Page loader:** `components/marketplace/HomePageLoader.tsx` covers the whole home page (logo and spinner) until the configuration answers, then fades out, so visitors never see sections appear or disappear. Scrolling is locked while it shows. A failed load also ends it.
 - **Only listed sections show.** Disabling a section in the admin removes it from `sections`, so a section shows only when it's listed with `visible: true`. If the configuration fails to load, every section shows, with no error toast.
 - **Freshness:** the configuration is cached for a minute, so admin changes show on the next page load (or within a minute on a page left open).
 - **Featured banks** (`featuredBanks`): bank ids from `GET /banks`. With a list, the Banks section shows only the visible ones, in the list's order. With an empty list it shows the first 10 banks, as before.

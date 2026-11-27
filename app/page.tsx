@@ -7,6 +7,7 @@ import SolutionsSection from '@/components/marketplace/SolutionsSection';
 import CtaBanner from '@/components/marketplace/CtaBanner';
 import Footer from '@/components/marketplace/Footer';
 import PageSection from '@/components/marketplace/PageSection';
+import HomePageLoader from '@/components/marketplace/HomePageLoader';
 
 export const metadata = {
   title: 'QAPP by Hatiso - One platform. Every service you need.',
@@ -17,6 +18,9 @@ export const metadata = {
 export default function MarketplacePage() {
   return (
     <div className="min-h-screen bg-ink-662 text-white flex flex-col justify-between selection:bg-brand-361 selection:text-white">
+      {/* Covers the page until the page configuration loads, so sections don't pop in or out */}
+      <HomePageLoader />
+
       {/* Top Navigation */}
       <Navbar />
 
