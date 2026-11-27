@@ -25,8 +25,9 @@ export default function BankLogo({
     <span
       role="img"
       aria-label={bank.name}
-      className={`flex items-center justify-center rounded-xl font-extrabold text-white ${textClassName} ${className}`}
-      style={{ background: bank.primaryColor || 'var(--color-ink-662)' }}
+      // No brand colour: `bg-ink-662` (not an inline var) so dark mode treats it as a dark panel and keeps it dark.
+      className={`flex items-center justify-center rounded-xl font-extrabold text-white ${bank.primaryColor ? '' : 'bg-ink-662'} ${textClassName} ${className}`}
+      style={bank.primaryColor ? { background: bank.primaryColor } : undefined}
     >
       {bankInitials(bank.name)}
     </span>

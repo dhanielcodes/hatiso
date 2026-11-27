@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useSyncExternalStore } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import moment from "moment";
 import { ArrowUpRight, Building2, ChevronRight, Landmark, Search } from "lucide-react";
@@ -10,59 +10,14 @@ import { useBanks } from "@/lib/queries/useBanks";
 import type { Bank } from "@/lib/api/banks";
 import { bankStatus, channelLabels, STATUS_DOT, STATUS_TEXT } from "@/lib/banks/bankDisplay";
 import { Skeleton } from "@/components/ui/Skeleton";
-
-/**
- * "Your banks" on the DashBanking board: the banks this person last opened. There is no API for it,
- * so it lives in this browser only.
- */
-const RECENT_KEY = "hatiso_recent_banks";
-type Recent = { id: string; at: number };
-
-const listeners = new Set<() => void>();
-function readRecentRaw() {
-  try {
-    return localStorage.getItem(RECENT_KEY) ?? "[]";
-  } catch {
-    return "[]";
-  }
-}
-function subscribe(cb: () => void) {
-  listeners.add(cb);
-  window.addEventListener("storage", cb);
-  return () => {
-    listeners.delete(cb);
-    window.removeEventListener("storage", cb);
-  };
-}
-function rememberBank(bank: Bank) {
-  try {
-    const list: Recent[] = JSON.parse(readRecentRaw());
-    const next = [{ id: String(bank.id), at: Date.now() }, ...list.filter((r) => r.id !== String(bank.id))].slice(0, 4);
-    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
-  } catch {
-    // Storage blocked: the list just stays empty
-  }
-  listeners.forEach((cb) => cb());
-}
+import { rememberBank, useRecentBanks } from "@/lib/banks/recentBanks";
 
 export default function BankingPage() {
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<Bank | null>(null);
   const { data: banks = [], isLoading, isError, refetch } = useBanks();
-  const recentRaw = useSyncExternalStore(subscribe, readRecentRaw, () => "[]");
-
-  const recent = useMemo(() => {
-    let list: Recent[] = [];
-    try {
-      list = JSON.parse(recentRaw);
-    } catch {
-      list = [];
-    }
-    return list.flatMap((r) => {
-      const bank = banks.find((b) => String(b.id) === r.id);
-      return bank ? [{ bank, at: r.at }] : [];
-    });
-  }, [recentRaw, banks]);
+  // "Your banks" on the DashBanking board: the banks this person last opened (this browser only).
+  const recent = useRecentBanks(banks);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import PromoCarousel from "@/components/dashboard/PromoCarousel";
+import BankingSpotlight from "@/components/dashboard/BankingSpotlight";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useDashboard } from "@/lib/queries/useDashboard";
 import {
@@ -454,6 +455,9 @@ export default function DashboardPage() {
           </p>
         )}
 
+        {/* Banking: one quiet row under the numbers, with the last bank they opened one tap away */}
+        <BankingSpotlight />
+
         {/* Chart + breakdown */}
         <div className="flex flex-wrap items-stretch gap-4">
           <section className="hz-rise flex min-w-0 flex-[999_1_520px] flex-col gap-6 rounded-[14px] border border-tone-100 bg-surface p-6" style={{ "--d": 3 } as React.CSSProperties}>
@@ -557,8 +561,9 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Bar chart: one bar per day, week or month; tap a bar to read its amount */}
-            <div className="relative h-60">
+            {/* Bar chart: one bar per day, week or month; tap a bar to read its amount. It grows to the card's
+                height so it lines up with "Where it went" beside it (240px at least). */}
+            <div className="relative min-h-60 flex-1">
               {isLoading ? (
                 <ChartSkeleton shape="bars" label="Loading spending" />
               ) : spendingData.length ? (
@@ -625,7 +630,8 @@ export default function DashboardPage() {
             ) : (
               <p className="py-10 text-center text-sm text-tone-414">No service usage yet.</p>
             )}
-            <div className="mt-auto flex flex-col gap-3 rounded-[10px] bg-ink-724 p-[18px] text-cloud">
+            {/* The faint inner outline separates it from a Graphite card in Hatiso dark mode. */}
+            <div className="mt-auto flex flex-col gap-3 rounded-[10px] bg-ink-724 p-[18px] text-cloud ring-1 ring-white/10 ring-inset">
               <span className="flex items-baseline justify-between">
                 <span className="text-sm text-grey-400">Rewards</span>
                 <span className="text-[13px] text-grey-500">

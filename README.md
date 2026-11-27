@@ -744,7 +744,9 @@ Every dashboard page is wrapped in `flex w-full flex-col gap-6 p-[clamp(20px,3vw
 
 **Dashboard**
 
-- **Shell:** Carbon sidebar with search, grouped nav and an account card. The overview has a greeting, Pay again, metrics, spending bars, where the money went and recent payments. Pay again deep-links with `/dashboard/services?service=<slug>`.
+- **Shell:** Carbon sidebar with search, grouped nav and an account card. The overview has a greeting, Pay again, the offers carousel, metrics, a banking strip, spending bars, where the money went and recent payments. Pay again deep-links with `/dashboard/services?service=<slug>`.
+- **Banking strip** (`components/dashboard/BankingSpotlight.tsx`): one quiet white card under the metric cards that keeps banking in view without pushing payments and numbers down. It has a bank icon, a line of copy ("Your bank, one tap away" with the partner bank count), up to four overlapping bank logos (each opens the "Continue to <bank>" dialog) and an outlined "Choose your bank" button (to Banking). For someone who has opened a bank before, it says "Back to <bank>?", their banks' logos come first, and the button becomes "Open bank". It stays hidden while the banks load, if they fail, or if there are none. Bank colours only appear in the dialog.
+- **Spending and Where it went** sit side by side at the same height. The spending bar chart grows to fill its card (240px at least), so its baseline lines up with the bottom of "Where it went". The Rewards box in "Where it went" has a faint inner outline (`ring-white/10`), so it stays visible on a Graphite card in Hatiso dark mode.
 - **Transactions:**
   - Status chips with counts, plus Service, Sort and Period selects.
   - Rows grouped by day, with Load more.
@@ -754,13 +756,13 @@ Every dashboard page is wrapped in `flex w-full flex-col gap-6 p-[clamp(20px,3vw
   - Carbon amount card, a token card with copy, a Details list, a Progress timeline, and a "Need help with this payment?" card.
   - "Download receipt" prints the page; print hides the actions.
 - **Get help with this payment (`TransactionSupportModal`):** Question/Complaint toggle, topic (labelled "What went wrong?"), payment reference, and a "We're on it." success view. `SupportEnquiryForm` takes `onCancel` and `hideReceipt`, and has an optional payment reference field.
-- **Banking:** "Your banks" (recently opened, kept in this browser under `hatiso_recent_banks`), all partner banks with search, a "How banking works" card and a "Bank not listed?" card.
+- **Banking:** "Your banks" (recently opened, kept in this browser under `hatiso_recent_banks` by `lib/banks/recentBanks.ts`, shared with the dashboard spotlight), all partner banks with search, a "How banking works" card and a "Bank not listed?" card.
 - **Analytics:**
   - 6 / 12 month toggle, Export, and Custom range, which opens `components/ui/DateRangeDialog.tsx` (presets plus a calendar).
   - Four KPI tiles: Total spent, Monthly average, Payments, Busiest day.
   - "Spending over time" chart with a dashed previous-period line, fetched as a second `useAnalytics` call.
   - The analytics API always sends 12 monthly buckets, even for a shorter range or `bucket=DAY`. The page keeps only the buckets inside the chosen dates (`inRange`). For a month range, the previous period is the same number of whole calendar months just before it.
-  - By category donut, Top providers, and a "biggest bill" insight card.
+  - By category, Top providers, and a "biggest bill" insight card. By category orders categories by amount and shows the top four plus "Other" (a neutral grey, `tone-100`), so the ring adds up to 100%. The total spent and the category count sit in the middle of the ring. Beside it, each category has its share, amount and a thin bar. Ring and list sit side by side (stacked when the card is narrow), centred so the card fills the height of Top providers. A share under 1% shows as "<1%".
 - **Notifications:**
   - All / Unread / Payments / Account / Offers tabs and Mark all as read.
   - Read state is kept in this browser (`hatiso_read_notifications`) because the API has none.

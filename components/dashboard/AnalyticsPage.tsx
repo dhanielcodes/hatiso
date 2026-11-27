@@ -137,7 +137,8 @@ function titleCase(value: string) {
 
 function buildUsageRows(items: AnalyticsData['digitalServicesUsage'], theme: ThemeId, mode: ColorMode) {
     return [...items]
-        .sort((a, b) => b.percentage - a.percentage || b.amountMinor - a.amountMinor)
+        // Biggest spend first, so the ring and the list read in the same order.
+        .sort((a, b) => b.amountMinor - a.amountMinor || b.percentage - a.percentage)
         .map((item, index) => {
             const meta = SERVICE_META[item.serviceType];
             return {
@@ -228,7 +229,13 @@ export default function AnalyticsPage() {
     ];
 
     const spentTotal = usageRows.reduce((sum, r) => sum + r.spentMinor, 0);
-    const donut = usageRows.slice(0, 4).map((r) => ({ ...r, pct: spentTotal ? Math.round((r.spentMinor / spentTotal) * 100) : 0 }));
+    // Top four categories, plus "Other" (a neutral grey in every theme) for the rest, so the ring adds up to the whole.
+    const pctOf = (minor: number) => (spentTotal ? (minor / spentTotal) * 100 : 0);
+    const otherMinor = usageRows.slice(4).reduce((sum, r) => sum + r.spentMinor, 0);
+    const donut = [
+        ...usageRows.slice(0, 4).map((r) => ({ name: r.name, spentMinor: r.spentMinor, color: r.color })),
+        ...(otherMinor > 0 ? [{ name: 'Other', spentMinor: otherMinor, color: 'var(--color-tone-100)' }] : []),
+    ].map((d) => ({ ...d, share: pctOf(d.spentMinor), pct: Math.round(pctOf(d.spentMinor)) }));
     const biggest = [...usageRows].sort((a, b) => b.spentMinor - a.spentMinor)[0];
     const biggestPct = biggest && spentTotal ? Math.round((biggest.spentMinor / spentTotal) * 100) : 0;
     const biggestSlug = biggest ? SERVICE_SLUG_BY_NAME[biggest.name] : undefined;
@@ -321,15 +328,28 @@ export default function AnalyticsPage() {
                     <section className={`hz-reveal ${CARD} flex min-w-0 flex-[1_1_360px] flex-col gap-[18px] p-[22px]`}>
                         <h2 className="text-lg font-semibold">By category</h2>
                         {isLoading ? <ProgressListSkeleton /> : donut.length ? (
-                            <div className="flex flex-wrap items-center gap-6">
-                                <Donut slices={donut.map((d) => ({ pct: d.pct, color: d.color }))} />
-                                <ul className="flex min-w-[180px] flex-1 flex-col gap-3">
+                            // Donut with the total in the middle beside a breakdown with bars, centred in the card so it
+                            // fills the height of "Top providers" beside it; stacks when the card is narrow.
+                            <div className="flex flex-1 flex-wrap items-center justify-center gap-x-6 gap-y-6">
+                                <div className="relative shrink-0">
+                                    <Donut slices={donut.map((d) => ({ pct: d.share, color: d.color }))} />
+                                    <span className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                        <span className="text-lg font-semibold tracking-[-0.02em] tabular-nums">{formatNaira(spentTotal)}</span>
+                                        <span className="text-xs text-tone-414">{usageRows.length} {usageRows.length === 1 ? 'category' : 'categories'}</span>
+                                    </span>
+                                </div>
+                                <ul className="flex min-w-0 flex-[1_1_200px] flex-col gap-3.5">
                                     {donut.map((d) => (
-                                        <li key={d.name} className="flex items-center gap-2.5 text-sm">
-                                            <span className="h-3 w-3 rounded-[3px]" style={{ background: d.color }} />
-                                            <span className="flex-1">{d.name}</span>
-                                            <span className="text-tone-414">{d.pct}%</span>
-                                            <span className="w-[84px] text-right font-semibold tabular-nums">{formatNaira(d.spentMinor)}</span>
+                                        <li key={d.name} className="flex flex-col gap-1.5 text-sm">
+                                            <span className="flex items-center gap-2.5">
+                                                <span className="h-3 w-3 shrink-0 rounded-[3px]" style={{ background: d.color }} />
+                                                <span className="min-w-0 flex-1 truncate">{d.name}</span>
+                                                <span className="w-10 text-right text-tone-414 tabular-nums">{d.share > 0 && d.pct === 0 ? '<1' : d.pct}%</span>
+                                                <span className="text-right font-semibold tabular-nums">{formatNaira(d.spentMinor)}</span>
+                                            </span>
+                                            <span className="h-1.5 overflow-hidden rounded-full bg-tone-44" aria-hidden="true">
+                                                <span className="block h-full rounded-full" style={{ width: `${Math.max(d.share, 1)}%`, background: d.color }} />
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>
@@ -412,9 +432,9 @@ function Donut({ slices }: { slices: { pct: number; color: string }[] }) {
     const offsets = slices.map((_, i) => slices.slice(0, i).reduce((sum, s) => sum + s.pct, 0));
     return (
         <svg viewBox="0 0 42 42" className="h-40 w-40 shrink-0 -rotate-90" role="img" aria-label="Spending by category">
-            <circle cx="21" cy="21" r="15.915" fill="none" className="stroke-tone-44" strokeWidth="6" />
+            <circle cx="21" cy="21" r="15.915" fill="none" className="stroke-tone-44" strokeWidth="5" />
             {slices.map((s, i) => (
-                <circle key={i} cx="21" cy="21" r="15.915" fill="none" stroke={s.color} strokeWidth="6" strokeDasharray={`${s.pct} ${100 - s.pct}`} strokeDashoffset={-offsets[i]} />
+                <circle key={i} cx="21" cy="21" r="15.915" fill="none" stroke={s.color} strokeWidth="5" strokeDasharray={`${s.pct} ${100 - s.pct}`} strokeDashoffset={-offsets[i]} />
             ))}
         </svg>
     );
