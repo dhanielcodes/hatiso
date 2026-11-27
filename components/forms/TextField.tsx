@@ -4,6 +4,7 @@ import React from 'react';
 import { useFormField } from './useFormField';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldControlClass, fieldShellClass } from './styles';
+import { useFieldVariant } from './FieldVariantContext';
 
 export interface TextFieldProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'name'> {
@@ -23,7 +24,7 @@ export default function TextField({
   name,
   label,
   hint,
-  variant = 'light',
+  variant: variantProp,
   icon,
   startIcon,
   labelAction,
@@ -33,6 +34,8 @@ export default function TextField({
   required,
   ...rest
 }: TextFieldProps) {
+  const contextVariant = useFieldVariant();
+  const variant = variantProp ?? contextVariant;
   const { field, meta, hasError } = useFormField(name);
   const inputId = id || name;
 

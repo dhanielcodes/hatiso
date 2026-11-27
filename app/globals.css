@@ -186,6 +186,11 @@ body {
 @keyframes hz-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .hz-bar { transform-origin: bottom; animation: hz-bar 0.7s var(--ease-out-soft) both; }
 .hz-grow { transform-origin: left; animation: hz-grow 0.6s var(--ease-out-soft) 0.15s both; }
+/* Charts: a line chart draws in left to right; a donut's slices sweep in clockwise (on an SVG mask stroke with pathLength 100). */
+@keyframes hz-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes hz-sweep { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+.hz-wipe { animation: hz-wipe 1s var(--ease-out-soft) both; }
+.hz-sweep { animation: hz-sweep 1s var(--ease-out-soft) 0.1s both; }
 .hz-lift { transition: transform 0.3s var(--ease-out-soft), box-shadow 0.3s var(--ease-out-soft), border-color 0.2s ease; }
 .hz-lift:active { transform: scale(0.98); }
 .hz-press { transition: transform 0.16s var(--ease-out-soft), background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
@@ -201,7 +206,7 @@ body {
   .hz-lift:hover .hz-arrow { transform: translate(2px, -2px); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hz-rise, .hz-stagger > *, .hz-card, .hz-float, .hz-ping, .hz-unveil, .hz-zoom, .hz-swap, .hz-pop, .hz-reveal, .hz-bar, .hz-grow { animation: none; }
+  .hz-rise, .hz-stagger > *, .hz-card, .hz-float, .hz-ping, .hz-unveil, .hz-zoom, .hz-swap, .hz-pop, .hz-reveal, .hz-bar, .hz-grow, .hz-wipe, .hz-sweep { animation: none; }
   .hz-fill { animation: none; transform: scaleX(1); }
   .hz-lift, .hz-press { transition: none; }
 }

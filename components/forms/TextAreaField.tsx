@@ -4,6 +4,7 @@ import React from 'react';
 import { useFormField } from './useFormField';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldControlClass } from './styles';
+import { useFieldVariant } from './FieldVariantContext';
 
 export interface TextAreaFieldProps
   extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'name'> {
@@ -18,7 +19,7 @@ export default function TextAreaField({
   name,
   label,
   hint,
-  variant = 'light',
+  variant: variantProp,
   showError = true,
   className = '',
   id,
@@ -26,6 +27,8 @@ export default function TextAreaField({
   rows = 5,
   ...rest
 }: TextAreaFieldProps) {
+  const contextVariant = useFieldVariant();
+  const variant = variantProp ?? contextVariant;
   const { field, meta, hasError } = useFormField(name);
   const inputId = id || name;
 

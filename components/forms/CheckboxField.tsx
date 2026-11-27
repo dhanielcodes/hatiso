@@ -3,6 +3,7 @@
 import React from 'react';
 import { useFormField } from './useFormField';
 import { FieldVariant, checkboxClass, fieldErrorClass } from './styles';
+import { useFieldVariant } from './FieldVariantContext';
 
 export interface CheckboxFieldProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'name' | 'type'> {
@@ -15,12 +16,14 @@ export interface CheckboxFieldProps
 export default function CheckboxField({
   name,
   label,
-  variant = 'light',
+  variant: variantProp,
   showError = true,
   className = '',
   id,
   ...rest
 }: CheckboxFieldProps) {
+  const contextVariant = useFieldVariant();
+  const variant = variantProp ?? contextVariant;
   const { field, meta, hasError } = useFormField({ name, type: 'checkbox' });
   const inputId = id || name;
 

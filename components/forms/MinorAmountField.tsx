@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useFormField } from './useFormField';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldShellClass } from './styles';
+import { useFieldVariant } from './FieldVariantContext';
 
 export interface MinorAmountFieldProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'name' | 'type' | 'onChange' | 'value'> {
@@ -31,7 +32,7 @@ export default function MinorAmountField({
   name,
   label,
   hint,
-  variant = 'light',
+  variant: variantProp,
   showError = true,
   currencySymbol = '₦',
   minimumMinor,
@@ -42,6 +43,8 @@ export default function MinorAmountField({
   placeholder = '0.00',
   ...rest
 }: MinorAmountFieldProps) {
+  const contextVariant = useFieldVariant();
+  const variant = variantProp ?? contextVariant;
   const { field, meta, setValue, hasError } = useFormField<number | ''>(name);
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState('');

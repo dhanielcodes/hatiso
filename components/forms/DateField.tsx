@@ -5,6 +5,7 @@ import { useFormField } from './useFormField';
 import { Calendar } from 'lucide-react';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldControlClass } from './styles';
+import { useFieldVariant } from './FieldVariantContext';
 
 export interface DateFieldProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'name' | 'type'> {
@@ -23,7 +24,7 @@ export default function DateField({
   name,
   label,
   hint,
-  variant = 'light',
+  variant: variantProp,
   showError = true,
   className = '',
   id,
@@ -34,6 +35,8 @@ export default function DateField({
   max,
   ...rest
 }: DateFieldProps) {
+  const contextVariant = useFieldVariant();
+  const variant = variantProp ?? contextVariant;
   const { field, meta, hasError } = useFormField(name);
   const inputId = id || name;
 

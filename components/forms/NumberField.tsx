@@ -4,6 +4,7 @@ import React from 'react';
 import { useFormField } from './useFormField';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldControlClass } from './styles';
+import { useFieldVariant } from './FieldVariantContext';
 
 export interface NumberFieldProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'name' | 'type' | 'onChange'> {
@@ -30,7 +31,7 @@ export default function NumberField({
   name,
   label,
   hint,
-  variant = 'light',
+  variant: variantProp,
   showError = true,
   asNumber = true,
   className = '',
@@ -42,6 +43,8 @@ export default function NumberField({
   onValueChange,
   ...rest
 }: NumberFieldProps) {
+  const contextVariant = useFieldVariant();
+  const variant = variantProp ?? contextVariant;
   const { field, meta, setValue, markTouched, hasError } = useFormField(name);
   const inputId = id || name;
 

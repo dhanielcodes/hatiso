@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import PromoCarousel from "@/components/dashboard/PromoCarousel";
 import BankingSpotlight from "@/components/dashboard/BankingSpotlight";
+import ChartTooltip, { tooltipEdge } from "@/components/ui/ChartTooltip";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useDashboard } from "@/lib/queries/useDashboard";
 import {
@@ -222,6 +223,8 @@ export default function DashboardPage() {
   const [pendingTo, setPendingTo] = useState("");
   // Which spending bar is picked; null means the latest one.
   const [selectedBucket, setSelectedBucket] = useState<number | null>(null);
+  /** The bar under the pointer or keyboard focus, for its tooltip. */
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
   const today = useClientDate();
   const { from, to, bucket } = useMemo(() => {
     if (customRange) return customRange;
@@ -584,9 +587,22 @@ export default function DashboardPage() {
                           aria-pressed={on}
                           aria-label={`${item.title}, ${formatNaira(item.amountMinor)}`}
                           onClick={() => setSelectedBucket(index)}
+                          onPointerEnter={() => setHoveredBar(index)}
+                          onPointerLeave={() => setHoveredBar((h) => (h === index ? null : h))}
+                          onFocus={() => setHoveredBar(index)}
+                          onBlur={() => setHoveredBar((h) => (h === index ? null : h))}
                           className="group flex min-w-0 flex-1 flex-col items-center gap-2.5"
                         >
-                          <span className="flex w-full flex-1 items-end justify-center">
+                          <span className="relative flex w-full flex-1 items-end justify-center">
+                            {hoveredBar === index && (
+                              <ChartTooltip
+                                x="50%"
+                                y={`${100 - Math.max(3, Math.round((item.amountMinor / maxBucket) * 100))}%`}
+                                edge={tooltipEdge(index, spendingData.length)}
+                                title={item.title}
+                                rows={[{ label: "Spent", value: formatNaira(item.amountMinor) }]}
+                              />
+                            )}
                             <span
                               className={`hz-bar block w-[min(44px,100%)] rounded-t-md rounded-b transition-colors ${on ? "bg-brand-305" : "bg-tone-178 group-hover:bg-tone-414"}`}
                               style={{ height: `${Math.max(3, Math.round((item.amountMinor / maxBucket) * 100))}%`, animationDelay: `${index * 50}ms` }}

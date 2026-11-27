@@ -5,6 +5,7 @@ import { useFormField } from './useFormField';
 import { ChevronDown } from 'lucide-react';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldControlClass } from './styles';
+import { useFieldVariant } from './FieldVariantContext';
 
 export interface SelectOption {
   value: string | number;
@@ -28,7 +29,7 @@ export default function SelectField({
   name,
   label,
   hint,
-  variant = 'light',
+  variant: variantProp,
   options,
   placeholder = 'Select an option',
   showError = true,
@@ -38,6 +39,8 @@ export default function SelectField({
   required,
   ...rest
 }: SelectFieldProps) {
+  const contextVariant = useFieldVariant();
+  const variant = variantProp ?? contextVariant;
   const { field, meta, hasError } = useFormField(name);
   const inputId = id || name;
 

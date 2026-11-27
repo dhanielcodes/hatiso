@@ -223,6 +223,15 @@ The public pages follow the brand palette strictly (Brand Essentials and Colour 
   - A green or red change pill shows "vs Last 7 days".
   - `SpendingChart` runs with `variant="overview"`: lower-case compact axis ("4m"), vertical gridlines only, and a card tooltip with the full date and amount.
   - Analytics still uses the default variant.
+- **Chart tooltips** (`components/ui/ChartTooltip.tsx`, with `tooltipEdge()` to keep it inside the chart near the edges):
+  - Spending bars: hover or focus a bar for its date and amount.
+  - Analytics "Spending over time": hover for a guide line, a dot on each line and both amounts. The chart also takes focus, and the left and right arrow keys step through the points (read out to screen readers).
+  - Analytics "By category" donut: hover a slice to thicken it, fade the others and show its name, share and amount.
+- **Chart transitions:**
+  - The Analytics line chart draws in left to right (`hz-wipe`), again each time the range changes. The hover guide, dots and tooltip glide between points.
+  - The donut's slices sweep in clockwise (`hz-sweep`, an SVG mask), again when the data changes.
+  - The dashboard spending bars grow up from the baseline (`hz-bar`), again when the period changes.
+  - All of these are off for users who prefer reduced motion.
 - **Digital Services usage:** a pie with callout labels (`ServiceUsageChart` with `callouts`). Names and colours per service are in `SERVICE_META`.
 - **Recent Transaction:** the last 5. Each row shows:
   - A provider logo: network images for MTN, Airtel, Glo and 9mobile, and a brand-colour badge for DStv, GOtv, SportyBet and others (`PROVIDERS`).
@@ -470,10 +479,12 @@ All fields take `name`, `label`, `required`, `hint`, and a `variant`:
 
 | `variant` | Where |
 | --- | --- |
-| `light` (default) | Public marketplace pages |
+| `light` (default outside the dashboard) | Public marketplace pages. Fixed brand colours, always light. |
 | `auth` | Login, register and recovery screens |
-| `dashboard` | Signed-in dashboard pages |
+| `dashboard` (default inside the dashboard) | Signed-in dashboard pages. Theme tokens, so it follows the theme and light/dark mode. |
 | `dark` | Dark panels |
+
+The default comes from `FieldVariantProvider` (`components/forms/FieldVariantContext.tsx`): `app/dashboard/layout.tsx` wraps the dashboard in `variant="dashboard"`, so a field there never needs the prop. A field's own `variant` still wins. Read the default in a new field with `useFieldVariant()`. Dashboard fields have a `tone-100` border (like the amount chips) that darkens to `tone-414` on hover.
 
 ### Example
 

@@ -28,3 +28,4 @@ export type { SubmitButtonProps } from './SubmitButton';
 export type { ButtonProps } from './Button';
 export type { FieldVariant, ButtonVariant, ButtonSize } from './styles';
 export { buttonClass } from './styles';
+export { FieldVariantProvider, useFieldVariant } from './FieldVariantContext';

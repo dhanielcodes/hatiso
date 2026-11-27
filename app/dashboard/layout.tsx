@@ -7,6 +7,7 @@ import HatisoLogo from '@/components/brand/HatisoLogo';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import { useDashboardTheme } from '@/lib/theme/theme';
+import { FieldVariantProvider } from '@/components/forms';
 
 // 1. Move all layout logic and hooks into this inner component
 function DashboardContent({ children }: { children: React.ReactNode }) {
@@ -63,7 +64,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             <Menu className="h-[18px] w-[18px]" />
           </button>
         </header>
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto">
+          {/* Fields here use the dashboard look, which follows the theme and light/dark mode. */}
+          <FieldVariantProvider variant="dashboard">{children}</FieldVariantProvider>
+        </main>
       </div>
     </div>
   );

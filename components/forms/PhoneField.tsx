@@ -5,6 +5,7 @@ import { useFormField } from './useFormField';
 import { ChevronDown } from 'lucide-react';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldControlClass, fieldShellClass } from './styles';
+import { useFieldVariant } from './FieldVariantContext';
 
 export interface PhoneFieldProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'name' | 'type'> {
@@ -24,7 +25,7 @@ export default function PhoneField({
   name,
   label,
   hint,
-  variant = 'light',
+  variant: variantProp,
   showError = true,
   showCountryAffix,
   dialCode,
@@ -34,6 +35,8 @@ export default function PhoneField({
   required,
   ...rest
 }: PhoneFieldProps) {
+  const contextVariant = useFieldVariant();
+  const variant = variantProp ?? contextVariant;
   const { field, meta, hasError } = useFormField(name);
   const inputId = id || name;
   const withAffix = showCountryAffix ?? variant === 'light';

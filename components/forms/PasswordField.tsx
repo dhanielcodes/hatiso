@@ -5,6 +5,7 @@ import { useFormField } from './useFormField';
 import { Eye, EyeOff } from 'lucide-react';
 import FieldShell from './FieldShell';
 import { FieldVariant, fieldControlClass } from './styles';
+import { useFieldVariant } from './FieldVariantContext';
 
 export interface PasswordFieldProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'name' | 'type'> {
@@ -20,7 +21,7 @@ export default function PasswordField({
   name,
   label,
   hint,
-  variant = 'light',
+  variant: variantProp,
   labelAction,
   showError = true,
   className = '',
@@ -28,6 +29,8 @@ export default function PasswordField({
   required,
   ...rest
 }: PasswordFieldProps) {
+  const contextVariant = useFieldVariant();
+  const variant = variantProp ?? contextVariant;
   const { field, meta, hasError } = useFormField(name);
   const [visible, setVisible] = useState(false);
   const inputId = id || name;

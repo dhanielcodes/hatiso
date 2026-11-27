@@ -7,6 +7,7 @@ import {
   fieldHintClass,
   fieldLabelClass,
 } from './styles';
+import { useFieldVariant } from './FieldVariantContext';
 
 export interface FieldShellProps {
   label?: React.ReactNode;
@@ -26,11 +27,13 @@ export default function FieldShell({
   required,
   error,
   hint,
-  variant = 'light',
+  variant: variantProp,
   labelAction,
   className = '',
   children,
 }: FieldShellProps) {
+  const contextVariant = useFieldVariant();
+  const variant = variantProp ?? contextVariant;
   return (
     <div className={className}>
       {(label || labelAction) && (

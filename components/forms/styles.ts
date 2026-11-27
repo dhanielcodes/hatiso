@@ -10,7 +10,7 @@ const DASHBOARD_BORDER = (hasError?: boolean, within = false) => {
   const f = within ? 'focus-within' : 'focus';
   return hasError
     ? `border-status-error ${f}:border-status-error ${f}:ring-3 ${f}:ring-status-error/15`
-    : `border-tone-98 ${f}:border-brand-361 ${f}:ring-3 ${f}:ring-silver/50`;
+    : `border-tone-100 hover:border-tone-414 ${f}:border-brand-361 ${f}:ring-3 ${f}:ring-silver/50`;
 };
 
 /* Public pages (light) and the auth screens share the Hatiso field: white, Grey 150 border, Carbon focus with a Silver ring. */

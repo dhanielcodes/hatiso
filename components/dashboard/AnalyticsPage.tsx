@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useId, useMemo, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { CalendarDays, Lightbulb, Upload } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
 import DateRangeDialog from '@/components/ui/DateRangeDialog';
+import ChartTooltip, { tooltipEdge } from '@/components/ui/ChartTooltip';
 import { ChartSkeleton, MetricCardSkeleton, ProgressListSkeleton } from '@/components/ui/Skeleton';
 import { useAnalytics, useAnalyticsCSV } from '@/lib/queries/useDashboard';
 import { DashboardBucket } from '@/lib/api/dashboard';
@@ -314,7 +315,7 @@ export default function AnalyticsPage() {
                     </div>
                     {isLoading ? <ChartSkeleton className="h-[240px]" /> : series.length ? (
                         <>
-                            <LineChart current={series.map((p) => p.amountMinor)} previous={prevSeries} />
+                            <LineChart labels={series.map((p) => p.label)} current={series.map((p) => p.amountMinor)} previous={prevSeries} currentLabel={rangeLabel} />
                             <div className="flex justify-between text-xs text-tone-414">
                                 {series.map((p, i) => <span key={`${p.label}-${i}`}>{p.label}</span>)}
                             </div>
@@ -332,8 +333,8 @@ export default function AnalyticsPage() {
                             // fills the height of "Top providers" beside it; stacks when the card is narrow.
                             <div className="flex flex-1 flex-wrap items-center justify-center gap-x-6 gap-y-6">
                                 <div className="relative shrink-0">
-                                    <Donut slices={donut.map((d) => ({ pct: d.share, color: d.color }))} />
-                                    <span className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                    <Donut slices={donut.map((d) => ({ name: d.name, amountMinor: d.spentMinor, pct: d.share, color: d.color }))} />
+                                    <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
                                         <span className="text-lg font-semibold tracking-[-0.02em] tabular-nums">{formatNaira(spentTotal)}</span>
                                         <span className="text-xs text-tone-414">{usageRows.length} {usageRows.length === 1 ? 'category' : 'categories'}</span>
                                     </span>
@@ -409,33 +410,129 @@ const SERVICE_SLUG_BY_NAME: Record<string, string> = {
     Betting: 'betting',
 };
 
-/** Analytics board line chart: this period solid with a soft fill, the previous period dashed. */
-function LineChart({ current, previous }: { current: number[]; previous: number[] }) {
+/**
+ * Analytics board line chart: this period solid with a soft fill, the previous period dashed. Hovering (or focusing
+ * and using the arrow keys) shows a guide line, a dot on each line and a tooltip with both amounts.
+ */
+function LineChart({ labels, current, previous, currentLabel }: { labels: string[]; current: number[]; previous: number[]; currentLabel: string }) {
     const W = 800;
     const H = 240;
+    const [active, setActive] = useState<number | null>(null);
     const max = Math.max(1, ...current, ...previous) * 1.1;
-    const pts = (arr: number[]) => arr.map((v, i) => `${((i / Math.max(arr.length - 1, 1)) * W).toFixed(1)},${(H - (v / max) * (H - 20)).toFixed(1)}`);
+    const xOf = (i: number, n: number) => (i / Math.max(n - 1, 1)) * W;
+    const yOf = (v: number) => H - (v / max) * (H - 20);
+    const pts = (arr: number[]) => arr.map((v, i) => `${xOf(i, arr.length).toFixed(1)},${yOf(v).toFixed(1)}`);
     const cur = pts(current);
-    const prev = previous.length === current.length ? pts(previous) : [];
+    const hasPrev = previous.length === current.length;
+    const prev = hasPrev ? pts(previous) : [];
+    const n = current.length;
+
+    const pick = (e: React.PointerEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const at = (e.clientX - rect.left) / rect.width;
+        setActive(Math.min(n - 1, Math.max(0, Math.round(at * (n - 1)))));
+    };
+    const onKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        const step = e.key === 'ArrowRight' ? 1 : -1;
+        setActive((i) => Math.min(n - 1, Math.max(0, (i ?? (step > 0 ? -1 : n)) + step)));
+    };
+
+    const left = active === null ? '0%' : `${(xOf(active, n) / W) * 100}%`;
+    const topOf = (v: number) => `${(yOf(v) / H) * 100}%`;
     return (
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-[240px] w-full text-tone-744" role="img" aria-label="Spending over time">
-            {[0.25, 0.5, 0.75].map((f) => <line key={f} x1="0" x2={W} y1={H * f} y2={H * f} className="stroke-tone-44" strokeWidth="1" vectorEffect="non-scaling-stroke" />)}
-            <path d={`M0,${H} L${cur.join(' L')} L${W},${H} Z`} fill="currentColor" opacity="0.06" />
-            {prev.length > 0 && <polyline points={prev.join(' ')} fill="none" className="stroke-tone-414" strokeWidth="2" strokeDasharray="5 5" vectorEffect="non-scaling-stroke" />}
-            <polyline points={cur.join(' ')} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-        </svg>
+        <div
+            className="relative outline-none focus-visible:ring-2 focus-visible:ring-tone-414 focus-visible:ring-offset-4 focus-visible:ring-offset-surface rounded-md"
+            tabIndex={0}
+            role="group"
+            aria-label="Spending over time. Use the left and right arrow keys to read each point."
+            onPointerMove={pick}
+            onPointerLeave={() => setActive(null)}
+            onBlur={() => setActive(null)}
+            onKeyDown={onKey}
+        >
+            {/* Keyed on the data so the lines draw in again, left to right, when the range changes. */}
+            <svg key={`${current.join()}|${previous.join()}`} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="hz-wipe block h-[240px] w-full text-tone-744" aria-hidden="true">
+                {[0.25, 0.5, 0.75].map((f) => <line key={f} x1="0" x2={W} y1={H * f} y2={H * f} className="stroke-tone-44" strokeWidth="1" vectorEffect="non-scaling-stroke" />)}
+                <path d={`M0,${H} L${cur.join(' L')} L${W},${H} Z`} fill="currentColor" opacity="0.06" />
+                {prev.length > 0 && <polyline points={prev.join(' ')} fill="none" className="stroke-tone-414" strokeWidth="2" strokeDasharray="5 5" vectorEffect="non-scaling-stroke" />}
+                <polyline points={cur.join(' ')} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            </svg>
+            {active !== null && (
+                <>
+                    {/* Drawn in HTML, not the stretched SVG, so the guide and dots keep their shape. */}
+                    <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 w-px -translate-x-1/2 bg-tone-100 transition-[left] duration-150 ease-out motion-reduce:transition-none" style={{ left }} />
+                    {hasPrev && (
+                        <span aria-hidden="true" className="pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-tone-414 bg-surface transition-[left,top] duration-150 ease-out motion-reduce:transition-none" style={{ left, top: topOf(previous[active]) }} />
+                    )}
+                    <span aria-hidden="true" className="pointer-events-none absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-tone-744 shadow-sm transition-[left,top] duration-150 ease-out motion-reduce:transition-none" style={{ left, top: topOf(current[active]) }} />
+                    <ChartTooltip
+                        x={left}
+                        y={topOf(Math.max(current[active], hasPrev ? previous[active] : 0))}
+                        edge={tooltipEdge(active, n)}
+                        title={labels[active] ?? ''}
+                        rows={[
+                            { label: currentLabel, value: formatNaira(current[active]), color: 'var(--color-tone-744)' },
+                            ...(hasPrev ? [{ label: 'Previous period', value: formatNaira(previous[active]), color: 'var(--color-tone-414)', dashed: true }] : []),
+                        ]}
+                    />
+                    <span className="sr-only" aria-live="polite">
+                        {labels[active]}: {formatNaira(current[active])}
+                        {hasPrev ? `, previous period ${formatNaira(previous[active])}` : ''}
+                    </span>
+                </>
+            )}
+        </div>
     );
 }
 
-/** Ring chart for "By category"; slices are percentages. */
-function Donut({ slices }: { slices: { pct: number; color: string }[] }) {
+/** Ring chart for "By category"; slices are percentages. Hovering a slice shows its name, amount and share. */
+function Donut({ slices }: { slices: { name: string; amountMinor: number; pct: number; color: string }[] }) {
+    const [hover, setHover] = useState<{ index: number; x: number; y: number } | null>(null);
     const offsets = slices.map((_, i) => slices.slice(0, i).reduce((sum, s) => sum + s.pct, 0));
+    const at = (e: React.PointerEvent, index: number) => {
+        const rect = (e.currentTarget.closest('[data-donut]') as HTMLElement).getBoundingClientRect();
+        setHover({ index, x: e.clientX - rect.left, y: e.clientY - rect.top });
+    };
+    const slice = hover ? slices[hover.index] : null;
+    const maskId = `donut-sweep-${useId().replace(/:/g, '')}`;
     return (
-        <svg viewBox="0 0 42 42" className="h-40 w-40 shrink-0 -rotate-90" role="img" aria-label="Spending by category">
-            <circle cx="21" cy="21" r="15.915" fill="none" className="stroke-tone-44" strokeWidth="5" />
-            {slices.map((s, i) => (
-                <circle key={i} cx="21" cy="21" r="15.915" fill="none" stroke={s.color} strokeWidth="5" strokeDasharray={`${s.pct} ${100 - s.pct}`} strokeDashoffset={-offsets[i]} />
-            ))}
-        </svg>
+        <div data-donut className="relative" onPointerLeave={() => setHover(null)}>
+            <svg viewBox="0 0 42 42" className="block h-40 w-40 shrink-0 -rotate-90" role="img" aria-label="Spending by category">
+                {/* The slices sweep in clockwise behind this mask; it's keyed on the data so a new range sweeps again. */}
+                <mask id={maskId} key={slices.map((s) => s.pct.toFixed(2)).join()}>
+                    <circle cx="21" cy="21" r="15.915" fill="none" stroke="white" strokeWidth="8" pathLength={100} strokeDasharray="100 100" className="hz-sweep" />
+                </mask>
+                <circle cx="21" cy="21" r="15.915" fill="none" className="stroke-tone-44" strokeWidth="5" />
+                <g mask={`url(#${maskId})`}>
+                {slices.map((s, i) => (
+                    <circle
+                        key={i}
+                        cx="21"
+                        cy="21"
+                        r="15.915"
+                        fill="none"
+                        stroke={s.color}
+                        strokeWidth={hover?.index === i ? 6 : 5}
+                        strokeDasharray={`${s.pct} ${100 - s.pct}`}
+                        strokeDashoffset={-offsets[i]}
+                        className="cursor-default transition-[stroke-width,opacity,stroke-dasharray,stroke-dashoffset] duration-150 motion-reduce:transition-none"
+                        opacity={hover && hover.index !== i ? 0.45 : 1}
+                        onPointerMove={(e) => at(e, i)}
+                    />
+                ))}
+                </g>
+            </svg>
+            {slice && hover && (
+                <ChartTooltip
+                    x={hover.x}
+                    y={hover.y}
+                    edge={hover.x < 50 ? 'start' : hover.x > 110 ? 'end' : 'center'}
+                    title={slice.name}
+                    rows={[{ label: `${slice.pct > 0 && slice.pct < 1 ? '<1' : Math.round(slice.pct)}% of spending`, value: formatNaira(slice.amountMinor), color: slice.color }]}
+                />
+            )}
+        </div>
     );
 }
