@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Formik, Form, type FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import { AlertTriangle, Check, CreditCard, KeyRound, Trash2 } from 'lucide-react';
+import { AlertTriangle, Check, CreditCard, KeyRound, Monitor, Moon, Sun, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNotificationSettings, useUpdateNotificationSettings } from '@/lib/queries/useNotifications';
 import { useCurrentUser, useResetPassword, useUpdateProfile } from '@/lib/queries/useAuth';
@@ -14,7 +14,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { PasswordField, TextField } from '@/components/forms';
 import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import DialogFrame, { DIALOG_DANGER, DIALOG_PRIMARY, DIALOG_SECONDARY } from '@/components/ui/DialogFrame';
-import { DEFAULT_THEME, THEMES, setTheme, useTheme } from '@/lib/theme/theme';
+import { DEFAULT_THEME, MODES, THEMES, setMode, setTheme, useColorMode, useModeChoice, useTheme, type ModeChoice } from '@/lib/theme/theme';
 
 /* ─── Types and constants ─────────────────────────────────────── */
 type TabId = 'details' | 'security' | 'notif' | 'look' | 'pay';
@@ -313,18 +313,46 @@ function NotificationPrefs() {
 }
 
 /* ─── Appearance ───────────────────────────────────────────────── */
+const MODE_ICONS: Record<ModeChoice, typeof Sun> = { light: Sun, dark: Moon, system: Monitor };
+
 function Appearance() {
     const active = useTheme();
+    const mode = useColorMode();
+    const modeChoice = useModeChoice();
     return (
         <section className={`hz-pop ${CARD} flex flex-col gap-[18px] p-[22px]`}>
             <div className="flex flex-col gap-1">
                 <h2 className="text-lg font-semibold">Appearance</h2>
-                <span className="text-sm text-tone-414">Choose the colours for your dashboard. It&apos;s saved on this device.</span>
+                <span className="text-sm text-tone-414">Choose the colours for your dashboard and whether it&apos;s light or dark. It&apos;s saved on this device.</span>
             </div>
-            <div role="radiogroup" aria-label="Theme" className="grid grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-3.5">
+            <div className="flex flex-col gap-2.5">
+                <span id="mode-label" className="text-sm font-medium">Mode</span>
+                <div role="radiogroup" aria-labelledby="mode-label" className="inline-flex flex-wrap self-start rounded-[10px] bg-tone-44 p-1">
+                    {MODES.map((option) => {
+                        const on = modeChoice === option.id;
+                        const Icon = MODE_ICONS[option.id];
+                        return (
+                            <button
+                                key={option.id}
+                                type="button"
+                                role="radio"
+                                aria-checked={on}
+                                onClick={() => setMode(option.id)}
+                                className={`inline-flex min-h-9 items-center gap-2 rounded-lg px-4 text-sm font-medium transition ${on ? 'bg-surface text-tone-744 shadow-[0_1px_3px_rgba(18,21,26,0.15)]' : 'text-tone-414 hover:text-tone-744'}`}
+                            >
+                                <Icon className="h-4 w-4" aria-hidden="true" />
+                                {option.name}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+            <span id="theme-label" className="text-sm font-medium">Theme</span>
+            <div role="radiogroup" aria-labelledby="theme-label" className="-mt-2 grid grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-3.5">
                 {THEMES.map((theme) => {
                     const on = active === theme.id;
-                    const [side, accent, background, line, card] = theme.swatches;
+                    // Each card previews the theme in the mode that's on screen.
+                    const [side, accent, background, line, card] = mode === 'dark' ? theme.darkSwatches : theme.swatches;
                     return (
                         <button
                             key={theme.id}

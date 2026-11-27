@@ -8,7 +8,7 @@ import DateRangeDialog from '@/components/ui/DateRangeDialog';
 import { ChartSkeleton, MetricCardSkeleton, ProgressListSkeleton } from '@/components/ui/Skeleton';
 import { useAnalytics, useAnalyticsCSV } from '@/lib/queries/useDashboard';
 import { DashboardBucket } from '@/lib/api/dashboard';
-import { seriesColor, useTheme, type ThemeId } from '@/lib/theme/theme';
+import { seriesColor, useColorMode, useTheme, type ColorMode, type ThemeId } from '@/lib/theme/theme';
 
 /* ─── API types (swap for the ones in lib/api/dashboard if you already have them) ─── */
 type DashboardSummary = {
@@ -135,7 +135,7 @@ function titleCase(value: string) {
     return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
-function buildUsageRows(items: AnalyticsData['digitalServicesUsage'], theme: ThemeId) {
+function buildUsageRows(items: AnalyticsData['digitalServicesUsage'], theme: ThemeId, mode: ColorMode) {
     return [...items]
         .sort((a, b) => b.percentage - a.percentage || b.amountMinor - a.amountMinor)
         .map((item, index) => {
@@ -144,7 +144,7 @@ function buildUsageRows(items: AnalyticsData['digitalServicesUsage'], theme: The
                 name: meta?.name ?? titleCase(item.serviceType),
                 value: item.percentage,
                 spentMinor: item.amountMinor,
-                color: seriesColor(theme, meta?.color ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length], index),
+                color: seriesColor(theme, mode, meta?.color ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length], index),
             };
         });
 }
@@ -152,6 +152,7 @@ function buildUsageRows(items: AnalyticsData['digitalServicesUsage'], theme: The
 /* ═══════════════════════════════════════════════════════════════ */
 export default function AnalyticsPage() {
     const theme = useTheme();
+    const mode = useColorMode();
     const { user } = useAuthStore();
     const [range, setRange] = useState<'6m' | '12m' | 'custom'>('6m');
     const [isRangePickerOpen, setIsRangePickerOpen] = useState(false);
@@ -202,7 +203,7 @@ export default function AnalyticsPage() {
         () => (previous ? inRange(prevAnalytics?.spendingOverview ?? [], previous.from, previous.to).map((p) => p.amountMinor) : []),
         [prevAnalytics, previous]
     );
-    const usageRows = useMemo(() => buildUsageRows(analytics?.digitalServicesUsage ?? [], theme), [analytics, theme]);
+    const usageRows = useMemo(() => buildUsageRows(analytics?.digitalServicesUsage ?? [], theme, mode), [analytics, theme, mode]);
     const providers = (analytics?.topProviders ?? []).slice(0, 5);
 
     const summary = analytics?.summary;

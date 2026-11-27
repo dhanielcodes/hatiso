@@ -1,6 +1,6 @@
 "use client";
 
-import { seriesColor, useTheme } from "@/lib/theme/theme";
+import { seriesColor, useColorMode, useTheme } from "@/lib/theme/theme";
 import Link from "next/link";
 import React, { useMemo, useState, useSyncExternalStore } from "react";
 import {
@@ -208,6 +208,7 @@ const PERIODS: [string, string][] = [
 
 export default function DashboardPage() {
   const theme = useTheme();
+  const mode = useColorMode();
   const { user } = useAuthStore();
   const [period, setPeriod] = useState("Last 7 days");
   const [isRangePickerOpen, setIsRangePickerOpen] = useState(false);
@@ -328,6 +329,7 @@ export default function DashboardPage() {
     value: item.percentage ?? 0,
     color: seriesColor(
       theme,
+      mode,
       SERVICE_META[item.serviceType]?.color ??
         FALLBACK_COLORS[index % FALLBACK_COLORS.length],
       index,

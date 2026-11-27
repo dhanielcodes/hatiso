@@ -30,10 +30,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       data-theme={BASE_THEME}
+      data-mode="light"
       className={`${outfit.variable} h-full antialiased`}
       // White-label deployments set NEXT_PUBLIC_ACCENT_COLOR to re-skin the accent site-wide.
       style={SITE_ACCENT ? accentStyle(SITE_ACCENT) : undefined}
-      // The inline script below may switch data-theme to the saved theme before React hydrates.
+      // The inline script below may switch data-theme and data-mode to the saved choice before React hydrates.
       suppressHydrationWarning
     >
       <head>
