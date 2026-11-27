@@ -312,7 +312,7 @@ What every visitor sees on the home page (`/`) comes from `GET /api/public/marke
 | `BUSINESS` | For business (`BusinessSection`) |
 | `CTA` | Call-to-action banner (`CtaBanner`) |
 
-- **The hero always shows.** Every other section is held back until the configuration loads, so a hidden section never flashes in.
+- **Page loader:** `components/marketplace/HomePageLoader.tsx` covers the whole home page until the configuration answers, so visitors never see sections appear or disappear. It's a Carbon panel with a soft Graphite glow, and the wordmark with a light sweeping across it. It shows for at least 0.7s so a fast answer doesn't flash it, then the content fades up and the panel lifts away like a curtain. While it shows, scrolling is locked and the page's own entrance animations are paused, so the hero animates in as it lifts. A failed load also ends it. Styles are the `hz-loader` rules at the end of `app/globals.css` (with a plain fade for reduced motion).
 - **Only listed sections show.** Disabling a section in the admin removes it from `sections`, so a section shows only when it's listed with `visible: true`. If the configuration fails to load, every section shows, with no error toast.
 - **Freshness:** the configuration is cached for a minute, so admin changes show on the next page load (or within a minute on a page left open).
 - **Featured banks** (`featuredBanks`): bank ids from `GET /banks`. With a list, the Banks section shows only the visible ones, in the list's order. With an empty list it shows the first 10 banks, as before.
