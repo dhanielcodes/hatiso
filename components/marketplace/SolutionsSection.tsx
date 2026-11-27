@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSectionVisible } from "@/lib/queries/useMarketplace";
 
 interface SlideData {
   badge: string;
@@ -67,10 +68,17 @@ const BUSINESS_SLIDES: SlideData[] = [
   },
 ];
 
+/**
+ * Personal and Business solutions. The page configuration controls each tab: AUDIENCE is Personal and BUSINESS is
+ * Business. With one hidden the switcher goes and the other tab shows on its own; with both hidden the section goes.
+ */
 export default function SolutionsSection() {
-  const [activeTab, setActiveTab] = useState<"personal" | "business">(
+  const showPersonal = useSectionVisible("AUDIENCE");
+  const showBusiness = useSectionVisible("BUSINESS");
+  const [chosenTab, setActiveTab] = useState<"personal" | "business">(
     "personal",
   );
+  const activeTab = showPersonal && showBusiness ? chosenTab : showPersonal ? "personal" : "business";
   const [individualSlide, setIndividualSlide] = useState(0);
   const [businessSlide, setBusinessSlide] = useState(0);
   const [isHoveredIndividual, setIsHoveredIndividual] = useState(false);
@@ -103,14 +111,16 @@ export default function SolutionsSection() {
     }
   };
 
+  if (!showPersonal && !showBusiness) return null;
+
   return (
     <section
       id="solutions"
       className="relative bg-surface px-4 py-20 sm:px-8 lg:px-20 xl:px-28 text-slate-900 overflow-hidden lg:overflow-visible"
     >
       <div className="mx-auto max-w-7xl">
-        {/* Segmented Control Pill: [ Personal | Business ] */}
-        <div className="mb-12 flex items-center justify-start">
+        {/* Segmented Control Pill: [ Personal | Business ], only when both tabs are visible */}
+        <div className={`mb-12 items-center justify-start ${showPersonal && showBusiness ? "flex" : "hidden"}`}>
           <div className="inline-flex items-center rounded-xl bg-tone-55 p-1 shadow-inner">
             <button
               onClick={() => handleTabChange("personal")}

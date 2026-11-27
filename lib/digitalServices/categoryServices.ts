@@ -14,19 +14,21 @@ export type CategoryService = {
   category: DigitalServiceCategory;
   /** Which of the existing card/tab icons to use. */
   visualSlug: string;
+  /** This service's id in the home page configuration's `featuredServices` (e.g. AIRTIME, CABLE_TV). */
+  featureId: string;
 };
 
 const SERVICES_BY_CATEGORY: Record<DigitalServiceCategory, Omit<CategoryService, 'category'>[]> = {
   TELCO: [
-    { slug: 'airtime', label: 'Airtime', visualSlug: 'airtime' },
-    { slug: 'data', label: 'Data', visualSlug: 'data' },
+    { slug: 'airtime', label: 'Airtime', visualSlug: 'airtime', featureId: 'AIRTIME' },
+    { slug: 'data', label: 'Data', visualSlug: 'data', featureId: 'DATA' },
   ],
-  INTERNET_SERVICES: [{ slug: 'internet-services', label: 'Internet Services', visualSlug: 'data' }],
-  DISCO: [{ slug: 'electricity', label: 'Electricity', visualSlug: 'electricity' }],
-  CABLE: [{ slug: 'tv', label: 'Cable TV', visualSlug: 'tv' }],
-  EDUCATION: [{ slug: 'education', label: 'Education', visualSlug: 'education' }],
-  INSURANCE: [{ slug: 'insurance', label: 'Insurance', visualSlug: 'government-services' }],
-  OTHER_SERVICES: [{ slug: 'other-services', label: 'Other Services', visualSlug: 'shopping' }],
+  INTERNET_SERVICES: [{ slug: 'internet-services', label: 'Internet Services', visualSlug: 'data', featureId: 'INTERNET_SERVICES' }],
+  DISCO: [{ slug: 'electricity', label: 'Electricity', visualSlug: 'electricity', featureId: 'ELECTRICITY' }],
+  CABLE: [{ slug: 'tv', label: 'Cable TV', visualSlug: 'tv', featureId: 'CABLE_TV' }],
+  EDUCATION: [{ slug: 'education', label: 'Education', visualSlug: 'education', featureId: 'EDUCATION' }],
+  INSURANCE: [{ slug: 'insurance', label: 'Insurance', visualSlug: 'government-services', featureId: 'INSURANCE' }],
+  OTHER_SERVICES: [{ slug: 'other-services', label: 'Other Services', visualSlug: 'shopping', featureId: 'OTHER_SERVICES' }],
 };
 
 /** The services a category gives (none for a category we don't know yet). */

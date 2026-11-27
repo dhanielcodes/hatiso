@@ -6,6 +6,7 @@ import BanksSection from '@/components/marketplace/BanksSection';
 import SolutionsSection from '@/components/marketplace/SolutionsSection';
 import CtaBanner from '@/components/marketplace/CtaBanner';
 import Footer from '@/components/marketplace/Footer';
+import PageSection from '@/components/marketplace/PageSection';
 
 export const metadata = {
   title: 'QAPP by Hatiso - One platform. Every service you need.',
@@ -19,22 +20,28 @@ export default function MarketplacePage() {
       {/* Top Navigation */}
       <Navbar />
 
-      {/* Main Content Area */}
+      {/* Main Content Area. Sections other than the hero show only when GET /api/public/marketplace/page-configuration has them visible (SolutionsSection handles AUDIENCE and BUSINESS itself). */}
       <main className="flex-1">
         {/* Hero Section with Headline & 3D Coverflow Carousel */}
         <HeroSection />
 
         {/* Popular Categories Grid & Instant Pay Card */}
-        <PopularCategories />
+        <PageSection id="FEATURED_DIGITAL_SERVICES">
+          <PopularCategories />
+        </PageSection>
 
         {/* Banks Section: Bank the way you already do */}
-        <BanksSection />
+        <PageSection id="FEATURED_BANKS">
+          <BanksSection />
+        </PageSection>
 
         {/* Personal & Business Solutions Section */}
         <SolutionsSection />
 
         {/* Ready to Get Started CTA Banner */}
-        <CtaBanner />
+        <PageSection id="CTA">
+          <CtaBanner />
+        </PageSection>
       </main>
 
       {/* Footer */}
