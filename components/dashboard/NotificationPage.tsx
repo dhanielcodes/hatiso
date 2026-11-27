@@ -183,7 +183,7 @@ export default function NotificationsPage() {
                                 }}
                                 aria-pressed={category === name}
                                 className={`rounded-full border px-5 py-2.5 text-sm transition ${category === name
-                                    ? 'border-ink-660 bg-ink-660 font-medium text-white'
+                                    ? 'border-selected bg-selected font-medium text-on-selected'
                                     : 'border-tone-114 bg-surface text-tone-678 hover:bg-slate-50'
                                     }`}
                             >

@@ -17,7 +17,7 @@ import {
   type TooltipItem,
   type TooltipModel,
 } from 'chart.js';
-import { themeColor, useTheme, withAlpha, type ThemeId } from '@/lib/theme/theme';
+import { themeColor, useColorMode, useTheme, withAlpha, type ColorMode, type ThemeId } from '@/lib/theme/theme';
 
 Chart.register(
   ArcElement,
@@ -33,18 +33,23 @@ Chart.register(
 );
 
 // Canvas can't read CSS variables. Classic and Hatiso have hand-picked colours; the hue themes
-// (Ocean, Forest, Plum) take the line from their accent token; Dark keeps the orange line on dark gridlines.
+// (Ocean, Forest, Plum) take the line from their accent token. In dark mode Hatiso draws a Cloud line on grey-900
+// gridlines, and the others keep their line with ticks and gridlines read from the dark tokens.
 type SpendingColors = { line: string; fill: [string, string]; tooltipBody: string; tooltipTitle: string; tick: string; grid: string };
 const CLASSIC_SPENDING: SpendingColors = { line: '#F45A08', fill: ['rgba(255, 142, 80, 0.52)', 'rgba(255, 142, 80, 0.02)'], tooltipBody: '#162C3B', tooltipTitle: '#69707B', tick: '#7F8085', grid: '#F5F2F0' };
 const HATISO_SPENDING: SpendingColors = { line: '#12151A', fill: ['rgba(35, 39, 47, 0.28)', 'rgba(35, 39, 47, 0.02)'], tooltipBody: '#12151A', tooltipTitle: '#616366', tick: '#79797A', grid: '#F1F2F4' };
+const DARK_SPENDING: SpendingColors = { line: '#F1F2F4', fill: ['rgba(184, 188, 194, 0.32)', 'rgba(184, 188, 194, 0.02)'], tooltipBody: '#12151A', tooltipTitle: '#616366', tick: '#919397', grid: '#303031' };
 
-function spendingColors(theme: ThemeId): SpendingColors {
-  if (theme === 'classic') return CLASSIC_SPENDING;
-  if (theme === 'hatiso') return HATISO_SPENDING;
-  if (theme === 'dark') return { ...CLASSIC_SPENDING, tick: themeColor('tone-405', CLASSIC_SPENDING.tick), grid: themeColor('tone-78', CLASSIC_SPENDING.grid) };
-  const line = themeColor('brand-333', CLASSIC_SPENDING.line);
-  const fill = themeColor('brand-249', '#FF8A4C');
-  return { ...CLASSIC_SPENDING, line, fill: [withAlpha(fill, 0.52), withAlpha(fill, 0.02)], tooltipBody: themeColor('ink-709', CLASSIC_SPENDING.tooltipBody) };
+function spendingColors(theme: ThemeId, mode: ColorMode): SpendingColors {
+  if (theme === 'hatiso') return mode === 'dark' ? DARK_SPENDING : HATISO_SPENDING;
+  let colors = CLASSIC_SPENDING;
+  if (theme !== 'classic') {
+    const fill = themeColor('brand-249', '#FF8A4C');
+    colors = { ...CLASSIC_SPENDING, line: themeColor('brand-333', CLASSIC_SPENDING.line), fill: [withAlpha(fill, 0.52), withAlpha(fill, 0.02)] };
+    if (mode === 'light') colors.tooltipBody = themeColor('ink-709', CLASSIC_SPENDING.tooltipBody);
+  }
+  if (mode === 'dark') colors = { ...colors, tick: themeColor('tone-405', CLASSIC_SPENDING.tick), grid: themeColor('tone-78', CLASSIC_SPENDING.grid) };
+  return colors;
 }
 
 /** `title` is the tooltip heading (e.g. "Tuesday, Mar 21, 2026"); defaults to the axis label. */
@@ -94,11 +99,12 @@ function overviewTooltip(context: { chart: Chart; tooltip: TooltipModel<'line'> 
 export function SpendingChart({ data, variant = 'default' }: { data: SpendingDatum[]; variant?: 'default' | 'overview' }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
+  const mode = useColorMode();
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const colors = spendingColors(theme);
+    const colors = spendingColors(theme, mode);
     const overview = variant === 'overview';
 
     const chart = new Chart(canvas, {
@@ -175,7 +181,7 @@ export function SpendingChart({ data, variant = 'default' }: { data: SpendingDat
       chart.destroy();
       canvas.parentElement?.querySelector('[data-chart-tooltip]')?.remove();
     };
-  }, [data, theme, variant]);
+  }, [data, theme, mode, variant]);
 
   return <canvas ref={canvasRef} aria-label="Monthly spending chart" role="img" />;
 }
@@ -228,6 +234,7 @@ function calloutPlugin(color: string, lineColor: string): Plugin<'pie' | 'doughn
 export function ServiceUsageChart({ data, donut = false, callouts = false }: { data: UsageDatum[]; donut?: boolean; callouts?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
+  const mode = useColorMode();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -269,7 +276,7 @@ export function ServiceUsageChart({ data, donut = false, callouts = false }: { d
         });
 
     return () => chart.destroy();
-  }, [data, donut, callouts, theme]);
+  }, [data, donut, callouts, theme, mode]);
 
   return <canvas ref={canvasRef} aria-label="Digital services usage chart" role="img" />;
 }

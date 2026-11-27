@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import { Formik, Form, type FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import { Bell, Check, ChevronRight, Lock, Palette, Pencil, UserPlus, User } from 'lucide-react';
+import { Bell, Check, ChevronRight, Lock, Monitor, Moon, Palette, Pencil, Sun, UserPlus, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNotificationSettings, useUpdateNotificationSettings } from '@/lib/queries/useNotifications';
 import { useCurrentUser, useResetPassword, useUpdateProfile } from '@/lib/queries/useAuth';
@@ -11,7 +11,7 @@ import type { CurrentUserProfile } from '@/lib/api/auth';
 import type { NotificationChannel } from '@/lib/api/notifications';
 import { Button, PasswordField, SubmitButton, TextAreaField, TextField } from '@/components/forms';
 import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
-import { DEFAULT_THEME, THEMES, setTheme, useTheme } from '@/lib/theme/theme';
+import { DEFAULT_THEME, MODES, THEMES, setMode, setTheme, useColorMode, useModeChoice, useTheme, type ModeChoice } from '@/lib/theme/theme';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 type TabId = 'personal' | 'notifications' | 'appearance' | 'privacy';
@@ -336,14 +336,43 @@ function NotificationSettings() {
     );
 }
 
-/* ─── Tab: Appearance (colour theme) ───────────────────────────── */
+/* ─── Tab: Appearance (mode and colour theme) ──────────────────── */
+const MODE_ICONS: Record<ModeChoice, typeof Sun> = { light: Sun, dark: Moon, system: Monitor };
+
 function Appearance() {
     const active = useTheme();
+    const mode = useColorMode();
+    const modeChoice = useModeChoice();
 
     return (
         <div className="max-w-[900px]">
             <h2 className="text-xl font-medium text-ink-660">Appearance</h2>
-            <div className="mt-5 space-y-5 border-t border-tone-78 py-6">
+            <div className="mt-5 space-y-4 border-t border-tone-78 pt-6">
+                <div>
+                    <h3 id="mode-label" className="text-base font-medium text-ink-660">Mode</h3>
+                    <p className="mt-2 max-w-[520px] text-sm text-tone-405">Light or dark, or follow your device&apos;s setting. Every theme has both.</p>
+                </div>
+                <div role="radiogroup" aria-labelledby="mode-label" className="inline-flex flex-wrap gap-1 rounded-xl border border-tone-88 bg-surface p-1">
+                    {MODES.map((option) => {
+                        const on = modeChoice === option.id;
+                        const Icon = MODE_ICONS[option.id];
+                        return (
+                            <button
+                                key={option.id}
+                                type="button"
+                                role="radio"
+                                aria-checked={on}
+                                onClick={() => setMode(option.id)}
+                                className={`inline-flex min-h-9 items-center gap-2 rounded-lg px-4 text-sm font-medium transition ${on ? 'bg-brand-361 text-on-brand' : 'text-tone-405 hover:text-tone-744'}`}
+                            >
+                                <Icon className="h-4 w-4" aria-hidden="true" />
+                                {option.name}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+            <div className="mt-6 space-y-5 border-t border-tone-78 py-6">
                 <div>
                     <h3 className="text-base font-medium text-ink-660">Theme</h3>
                     <p className="mt-2 max-w-[520px] text-sm text-tone-405">
@@ -354,8 +383,8 @@ function Appearance() {
                 <div role="radiogroup" aria-label="Colour theme" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {THEMES.map((theme) => {
                         const checked = active === theme.id;
-                        // Preview swatches: sidebar, accent, page background, border, card.
-                        const [surface, accent, background, line, card] = theme.swatches;
+                        // Preview swatches (sidebar, accent, page background, border, card) in the mode on screen.
+                        const [surface, accent, background, line, card] = mode === 'dark' ? theme.darkSwatches : theme.swatches;
                         return (
                             <button
                                 key={theme.id}
@@ -516,8 +545,8 @@ export default function AccountPage() {
                                         <Icon className="h-[18px] w-[18px] shrink-0" />
                                         <span className="flex-1">{item.label}</span>
                                         {active && (
-                                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-ink-660">
-                                                <ChevronRight className="h-3 w-3 text-white" strokeWidth={3} />
+                                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-selected">
+                                                <ChevronRight className="h-3 w-3 text-on-selected" strokeWidth={3} />
                                             </span>
                                         )}
                                     </button>

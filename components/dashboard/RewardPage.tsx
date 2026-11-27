@@ -346,7 +346,7 @@ export default function RewardPage() {
                                     }}
                                     aria-pressed={tab === name}
                                     className={`rounded-full border px-5 py-2.5 text-sm font-medium transition ${tab === name
-                                        ? 'border-ink-660 bg-ink-660 text-white'
+                                        ? 'border-selected bg-selected text-on-selected'
                                         : 'border-tone-114 bg-surface text-tone-678 hover:bg-slate-50'
                                         }`}
                                 >

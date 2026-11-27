@@ -50,7 +50,7 @@ function Bubble({ mine, author, time, children }: { mine: boolean; author: strin
           <span className="font-medium text-ink-510">{author}</span> · {time}
         </p>
         <div
-          className={`mt-1.5 inline-block whitespace-pre-line break-words rounded-xl px-4 py-3 text-left text-sm leading-relaxed ${mine ? 'rounded-tr-sm bg-ink-660 text-white' : 'rounded-tl-sm bg-tone-31 text-tone-744'}`}
+          className={`mt-1.5 inline-block whitespace-pre-line break-words rounded-xl px-4 py-3 text-left text-sm leading-relaxed ${mine ? 'rounded-tr-sm bg-selected text-on-selected' : 'rounded-tl-sm bg-tone-31 text-tone-744'}`}
         >
           {children}
         </div>

@@ -231,7 +231,7 @@ export default function DigitalServicesPage() {
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search services or provider" className="h-15 w-full rounded-xl border border-tone-97 bg-surface pl-14 pr-4 text-sm text-slate-800 outline-none transition focus:border-brand-361 focus:ring-4 focus:ring-brand-361/10" />
           </label>
           <div className="flex gap-2 border-l-0 pl-0 xl:border-l xl:border-tone-99 xl:pl-4">
-            {['All', 'Popular', 'Cashback'].map((option) => <button key={option} type="button" onClick={() => setFilter(option)} className={`rounded-full px-5 py-3 text-sm font-medium transition active:scale-[0.98] ${filter === option ? 'bg-ink-626 text-white' : 'border border-tone-97 bg-surface text-slate-700 hover:border-ink-626/30'}`}>{option}</button>)}
+            {['All', 'Popular', 'Cashback'].map((option) => <button key={option} type="button" onClick={() => setFilter(option)} className={`rounded-full px-5 py-3 text-sm font-medium transition active:scale-[0.98] ${filter === option ? 'bg-selected text-on-selected' : 'border border-tone-97 bg-surface text-slate-700 hover:border-ink-626/30'}`}>{option}</button>)}
           </div>
         </div>
 

@@ -7,7 +7,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { ChartSkeleton, MetricCardSkeleton, ProgressListSkeleton } from '@/components/ui/Skeleton';
 import { useAnalytics, useAnalyticsCSV } from '@/lib/queries/useDashboard';
 import { DashboardBucket } from '@/lib/api/dashboard';
-import { themeColor, useTheme, type ThemeId } from '@/lib/theme/theme';
+import { themeColor, useColorMode, useTheme, type ColorMode, type ThemeId } from '@/lib/theme/theme';
 
 /* ─── API types (swap for the ones in lib/api/dashboard if you already have them) ─── */
 type DashboardSummary = {
@@ -72,11 +72,12 @@ const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
 const DAY_KEYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 const TIME_SLOTS = ['Morn.', 'Noon', 'Evening', 'Night'];
 const SLOT_KEYS = ['morning', 'noon', 'evening', 'night'] as const;
-// Heatmap ramp, light to dark. Hue themes build theirs from their accent tokens.
+// Heatmap ramp, quiet to busy: light to dark in light mode, dark to light in dark mode.
+// Hue themes (and every theme but Hatiso in dark mode) build theirs from their accent tokens.
 const CLASSIC_HEAT = ['#F7E1D5', '#F5B692', '#E1966C', '#D9622B'];
-function heatColorsFor(theme: ThemeId): string[] {
-    if (theme === 'classic') return CLASSIC_HEAT;
-    if (theme === 'hatiso') return ['#F1F2F4', '#C9CACB', '#79797A', '#23272F'];
+function heatColorsFor(theme: ThemeId, mode: ColorMode): string[] {
+    if (theme === 'hatiso') return mode === 'dark' ? ['#303031', '#616366', '#B8BCC2', '#F1F2F4'] : ['#F1F2F4', '#C9CACB', '#79797A', '#23272F'];
+    if (theme === 'classic' && mode === 'light') return CLASSIC_HEAT;
     return [themeColor('brand-95', CLASSIC_HEAT[0]), themeColor('brand-212', CLASSIC_HEAT[1]), themeColor('brand-249', CLASSIC_HEAT[2]), themeColor('brand-365', CLASSIC_HEAT[3])];
 }
 const HEAT_LABELS = ['<2', '2-4', '5-20', '>20'];
@@ -311,7 +312,7 @@ function CumulativeChart({
 
 /* ═══════════════════════════════════════════════════════════════ */
 export default function AnalyticsPage() {
-    const heatColors = heatColorsFor(useTheme());
+    const heatColors = heatColorsFor(useTheme(), useColorMode());
     const { user } = useAuthStore();
     const [period, setPeriod] = useState('Last month');
     const [isRangePickerOpen, setIsRangePickerOpen] = useState(false);

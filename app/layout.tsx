@@ -29,8 +29,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       data-theme={BASE_THEME}
+      data-mode="light"
       className={`${outfit.variable} h-full antialiased`}
-      // The inline script below may switch data-theme to the saved theme before React hydrates.
+      // The inline script below may switch data-theme and data-mode to the saved choice before React hydrates.
       suppressHydrationWarning
     >
       <head>

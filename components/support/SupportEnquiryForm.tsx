@@ -44,10 +44,10 @@ function RequestTypeField({ name }: { name: string }) {
               role="radio"
               aria-checked={active}
               onClick={() => setValue(option.value)}
-              className={`rounded-lg border px-3.5 py-2.5 text-left transition ${active ? 'border-ink-660 bg-ink-660 text-white' : 'border-tone-98 bg-surface text-tone-744 hover:bg-slate-50'}`}
+              className={`rounded-lg border px-3.5 py-2.5 text-left transition ${active ? 'border-selected bg-selected text-on-selected' : 'border-tone-98 bg-surface text-tone-744 hover:bg-slate-50'}`}
             >
               <span className="block text-sm font-medium">{option.label}</span>
-              <span className={`block text-xs ${active ? 'text-white/70' : 'text-tone-405'}`}>{option.hint}</span>
+              <span className={`block text-xs ${active ? 'text-on-selected/70' : 'text-tone-405'}`}>{option.hint}</span>
             </button>
           );
         })}

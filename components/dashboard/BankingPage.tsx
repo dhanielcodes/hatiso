@@ -186,7 +186,7 @@ export default function BankingPage() {
                   onClick={() => setActiveTab(tab)}
                   className={`rounded-full px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
                     isActive
-                      ? "bg-ink-662 text-white"
+                      ? "bg-selected text-on-selected"
                       : "border border-tone-96 bg-surface text-tone-572 hover:bg-tone-26"
                   }`}
                 >

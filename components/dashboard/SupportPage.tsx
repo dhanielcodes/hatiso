@@ -529,8 +529,8 @@ function Faqs({ entries }: { entries: SupportContentEntry[] }) {
                                 >
                                     <span className="flex-1">{item.label}</span>
                                     {active && (
-                                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-ink-660">
-                                            <ChevronRight className="h-3 w-3 text-white" strokeWidth={3} />
+                                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-selected">
+                                            <ChevronRight className="h-3 w-3 text-on-selected" strokeWidth={3} />
                                         </span>
                                     )}
                                 </button>
@@ -721,7 +721,7 @@ export default function SupportPage() {
                                 aria-controls={`support-panel-${item.id}`}
                                 onClick={() => setTab(item.id)}
                                 className={`rounded-full border px-5 py-2.5 text-sm transition ${active
-                                    ? 'border-ink-660 bg-ink-660 font-medium text-white'
+                                    ? 'border-selected bg-selected font-medium text-on-selected'
                                     : 'border-tone-88 bg-surface text-tone-744 hover:bg-slate-50'
                                     }`}
                             >
