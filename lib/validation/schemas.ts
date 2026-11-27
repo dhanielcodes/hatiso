@@ -144,10 +144,19 @@ export const registerSchema = Yup.object({
     .required(),
 });
 
+/** Contact form, sent to POST /api/public/expressions-of-interest. Role and website are optional. */
 export const contactSchema = Yup.object({
-  businessName: requiredString('Business name'),
+  contactName: requiredString('Your name'),
+  contactRole: Yup.string().trim().default(''),
   email: emailSchema,
   phone: loosePhoneSchema,
+  organisation: requiredString('Organisation'),
+  tenantType: requiredString('Organisation type'),
+  country: requiredString('Country'),
+  website: Yup.string()
+    .trim()
+    .test('website', 'Enter a valid website, e.g. example.com', (v) => !v || /^(https?:\/\/)?[^\s.]+\.[^\s]{2,}$/i.test(v))
+    .default(''),
   message: Yup.string()
     .trim()
     .min(10, 'Message should be at least 10 characters')

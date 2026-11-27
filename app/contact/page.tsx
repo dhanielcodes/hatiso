@@ -6,19 +6,28 @@ import { MapPin, CheckCircle2, ArrowRight } from 'lucide-react';
 import Navbar from '@/components/marketplace/Navbar';
 import Footer from '@/components/marketplace/Footer';
 import CtaBanner from '@/components/marketplace/CtaBanner';
-import { TextField, PhoneField, TextAreaField, SubmitButton } from '@/components/forms';
+import { TextField, PhoneField, TextAreaField, SelectField, SubmitButton } from '@/components/forms';
 import { contactSchema, ContactFormValues } from '@/lib/validation/schemas';
+import { TENANT_TYPES, buildExpressionOfInterest } from '@/lib/api/expressionsOfInterest';
+import { useSubmitExpressionOfInterest } from '@/lib/queries/useExpressionsOfInterest';
 
 const initialValues: ContactFormValues = {
-  businessName: '',
+  contactName: '',
+  contactRole: '',
   email: '',
   phone: '',
+  organisation: '',
+  tenantType: '',
+  country: 'Nigeria',
+  website: '',
   message: '',
 };
 
+/** Contact page. The form is sent to POST /api/public/expressions-of-interest; the confirmation shows once it's accepted. */
 export default function ContactPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedName, setSubmittedName] = useState('');
+  const submit = useSubmitExpressionOfInterest();
 
   return (
     <div className="min-h-screen bg-ink-662 text-white selection:bg-brand-361 selection:text-white flex flex-col justify-between">
@@ -92,18 +101,26 @@ export default function ContactPage() {
                     initialValues={initialValues}
                     validationSchema={contactSchema}
                     onSubmit={async (values, helpers) => {
-                      await new Promise((r) => setTimeout(r, 900));
-                      setSubmittedName(values.businessName);
-                      setIsSubmitted(true);
-                      helpers.resetForm();
+                      try {
+                        await submit.mutateAsync(buildExpressionOfInterest(values));
+                        setSubmittedName(values.contactName.trim());
+                        setIsSubmitted(true);
+                        helpers.resetForm();
+                      } catch {
+                        // The error toast comes from the API client; the form keeps what they typed.
+                      }
                     }}
                   >
                     <Form className="space-y-6" noValidate>
-                      <TextField
-                        name="businessName"
-                        label="Business Name"
-                        placeholder="Enter your business name"
-                      />
+                      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <TextField name="contactName" label="Your name" placeholder="Enter your full name" autoComplete="name" />
+                        <TextField
+                          name="contactRole"
+                          label={<>Your role <span className="font-normal text-slate-500">(optional)</span></>}
+                          placeholder="e.g. Head of Payments"
+                          autoComplete="organization-title"
+                        />
+                      </div>
 
                       <TextField
                         name="email"
@@ -118,6 +135,28 @@ export default function ContactPage() {
                         label="Phone number"
                         placeholder="80-000-0000"
                       />
+
+                      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <TextField name="organisation" label="Organisation" placeholder="Enter your organisation" autoComplete="organization" />
+                        <SelectField
+                          name="tenantType"
+                          label="Organisation type"
+                          placeholder="Choose a type"
+                          options={TENANT_TYPES.map((t) => ({ value: t, label: t }))}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <TextField name="country" label="Country" placeholder="Enter your country" autoComplete="country-name" />
+                        <TextField
+                          name="website"
+                          type="url"
+                          inputMode="url"
+                          label={<>Website <span className="font-normal text-slate-500">(optional)</span></>}
+                          placeholder="e.g. example.com"
+                          autoComplete="url"
+                        />
+                      </div>
 
                       <TextAreaField
                         name="message"

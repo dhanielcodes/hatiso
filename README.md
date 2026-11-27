@@ -17,6 +17,7 @@ This README is for frontend developers joining the project. It covers how to run
 - [Digital services](#digital-services)
 - [Banks](#banks)
 - [Support](#support)
+- [Contact form](#contact-form)
 - [Endpoint structure](#endpoint-structure)
 - [Forms](#forms)
 - [Buttons](#buttons)
@@ -260,6 +261,28 @@ The dashboard support module uses the individual support API (`lib/api/support.t
 
 ---
 
+## Contact form
+
+The public Contact form (`/contact`; `/contact-us` redirects there) is sent to `POST /api/public/expressions-of-interest`. No sign-in is needed.
+
+| Field | Form label | Notes |
+| --- | --- | --- |
+| `contactName` | Your name | Required |
+| `contactRole` | Your role | Optional; left out when blank |
+| `email` | Email address | Required |
+| `phone` | Phone number | Required. Sent in international format: `0803 555 0212` becomes `+2348035550212` |
+| `organisation` | Organisation | Required |
+| `tenantType` | Organisation type | Required select: Bank, Fintech, Microfinance bank, Merchant, Other (`TENANT_TYPES`) |
+| `country` | Country | Required; starts as Nigeria |
+| `website` | Website | Optional; `example.com` is sent as `https://example.com` |
+| `message` | Message | Required, 10 characters or more |
+
+- **Code:** `lib/api/expressionsOfInterest.ts` (`submitExpressionOfInterest`, `buildExpressionOfInterest`, `toInternationalPhone`, `TENANT_TYPES`), the hook `useSubmitExpressionOfInterest` in `lib/queries/useExpressionsOfInterest.ts`, and `contactSchema` in `lib/validation/schemas.ts`.
+- **Success:** the confirmation shows only after the API accepts the form, and the form is cleared.
+- **Errors:** the API client shows the error toast, and the form keeps what was typed so it can be sent again.
+
+---
+
 ## Endpoint structure
 
 Every backend call goes through **three layers**. The dashboard page is the reference implementation.
@@ -365,6 +388,7 @@ await updateProfile.mutateAsync({ firstName, lastName, displayName, bio });
 | `useDigitalServices.ts` | `useDigitalServiceCategories`, `useDigitalServiceCatalogues`, `useCreateDigitalServiceOrder`, `useCreatePaymentQuote`, `useCreatePayment`, `useVerifyPayment` |
 | `useNotifications.ts` | `useNotifications`, `useNotificationSettings`, `useUpdateNotificationSettings` |
 | `useOrders.ts` | `useDigitalServiceOrders` |
+| `useExpressionsOfInterest.ts` | `useSubmitExpressionOfInterest` (public `POST /api/public/expressions-of-interest`) |
 | `useSupport.ts` | `useSupportOptions`, `useSupportHistory`, `useSupportTicket`, `useCreateSupportEnquiry`, `useSubmitSupportFeedback`, `useReplyToSupportTicket`, `useReopenSupportTicket` |
 
 The checkout hooks take `authenticated` (default `false`): pass `true` on the dashboard to use the signed-in endpoints, and leave it off for guest checkout.
