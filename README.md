@@ -19,6 +19,7 @@ This README is for frontend developers joining the project. It covers how to run
 - [Banks](#banks)
 - [Support](#support)
 - [Contact form](#contact-form)
+- [Home page configuration](#home-page-configuration)
 - [Endpoint structure](#endpoint-structure)
 - [Forms](#forms)
 - [Buttons](#buttons)
@@ -250,7 +251,7 @@ The banks page (`/banks`), the home "Banks" section and the dashboard banking pa
 - **Status:** `ACTIVE` reads as "Online". `MAINTENANCE` or `DEGRADED` is amber, and any other status is red and shown as the API sends it. The status filters on `/banks` and the dashboard tabs are built from the statuses the API returns.
 - **Channels:** `channels` (e.g. `INTERNET_BANKING`) are shown as "Internet banking", and the `/banks` "Channels" filter is built from them.
 - **Website:** the API doesn't return a website URL yet. "Continue to bank" uses `BANK_WEBSITES` (keyed by `bankIdentifier`), or `DEFAULT_BANK_URL` when a bank isn't listed there. Replace this once the API sends a URL.
-- The home section shows the first 10 banks (`HOME_BANK_LIMIT`).
+- The home section shows the admin's featured banks from the page configuration, or the first 10 banks (`HOME_BANK_LIMIT`) when none are picked. See [Home page configuration](#home-page-configuration).
 
 ## Support
 
@@ -296,6 +297,28 @@ The public Contact form (`/contact`; `/contact-us` redirects there) is sent to `
 - **Success:** the confirmation shows only after the API accepts the form, and the form is cleared.
 - **Errors:** the API client shows the error toast, and the form keeps what was typed so it can be sent again.
 - **Topic chips** (Help with a payment, My account, Sell on Hatiso, Bank partnership) only change the message placeholder; the topic isn't sent.
+
+---
+
+## Home page configuration
+
+What every visitor sees on the home page (`/`) comes from `GET /api/public/marketplace/page-configuration` (public, no sign-in). Code: `lib/api/marketplace.ts`, hooks in `lib/queries/useMarketplace.ts`, and `components/marketplace/PageSection.tsx`.
+
+| Section id | What it controls |
+| --- | --- |
+| `FEATURED_DIGITAL_SERVICES` | Services grid (`PopularCategories`) |
+| `FEATURED_BANKS` | Banks section (`BanksSection`) |
+| `AUDIENCE` | How it works (`HowItWorks`) |
+| `BUSINESS` | For business (`BusinessSection`) |
+| `CTA` | Call-to-action banner (`CtaBanner`) |
+
+- **The hero always shows.** Every other section is held back until the configuration loads, so a hidden section never flashes in.
+- **Only listed sections show.** Disabling a section in the admin removes it from `sections`, so a section shows only when it's listed with `visible: true`. If the configuration fails to load, every section shows, with no error toast.
+- **Freshness:** the configuration is cached for a minute, so admin changes show on the next page load (or within a minute on a page left open).
+- **Featured banks** (`featuredBanks`): bank ids from `GET /banks`. With a list, the Banks section shows only the visible ones, in the list's order. With an empty list it shows the first 10 banks, as before.
+- **Featured services** (`featuredServices`): ids such as `AIRTIME`, `DATA`, `CABLE_TV`, `INTERNET_SERVICES`, `ELECTRICITY`, `EDUCATION`, `INSURANCE` and `OTHER_SERVICES` (each service's `featureId` in `lib/digitalServices/categoryServices.ts`). An API category (e.g. `TELCO`, giving Airtime and Data) or a service slug also match, ignoring case. With a list, the services grid shows only the visible ones, in the list's order, so a service left out of the list is hidden. With an empty list it shows every service.
+- **Nothing left to show:** when a featured list is set but none of its entries can be shown (all hidden, or ids that no longer exist), that section is left out.
+- **Hooks:** `useMarketplacePageConfiguration()` (cached for a minute), `useSectionVisible(id)`, and `pickFeatured(items, featured, idsOf)`.
 
 ---
 
@@ -404,6 +427,7 @@ await updateProfile.mutateAsync({ firstName, lastName, displayName, bio });
 | `useDigitalServices.ts` | `useDigitalServiceCategories`, `useDigitalServiceCatalogues`, `useCreateDigitalServiceOrder`, `useCreatePaymentQuote`, `useCreatePayment`, `useVerifyPayment` |
 | `useNotifications.ts` | `useNotifications`, `useNotificationSettings`, `useUpdateNotificationSettings` |
 | `useOrders.ts` | `useDigitalServiceOrders` |
+| `useMarketplace.ts` | `useMarketplacePageConfiguration`, `useSectionVisible` (public `GET /api/public/marketplace/page-configuration`) |
 | `useExpressionsOfInterest.ts` | `useSubmitExpressionOfInterest` (public `POST /api/public/expressions-of-interest`) |
 | `useSupport.ts` | `useSupportOptions`, `useSupportHistory`, `useSupportTicket`, `useCreateSupportEnquiry`, `useSubmitSupportFeedback`, `useReplyToSupportTicket`, `useReopenSupportTicket` |
 

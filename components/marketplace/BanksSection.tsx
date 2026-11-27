@@ -6,10 +6,11 @@ import { ArrowRight, Check } from "lucide-react";
 import BankLogo from "@/components/banks/BankLogo";
 import BankOpenDialog from "@/components/banks/BankOpenDialog";
 import { useBanks } from "@/lib/queries/useBanks";
+import { pickFeatured, useMarketplacePageConfiguration } from "@/lib/queries/useMarketplace";
 import type { Bank } from "@/lib/api/banks";
 import { bankStatus, channelLabels, STATUS_DOT } from "@/lib/banks/bankDisplay";
 
-/** How many banks the home section shows before "See all Banks". */
+/** How many banks the home section shows before "See all Banks" when the admin hasn't picked featured banks. */
 const HOME_BANK_LIMIT = 10;
 
 const PROMISES = [
@@ -20,7 +21,17 @@ const PROMISES = [
 
 export default function BanksSection() {
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
-  const { data: banks = [], isLoading, isError, refetch } = useBanks();
+  const { data: allBanks = [], isLoading: banksLoading, isError, refetch } = useBanks();
+  const { data: config, isPending: configLoading } = useMarketplacePageConfiguration();
+  // The admin's featured banks (page configuration), in their order; otherwise the first HOME_BANK_LIMIT banks.
+  const featured = config?.featuredBanks ?? [];
+  const banks = featured.length
+    ? pickFeatured(allBanks, featured, (bank) => [String(bank.id)])
+    : allBanks.slice(0, HOME_BANK_LIMIT);
+  const isLoading = banksLoading || configLoading;
+
+  // Featured banks were picked but none of them can be shown: leave the section out.
+  if (!isLoading && !isError && featured.length && !banks.length) return null;
 
   return (
     <section id="banks-section" className="bg-carbon text-cloud">
@@ -69,7 +80,7 @@ export default function BanksSection() {
                 Array.from({ length: 6 }, (_, i) => (
                   <div key={i} className="h-[104px] animate-pulse rounded-xl bg-graphite" />
                 ))}
-              {banks.slice(0, HOME_BANK_LIMIT).map((bank) => (
+              {!isLoading && banks.map((bank) => (
                 <button
                   key={bank.id}
                   onClick={() => setSelectedBank(bank)}

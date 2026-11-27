@@ -6,6 +6,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { useDigitalServiceCategories } from '@/lib/queries/useDigitalServices';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { servicesForCategory } from '@/lib/digitalServices/categoryServices';
+import { pickFeatured, useMarketplacePageConfiguration } from '@/lib/queries/useMarketplace';
 
 // Custom precision SVG icons matching the exact iconography in the screenshot
 const CategoryIconMap: Record<string, React.ReactNode> = {
@@ -213,9 +214,18 @@ export default function PopularCategories() {
   const {
     data: serviceCategories,
     isError: hasCategoryRequestError,
-    isLoading,
+    isLoading: categoriesLoading,
   } = useDigitalServiceCategories();
-  const services = serviceCategories?.flatMap(servicesForCategory) ?? [];
+  const { data: config, isPending: configLoading } = useMarketplacePageConfiguration();
+  // The admin's featured services (page configuration), matched by featureId (e.g. AIRTIME, CABLE_TV), slug or category.
+  const featured = config?.featuredServices ?? [];
+  const isLoading = categoriesLoading || configLoading;
+  const services = isLoading
+    ? []
+    : pickFeatured(serviceCategories?.flatMap(servicesForCategory) ?? [], featured, (s) => [s.featureId, s.slug, s.category]);
+
+  // Featured services were picked but none of them can be shown: leave the section out.
+  if (!isLoading && !hasCategoryRequestError && featured.length && !services.length) return null;
 
   return (
     <section id="popular-categories" className="bg-cloud text-carbon">
