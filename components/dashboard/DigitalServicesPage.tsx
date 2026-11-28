@@ -89,7 +89,7 @@ function StepIndicator({ step }: { step: ModalStep }) {
 
 function ModalShell({ children, onClose, canClose, title }: { children: React.ReactNode; onClose: () => void; canClose: boolean; title: string }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-729/45 p-4 backdrop-blur-sm">
+    <div className="hz-dialog fixed inset-0 z-50 flex items-center justify-center bg-ink-729/45 p-4 backdrop-blur-sm">
       <div className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-surface text-slate-900 shadow-2xl">
         <div className="flex items-start justify-between px-6 pb-5 pt-6 sm:px-8">
           <div>

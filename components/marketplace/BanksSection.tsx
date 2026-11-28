@@ -52,7 +52,7 @@ export default function BanksSection() {
     >
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
-        <div className="mb-12 text-center space-y-3">
+        <div className="hz-reveal mb-12 text-center space-y-3">
           <span className="text-xs font-bold uppercase tracking-wider text-brand-361">
             Banks
           </span>
@@ -100,7 +100,7 @@ export default function BanksSection() {
                 key={bank.id}
                 onClick={() => setSelectedBank(bank)}
                 type="button"
-                className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-surface shadow-xs text-left transition-shadow duration-200 hover:shadow-md hover:border-slate-300 h-[200px] sm:h-[220px]"
+                className="hz-reveal hz-lift relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-surface shadow-xs text-left hover:border-slate-300 h-[200px] sm:h-[220px]"
               >
                 {/* Logo taking full space of card */}
                 <div className="relative flex-1 w-full bg-surface p-5 flex items-center justify-center">
@@ -144,11 +144,11 @@ export default function BanksSection() {
       {/* ── Bank Opening Modal ─────────────────────────────────────────────── */}
       {selectedBank && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          className="hz-dialog fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           onClick={(e) => e.target === e.currentTarget && setSelectedBank(null)}
         >
           {/* Card */}
-          <div className="w-full max-w-sm rounded-3xl bg-surface px-6 pt-8 pb-5 shadow-2xl text-slate-900 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-surface px-6 pt-8 pb-5 shadow-2xl text-slate-900">
             {/* Bank logo — left-aligned */}
             <div className="flex mb-5">
               <div className="flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-tone-28 p-2.5 border border-slate-100">

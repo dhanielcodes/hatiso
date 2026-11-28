@@ -159,7 +159,7 @@ export function buttonClass(
   opts?: { size?: ButtonSize; fullWidth?: boolean }
 ) {
   return [
-    'inline-flex items-center justify-center gap-1.5 transition disabled:cursor-not-allowed disabled:opacity-50',
+    'hz-press inline-flex items-center justify-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-50',
     BUTTON_VARIANTS[variant],
     BUTTON_SIZES[opts?.size ?? 'md'],
     opts?.fullWidth ? 'w-full' : '',

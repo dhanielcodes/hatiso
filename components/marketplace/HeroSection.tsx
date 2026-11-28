@@ -76,7 +76,7 @@ export default function HeroSection() {
       <div className="mx-auto max-w-7xl">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
           {/* Left Column: Headline & Value Proposition */}
-          <div className="flex flex-col space-y-6 lg:col-span-6 xl:col-span-6">
+          <div className="hz-stagger flex flex-col space-y-6 lg:col-span-6 xl:col-span-6">
             <div className="space-y-2">
               <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
                 <span className="block text-brand-305 drop-shadow-sm">
@@ -96,7 +96,7 @@ export default function HeroSection() {
 
           {/* Right Column: Straight Cards Carousel with Blurred Out Sides (NO SHADOWS) */}
           <div
-            className="relative flex flex-col items-center justify-center lg:col-span-6 xl:col-span-6"
+            className="hz-rise relative flex flex-col items-center justify-center [--d:3] lg:col-span-6 xl:col-span-6"
             onMouseEnter={() => setIsAutoPlaying(false)}
             onMouseLeave={() => setIsAutoPlaying(true)}
           >

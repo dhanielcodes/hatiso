@@ -217,14 +217,14 @@ export default function PopularCategories() {
     <section id="popular-categories" className="relative px-4 py-36 sm:px-8 lg:px-14">
       <div className="mx-auto max-w-7xl">
         {/* Section Title */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="hz-reveal mb-6 flex items-center justify-between">
           <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
             Popular Categories
           </h2>
         </div>
 
         {/* Categories Grid & Featured Promo Banner */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="hz-reveal grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Left: 2 Rows x 5 Columns Grid of Two-Tone Category Cards (10 Cards total) */}
           <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-5 lg:col-span-8 lg:gap-3.5 xl:col-span-9" aria-live="polite">
             {isLoading &&

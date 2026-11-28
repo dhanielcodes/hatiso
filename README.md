@@ -26,6 +26,7 @@ This README is for frontend developers joining the project. It covers how to run
 - [State management](#state-management)
 - [Errors and notifications](#errors-and-notifications)
 - [Styling](#styling)
+- [Motion and page transitions](#motion-and-page-transitions)
 - [Conventions checklist](#conventions-checklist)
 
 ---
@@ -686,6 +687,12 @@ The React Query defaults in `app/providers.tsx` are: retry once, no refetch on w
 - **Charts** are Chart.js wrappers in `components/dashboard/DashboardCharts.tsx`:
   - `SpendingChart`: line/area chart.
   - `ServiceUsageChart`: a pie by default; pass `donut` for the ring with rounded segments used on Analytics.
+- **Chart tooltips** for hand-drawn (SVG/HTML) charts use `components/ui/ChartTooltip.tsx`:
+  - Props: `x`/`y` (the anchor point), `title`, `rows` (`label`, `value`, optional `color` swatch and `dashed`), `edge` and `placement`.
+  - `tooltipEdge(index, count)` returns the `edge` that keeps the card inside the chart near the left and right sides.
+  - `placement="below"` opens the card under the anchor. Use it where the chart sits in a scroll container (`overflow-x-auto` also clips vertically), as the heatmap's top rows do.
+  - Analytics "This month vs last month": hover or move along the chart (or focus it and use ← / →) to see the day with both months' running totals. A guide line and dots mark the day.
+  - Analytics "When you pay": hover or tab to a cell to see the day, time of day and number of payments.
 - **Auth brand panel** (`components/auth/AuthBrandPanel.tsx`) is the left side of login, register and forgot-password on desktop:
   - It stays in the viewport while the form scrolls, and the photo frame shrinks to fit shorter screens.
   - Photos live in the `SLIDES` array (`src`, `alt`, plus `position` and `zoom` to set the crop). They cross-fade inside a squircle frame every 6s.
@@ -701,6 +708,34 @@ The React Query defaults in `app/providers.tsx` are: retry once, no refetch on w
 - **Favicons and app icons** use the "cloud on carbon" set: `app/favicon.ico`, `app/icon.svg` and `app/apple-icon.png` (Next.js file conventions), the matching copies in `public/` referenced by `metadata.icons`, and the Android icons in `public/brand/icons/` listed in `app/manifest.ts`. The other icon sets (carbon on white, cloud on graphite, graphite on cloud, white on black) aren't in the repo; swap the files from the brand pack to change them.
 - **Icons** come from `lucide-react`.
 - **Remote images** must come from a host listed under `images.remotePatterns` in `next.config.ts`.
+
+---
+
+## Motion and page transitions
+
+**Page transitions** use React's `<ViewTransition>` (React 19.3; Next.js runs every navigation as a transition, so no config is needed).
+
+- `components/motion/PageTransition.tsx` wraps a route's content: the old page fades out (140ms) and the new one fades in and rises 14px (`.hz-page` in `app/globals.css`).
+- It's used by route templates, which remount when the segment under them changes: `app/template.tsx` (top-level routes), `app/auth/template.tsx`, `app/services/template.tsx`, `app/categories/template.tsx`, `app/dashboard/template.tsx`, `app/dashboard/transactions/template.tsx` and `app/dashboard/support/template.tsx`.
+- **Adding a route group whose pages share a parent segment?** Give it a `template.tsx` that renders `<PageTransition>`, or moving between its pages won't animate.
+- The dashboard template sits inside the dashboard layout, so only the content area moves; the sidebar and top bar stay still.
+- The default whole-page crossfade is off (`::view-transition-old(root)`), and clicks pass through while a transition runs. Browsers without the View Transitions API just swap pages.
+
+**Animation classes** (in `app/globals.css`):
+
+| Class | What it does | Used on |
+| --- | --- | --- |
+| `hz-rise` | Fades in and rises; set `[--d:N]` for an N × 90ms delay | Dashboard rows, the home hero carousel |
+| `hz-stagger` | Its children rise one after another | Home hero text, dashboard greeting, metric cards |
+| `hz-reveal` | Rises as it scrolls into view (scroll-driven; browsers without support show it straight away) | Home section headings, categories grid, bank tiles, Solutions, CTA |
+| `hz-dialog` | The backdrop fades in and the panel (its first child) pops up | Every modal overlay |
+| `hz-lift` | Rises with a shadow on hover | Bank tiles, metric cards |
+| `hz-press` | Presses in on click; an `.hz-arrow` icon nudges on hover | `Button` / `SubmitButton` (via `buttonClass()`), CTA buttons |
+| `hz-pop`, `hz-swap`, `hz-bar`, `hz-grow`, `hz-float` | Menus, content swapped in place, chart and progress bars, a gentle bob | Available |
+
+- `hz-reveal` and `hz-rise` animate the CSS `translate` property, which Tailwind v4's `translate-*` / `hover:-translate-y-*` utilities also use. Don't put them on an element that lifts with those; put them on its container (as the categories grid does).
+- While the home page loader shows, the page's own animations are paused, so the hero animates in as it lifts.
+- Everything is off for users who prefer reduced motion, including page transitions.
 
 ---
 

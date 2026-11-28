@@ -322,7 +322,7 @@ export default function BankingPage() {
 
       {/* ── 2-STEP REDIRECTION MODAL ─────────────────────────────────── */}
       {modalStep && selectedBank && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="hz-dialog fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl sm:p-7">
             {/* Bank Logo */}
             <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-tone-83 bg-surface p-1.5">

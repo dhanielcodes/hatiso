@@ -483,8 +483,8 @@ export default function ServiceDetailPage({ initialSlug = 'airtime', initialTitl
       </main>
 
       {isSuccessModalOpen && pendingPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-729/75 p-4 backdrop-blur-sm">
-          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-[28px] bg-surface text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="hz-dialog fixed inset-0 z-50 flex items-center justify-center bg-ink-729/75 p-4 backdrop-blur-sm">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-[28px] bg-surface text-slate-900 shadow-2xl">
             <div className="border-b border-slate-100 px-6 pb-7 pt-8 text-center sm:px-9 sm:pt-10 [@media(max-height:800px)]:pb-5 [@media(max-height:800px)]:pt-6">
               <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-tone-54 text-success-417 ring-8 ring-tone-20">
                 <CheckCircle2 className="h-10 w-10 stroke-[2.4]" />

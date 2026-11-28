@@ -340,7 +340,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-full bg-tone-12 text-tone-760">
-      <section className="border-b border-tone-75 px-5 py-5 sm:px-8 sm:py-6">
+      <section className="hz-stagger border-b border-tone-75 px-5 py-5 sm:px-8 sm:py-6">
         <p className="text-[13px] text-brand-325">
           {today ? moment(today).format("dddd, Do MMMM YYYY") : "\u00a0"}
         </p>
@@ -353,7 +353,7 @@ export default function DashboardPage() {
       </section>
 
       <main className="mx-auto space-y-5 px-5 py-6 sm:px-8 lg:py-7">
-        <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
+        <section className="hz-rise grid gap-5 [--d:1] xl:grid-cols-[1.85fr_.95fr]">
           <div className="relative min-h-[247px] overflow-hidden rounded-xl bg-ink-626 px-7 py-8 text-white sm:px-7">
             {/* Photo in a soft blob shape with floating service icons (design). */}
             <div className="absolute right-[5%] top-1/2 hidden h-[180px] w-[250px] -translate-y-1/2 md:block xl:right-[6%] 2xl:w-[290px]">
@@ -394,7 +394,7 @@ export default function DashboardPage() {
           <PromoCarousel />
         </section>
 
-        <section>
+        <section className="hz-rise [--d:2]">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg text-tone-405">Metrics</h2>
             <div className="flex flex-wrap gap-2">
@@ -485,7 +485,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="hz-stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {isLoading
               ? Array.from({ length: 4 }, (_, index) => (
                   <MetricCardSkeleton key={index} />
@@ -493,7 +493,7 @@ export default function DashboardPage() {
               : metrics.map((metric) => (
                   <article
                     key={metric.label}
-                    className="rounded-xl border border-tone-98 bg-surface px-5 py-6"
+                    className="hz-lift rounded-xl border border-tone-98 bg-surface px-5 py-6"
                   >
                     <p className="text-[15px] text-ink-510">{metric.label}</p>
                     <p className="mt-3 text-[26px] tracking-[-0.02em] text-ink-622">
@@ -517,7 +517,7 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
+        <section className="hz-rise grid gap-5 [--d:3] xl:grid-cols-[1.85fr_.95fr]">
           <article className="rounded-xl border border-tone-98 bg-surface p-5 sm:p-6">
             <div>
               <h2 className="text-xl text-ink-504">Spending overview</h2>
@@ -596,7 +596,7 @@ export default function DashboardPage() {
           </article>
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[1.85fr_.95fr]">
+        <section className="hz-rise grid gap-5 [--d:4] xl:grid-cols-[1.85fr_.95fr]">
           <article className="rounded-xl border border-tone-98 bg-surface p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-xl font-medium text-tone-744">Recent Transaction</h2>

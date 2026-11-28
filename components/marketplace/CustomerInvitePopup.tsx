@@ -46,14 +46,14 @@ export default function CustomerInvitePopup({ onClose }: { onClose: () => void }
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-ink-729/60 p-4 backdrop-blur-[2px]" onClick={onClose}>
+    <div className="hz-dialog fixed inset-0 z-[60] flex items-center justify-center bg-ink-729/60 p-4 backdrop-blur-[2px]" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="invite-title"
         aria-describedby="invite-body"
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-[446px] rounded-2xl bg-surface text-center shadow-[0_24px_60px_-12px_rgba(16,42,54,0.45)] animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full max-w-[446px] rounded-2xl bg-surface text-center shadow-[0_24px_60px_-12px_rgba(16,42,54,0.45)]"
       >
         <button
           type="button"

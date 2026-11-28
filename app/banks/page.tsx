@@ -475,8 +475,8 @@ export default function BanksPage() {
       {/* 3. EXTERNAL BANK REDIRECTION MODAL                        */}
       {/* ========================================================= */}
       {selectedBankModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-surface p-6 text-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="hz-dialog fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-surface p-6 text-slate-900 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-2.5">
                 <BankLogo

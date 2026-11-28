@@ -118,7 +118,7 @@ export default function SolutionsSection() {
       id="solutions"
       className="relative bg-surface px-4 py-20 sm:px-8 lg:px-20 xl:px-28 text-slate-900 overflow-hidden lg:overflow-visible"
     >
-      <div className="mx-auto max-w-7xl">
+      <div className="hz-reveal mx-auto max-w-7xl">
         {/* Segmented Control Pill: [ Personal | Business ], only when both tabs are visible */}
         <div className={`mb-12 items-center justify-start ${showPersonal && showBusiness ? "flex" : "hidden"}`}>
           <div className="inline-flex items-center rounded-xl bg-tone-55 p-1 shadow-inner">

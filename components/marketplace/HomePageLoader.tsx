@@ -40,6 +40,7 @@ export default function HomePageLoader({ className = 'bg-ink-662 text-white' }: 
       role="status"
       aria-live="polite"
       aria-hidden={!isPending}
+      data-hz-loader={isPending ? 'loading' : 'leaving'}
       className={`fixed inset-0 z-[100] flex flex-col items-center justify-center gap-6 transition-opacity ease-out motion-reduce:transition-none ${
         isPending ? 'opacity-100' : 'pointer-events-none opacity-0'
       } ${className}`}

@@ -458,7 +458,7 @@ export default function RegisterPage() {
 
       {/* ══ SUCCESS MODAL ═══════════════════════════════════════════ */}
       {showSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+        <div className="hz-dialog fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-surface p-8 text-center shadow-2xl">
             {/* Green check */}
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">

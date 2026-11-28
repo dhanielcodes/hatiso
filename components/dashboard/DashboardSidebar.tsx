@@ -288,7 +288,7 @@ export default function DashboardSidebar({ open, onClose }: DashboardSidebarProp
       </aside>
 
       {isLogoutConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-729/70 p-4 backdrop-blur-sm">
+        <div className="hz-dialog fixed inset-0 z-50 flex items-center justify-center bg-ink-729/70 p-4 backdrop-blur-sm">
           <div role="dialog" aria-modal="true" aria-labelledby="logout-title" className="w-full max-w-sm rounded-2xl bg-surface p-6 text-tone-760 shadow-2xl">
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-tone-39 text-brand-361">
               <LogOut className="h-5 w-5" />

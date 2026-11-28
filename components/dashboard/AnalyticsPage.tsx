@@ -5,6 +5,7 @@ import { CalendarDays, ChevronDown, Upload } from 'lucide-react';
 import { ServiceUsageChart, SpendingChart } from '@/components/dashboard/DashboardCharts';
 import { useAuthStore } from '@/lib/store/authStore';
 import { ChartSkeleton, MetricCardSkeleton, ProgressListSkeleton } from '@/components/ui/Skeleton';
+import ChartTooltip, { tooltipEdge } from '@/components/ui/ChartTooltip';
 import { useAnalytics, useAnalyticsCSV } from '@/lib/queries/useDashboard';
 import { DashboardBucket } from '@/lib/api/dashboard';
 import { themeColor, useColorMode, useTheme, type ColorMode, type ThemeId } from '@/lib/theme/theme';
@@ -71,6 +72,9 @@ function unwrapAnalytics(payload: unknown): AnalyticsData | undefined {
 const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
 const DAY_KEYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 const TIME_SLOTS = ['Morn.', 'Noon', 'Evening', 'Night'];
+/** Full names for the heatmap tooltip. */
+const WEEK_DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const TIME_SLOT_NAMES = ['Morning', 'Noon', 'Evening', 'Night'];
 const SLOT_KEYS = ['morning', 'noon', 'evening', 'night'] as const;
 // Heatmap ramp, quiet to busy: light to dark in light mode, dark to light in dark mode.
 // Hue themes (and every theme but Hatiso in dark mode) build theirs from their accent tokens.
@@ -254,14 +258,21 @@ function EmptyState({ message }: { message: string }) {
 }
 
 /* ─── Cumulative "this month vs last month" line chart (inline SVG) ─ */
+/**
+ * "This month vs last month": cumulative spend by day of the month. Hovering (or focusing and using the arrow keys)
+ * shows a guide line, a dot on each line and a tooltip with both running totals for that day.
+ */
 function CumulativeChart({
     thisMonth,
     lastMonth,
     days,
+    dayLabels,
 }: {
     thisMonth: number[];
     lastMonth: number[];
     days: number;
+    /** Day of the month for each point (from the API); defaults to 1, 2, 3… */
+    dayLabels?: number[];
 }) {
     const W = 620;
     const H = 240;
@@ -269,6 +280,7 @@ function CumulativeChart({
     const R = 12;
     const T = 14;
     const B = 28;
+    const [active, setActive] = useState<number | null>(null);
     const maxVal = Math.max(1, ...thisMonth, ...lastMonth);
     const x = (i: number) => L + (i / Math.max(days - 1, 1)) * (W - L - R);
     const y = (v: number) => T + (1 - v / maxVal) * (H - T - B);
@@ -280,33 +292,85 @@ function CumulativeChart({
     const lastIndex = thisMonth.length - 1;
     const lastValue = thisMonth[lastIndex] ?? 0;
 
+    const pick = (e: React.PointerEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const svgX = ((e.clientX - rect.left) / rect.width) * W;
+        const i = Math.round(((svgX - L) / (W - L - R)) * (days - 1));
+        setActive(Math.min(days - 1, Math.max(0, i)));
+    };
+    const onKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        const step = e.key === 'ArrowRight' ? 1 : -1;
+        setActive((i) => Math.min(days - 1, Math.max(0, (i ?? (step > 0 ? -1 : days)) + step)));
+    };
+    const day = active === null ? 0 : (dayLabels?.[active] ?? active + 1);
+    const thisValue = active === null ? undefined : thisMonth[active];
+    const lastMonthValue = active === null ? undefined : lastMonth[active];
+
     return (
-        <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Cumulative spend, this month versus last month">
-            {yTicks.map((tick) => (
-                <g key={tick}>
-                    <line x1={L} x2={W - R} y1={y(tick)} y2={y(tick)} className="stroke-tone-78" strokeWidth="1" />
-                    <text x={L - 8} y={y(tick) + 3} textAnchor="end" fontSize="10" className="fill-tone-351">
-                        {compactNaira(tick)}
-                    </text>
-                </g>
-            ))}
-            {xTicks.map((i) => (
-                <g key={i}>
-                    <line x1={x(i)} x2={x(i)} y1={T} y2={H - B} className="stroke-tone-62" strokeWidth="1" />
-                    <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="10" className="fill-tone-351">
-                        {i + 1}
-                    </text>
-                </g>
-            ))}
-            <path d={path(lastMonth)} fill="none" stroke="#E8502D" strokeWidth="2" strokeDasharray="2 4" strokeLinecap="round" />
-            <path d={path(thisMonth)} fill="none" stroke="#4CAF50" strokeWidth="2" strokeDasharray="2 4" strokeLinecap="round" />
-            {lastIndex >= 0 && (
-                <g>
-                    <line x1={x(lastIndex)} x2={x(lastIndex)} y1={T} y2={H - B} stroke="#E8502D" strokeWidth="1.5" />
-                    <circle cx={x(lastIndex)} cy={y(lastValue)} r="4" fill="#E8502D" />
-                </g>
+        <div
+            className="relative rounded-md outline-none focus-visible:ring-2 focus-visible:ring-tone-414"
+            tabIndex={0}
+            role="group"
+            aria-label="Cumulative spend, this month versus last month. Use the left and right arrow keys to read each day."
+            onPointerMove={pick}
+            onPointerLeave={() => setActive(null)}
+            onBlur={() => setActive(null)}
+            onKeyDown={onKey}
+        >
+            <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" aria-hidden="true">
+                {yTicks.map((tick) => (
+                    <g key={tick}>
+                        <line x1={L} x2={W - R} y1={y(tick)} y2={y(tick)} className="stroke-tone-78" strokeWidth="1" />
+                        <text x={L - 8} y={y(tick) + 3} textAnchor="end" fontSize="10" className="fill-tone-351">
+                            {compactNaira(tick)}
+                        </text>
+                    </g>
+                ))}
+                {xTicks.map((i) => (
+                    <g key={i}>
+                        <line x1={x(i)} x2={x(i)} y1={T} y2={H - B} className="stroke-tone-62" strokeWidth="1" />
+                        <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="10" className="fill-tone-351">
+                            {i + 1}
+                        </text>
+                    </g>
+                ))}
+                <path d={path(lastMonth)} fill="none" stroke="#E8502D" strokeWidth="2" strokeDasharray="2 4" strokeLinecap="round" />
+                <path d={path(thisMonth)} fill="none" stroke="#4CAF50" strokeWidth="2" strokeDasharray="2 4" strokeLinecap="round" />
+                {lastIndex >= 0 && active === null && (
+                    <g>
+                        <line x1={x(lastIndex)} x2={x(lastIndex)} y1={T} y2={H - B} stroke="#E8502D" strokeWidth="1.5" />
+                        <circle cx={x(lastIndex)} cy={y(lastValue)} r="4" fill="#E8502D" />
+                    </g>
+                )}
+                {active !== null && (
+                    <g className="pointer-events-none">
+                        <line x1={x(active)} x2={x(active)} y1={T} y2={H - B} className="stroke-tone-414" strokeWidth="1" />
+                        {lastMonthValue !== undefined && <circle cx={x(active)} cy={y(lastMonthValue)} r="4" fill="#E8502D" className="stroke-surface" strokeWidth="2" />}
+                        {thisValue !== undefined && <circle cx={x(active)} cy={y(thisValue)} r="4" fill="#4CAF50" className="stroke-surface" strokeWidth="2" />}
+                    </g>
+                )}
+            </svg>
+            {active !== null && (
+                <>
+                    <ChartTooltip
+                        x={`${(x(active) / W) * 100}%`}
+                        y={`${(y(Math.max(thisValue ?? 0, lastMonthValue ?? 0)) / H) * 100}%`}
+                        edge={tooltipEdge(active, days)}
+                        title={`Day ${day}, spent so far`}
+                        rows={[
+                            ...(thisValue !== undefined ? [{ label: 'This month', value: formatNaira(thisValue), color: '#4CAF50' }] : []),
+                            ...(lastMonthValue !== undefined ? [{ label: 'Last month', value: formatNaira(lastMonthValue), color: '#E8502D' }] : []),
+                        ]}
+                    />
+                    <span className="sr-only" aria-live="polite">
+                        Day {day}: this month {thisValue !== undefined ? formatNaira(thisValue) : 'no data'}, last month{' '}
+                        {lastMonthValue !== undefined ? formatNaira(lastMonthValue) : 'no data'}
+                    </span>
+                </>
             )}
-        </svg>
+        </div>
     );
 }
 
@@ -357,6 +421,8 @@ export default function AnalyticsPage() {
     const lastMonthSeries = useMemo(() => comparisonPoints.map((p) => p.previousAmountMinor), [comparisonPoints]);
 
     const heatCounts = useMemo(() => buildHeatCounts(analytics?.paymentActivity ?? []), [analytics]);
+    /** The "When you pay" cell under the pointer or keyboard focus, for its tooltip. */
+    const [heatCell, setHeatCell] = useState<{ day: number; slot: number } | null>(null);
 
     const providers = analytics?.topProviders ?? [];
     const providerMax = Math.max(1, ...providers.map((p) => p.amountMinor));
@@ -651,7 +717,7 @@ export default function AnalyticsPage() {
                                     </div>
                                 </div>
                                 <div className="mt-4">
-                                    <CumulativeChart thisMonth={thisMonthSeries} lastMonth={lastMonthSeries} days={comparisonPoints.length} />
+                                    <CumulativeChart thisMonth={thisMonthSeries} lastMonth={lastMonthSeries} days={comparisonPoints.length} dayLabels={comparisonPoints.map((p) => p.day)} />
                                 </div>
                             </>
                         )}
@@ -687,10 +753,30 @@ export default function AnalyticsPage() {
                                             {heatCounts[dayIndex].map((count, slotIndex) => (
                                                 <div
                                                     key={`${day}-${slotIndex}`}
-                                                    title={`${count} payment${count === 1 ? '' : 's'}`}
-                                                    className="h-9 rounded-md"
+                                                    tabIndex={0}
+                                                    role="img"
+                                                    aria-label={`${WEEK_DAY_NAMES[dayIndex]}, ${TIME_SLOT_NAMES[slotIndex]}: ${count} payment${count === 1 ? '' : 's'}`}
+                                                    onPointerEnter={() => setHeatCell({ day: dayIndex, slot: slotIndex })}
+                                                    onPointerLeave={() => setHeatCell(null)}
+                                                    onFocus={() => setHeatCell({ day: dayIndex, slot: slotIndex })}
+                                                    onBlur={() => setHeatCell(null)}
+                                                    className={`relative h-9 rounded-md outline-none transition-shadow duration-150 focus-visible:ring-2 focus-visible:ring-tone-414 ${
+                                                        heatCell?.day === dayIndex && heatCell.slot === slotIndex ? 'ring-2 ring-tone-414 ring-offset-1 ring-offset-surface' : ''
+                                                    }`}
                                                     style={{ backgroundColor: heatColors[heatLevel(count)] }}
-                                                />
+                                                >
+                                                    {heatCell?.day === dayIndex && heatCell.slot === slotIndex && (
+                                                        <ChartTooltip
+                                                            x="50%"
+                                                            // Above the cell, except on the top rows, where the scrolling box would clip it.
+                                                            y={dayIndex < 2 ? '100%' : 0}
+                                                            placement={dayIndex < 2 ? 'below' : 'above'}
+                                                            edge={slotIndex === 0 ? 'start' : slotIndex === TIME_SLOTS.length - 1 ? 'end' : 'center'}
+                                                            title={`${WEEK_DAY_NAMES[dayIndex]}, ${TIME_SLOT_NAMES[slotIndex]}`}
+                                                            rows={[{ label: 'Payments', value: String(count), color: heatColors[heatLevel(count)] }]}
+                                                        />
+                                                    )}
+                                                </div>
                                             ))}
                                         </div>
                                     ))}

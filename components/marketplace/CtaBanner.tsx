@@ -14,7 +14,7 @@ export default function CtaBanner({
 }: CtaBannerProps) {
   return (
     <section className="relative bg-ink-662 px-4 py-20 sm:px-8 lg:px-14">
-      <div className="mx-auto max-w-7xl">
+      <div className="hz-reveal mx-auto max-w-7xl">
         <div className="relative overflow-hidden rounded-[32px] bg-ink-592 px-6 py-16 sm:px-12 sm:py-20 lg:py-24 text-center shadow-2xl border border-white/5">
           {/* Decorative Topographic / Wave Contours */}
           <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
@@ -67,13 +67,13 @@ export default function CtaBanner({
             <div className="pt-6 sm:pt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
               <Link
                 href="/auth/register"
-                className="inline-flex items-center justify-center rounded-xl bg-brand-359 px-7 py-3.5 text-xs sm:text-sm font-bold text-on-brand shadow-lg shadow-brand-361/20 transition-all duration-150 hover:bg-brand-370 active:scale-[0.98]"
+                className="inline-flex items-center justify-center rounded-xl bg-brand-359 px-7 py-3.5 text-xs sm:text-sm font-bold text-on-brand shadow-lg shadow-brand-361/20 hz-press hover:bg-brand-370"
               >
                 Create a free account
               </Link>
               <Link
                 href={secondaryButtonHref}
-                className="inline-flex items-center justify-center rounded-xl bg-surface px-7 py-3.5 text-xs sm:text-sm font-bold text-ink-729 shadow-md transition-all duration-150 hover:bg-slate-100 active:scale-[0.98]"
+                className="inline-flex items-center justify-center rounded-xl bg-surface px-7 py-3.5 text-xs sm:text-sm font-bold text-ink-729 shadow-md hz-press hover:bg-slate-100"
               >
                 {secondaryButtonText}
               </Link>

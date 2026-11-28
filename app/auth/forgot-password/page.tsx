@@ -348,7 +348,7 @@ export default function ForgotPasswordPage() {
 
       {/* ══ SUCCESS MODAL ═══════════════════════════════════════════ */}
       {showSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="hz-dialog fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-surface p-8 text-center shadow-2xl">
             <h2 className="flex items-center justify-center gap-2 text-xl font-bold text-tone-822">
               Password Reset Successful

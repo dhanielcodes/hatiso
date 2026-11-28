@@ -135,3 +135,69 @@ body {
     radial-gradient(circle at 20% 80%, rgba(255, 90, 31, 0.05) 0%, transparent 45%),
     var(--brand-bg);
 }
+/* ---------------------------------------------------------------------------
+ * Motion. Entrances: hz-rise (set --d for a 90ms step delay), hz-stagger (children one after another),
+ * hz-reveal (rises as it scrolls into view, where the browser supports scroll-driven animation).
+ * Accents: hz-pop (dialogs, menus), hz-swap (content that changes in place), hz-bar / hz-grow (chart and progress
+ * bars), hz-float (gentle bob). Hover: hz-lift (cards rise), hz-press (buttons press in; .hz-arrow nudges).
+ * Everything is switched off when the device asks for reduced motion.
+ * ------------------------------------------------------------------------- */
+:root { --ease-out-soft: cubic-bezier(0.23, 1, 0.32, 1); }
+@keyframes hz-rise { from { opacity: 0; translate: 0 16px; } to { opacity: 1; translate: 0 0; } }
+@keyframes hz-pop { from { opacity: 0; translate: 0 10px; scale: 0.96; } to { opacity: 1; translate: 0 0; scale: 1; } }
+@keyframes hz-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+@keyframes hz-swap { from { opacity: 0; transform: translateY(14px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes hz-bar { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes hz-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.hz-rise { animation: hz-rise 0.7s var(--ease-out-soft) both; animation-delay: calc(var(--d, 0) * 90ms); }
+.hz-stagger > * { animation: hz-rise 0.6s var(--ease-out-soft) both; }
+.hz-stagger > *:nth-child(2) { animation-delay: 0.06s; }
+.hz-stagger > *:nth-child(3) { animation-delay: 0.12s; }
+.hz-stagger > *:nth-child(4) { animation-delay: 0.18s; }
+.hz-stagger > *:nth-child(5) { animation-delay: 0.24s; }
+.hz-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+.hz-stagger > *:nth-child(7) { animation-delay: 0.36s; }
+.hz-stagger > *:nth-child(n + 8) { animation-delay: 0.42s; }
+.hz-float { animation: hz-float 6s ease-in-out infinite; }
+.hz-swap { animation: hz-swap 0.6s var(--ease-out-soft) both; }
+.hz-pop { animation: hz-pop 0.28s var(--ease-out-soft) both; }
+/* Dialogs: the backdrop fades in and the panel (its first child) pops up. */
+.hz-dialog { animation: hz-vt-fade 0.2s ease-out both; }
+.hz-dialog > :first-child { animation: hz-pop 0.32s var(--ease-out-soft) 0.04s both; }
+.hz-bar { transform-origin: bottom; animation: hz-bar 0.7s var(--ease-out-soft) both; }
+.hz-grow { transform-origin: left; animation: hz-grow 0.6s var(--ease-out-soft) 0.15s both; }
+.hz-lift { transition: transform 0.3s var(--ease-out-soft), box-shadow 0.3s var(--ease-out-soft), border-color 0.2s ease; }
+.hz-lift:active { transform: scale(0.98); }
+.hz-press { transition: transform 0.16s var(--ease-out-soft), background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+.hz-press:active { transform: scale(0.97); }
+.hz-press svg.hz-arrow, .hz-lift .hz-arrow { transition: transform 0.25s var(--ease-out-soft); }
+@supports (animation-timeline: view()) {
+  .hz-reveal { animation: hz-rise linear both; animation-timeline: view(); animation-range: entry 5% cover 30%; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .hz-lift:hover { transform: translateY(-4px); box-shadow: 0 22px 44px -22px rgba(16, 42, 54, 0.4); }
+  .hz-press:hover svg.hz-arrow { transform: translateX(3px); }
+  .hz-lift:hover .hz-arrow { transform: translate(2px, -2px); }
+}
+
+/* Hold the page's own entrance animations while the home page loader covers it, so they play as it lifts. */
+body:has([data-hz-loader="loading"]) *:not([data-hz-loader], [data-hz-loader] *) { animation-play-state: paused !important; }
+
+/* ---------------------------------------------------------------------------
+ * Page transitions (React <ViewTransition> in app/template.tsx and app/dashboard/template.tsx): the old page fades
+ * out quickly, the new one fades in and rises a little. Only the wrapped content animates (the dashboard sidebar
+ * and top bar stay still), and clicks pass through while it runs.
+ * ------------------------------------------------------------------------- */
+@keyframes hz-vt-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hz-vt-rise { from { translate: 0 14px; } to { translate: 0 0; } }
+::view-transition { pointer-events: none; }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+::view-transition-old(.hz-page) { animation: 140ms ease-in both hz-vt-fade reverse; }
+::view-transition-new(.hz-page) { animation: 260ms var(--ease-out-soft) 100ms both hz-vt-fade, 420ms var(--ease-out-soft) 100ms both hz-vt-rise; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hz-rise, .hz-stagger > *, .hz-float, .hz-swap, .hz-pop, .hz-reveal, .hz-bar, .hz-grow, .hz-dialog, .hz-dialog > :first-child { animation: none; }
+  .hz-lift, .hz-press { transition: none; }
+  ::view-transition-old(*), ::view-transition-new(*), ::view-transition-group(*) { animation-duration: 0s !important; animation-delay: 0s !important; }
+}
