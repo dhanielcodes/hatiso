@@ -8,12 +8,20 @@ import {
   CalendarDays,
   ChevronDown,
   ChevronRight,
+  Dices,
   Gift, // Gift, Sparkles and Trophy are used by the commented-out Reward points card.
+  GraduationCap,
   Lightbulb,
   ReceiptText,
+  ShieldCheck,
+  Signal,
+  Smartphone,
   Sparkles,
   Trophy,
   Tv,
+  Wifi,
+  Zap,
+  type LucideIcon,
 } from "lucide-react";
 import {
   ServiceUsageChart,
@@ -58,22 +66,35 @@ function serviceName(serviceType: string) {
   );
 }
 
-// Provider logos for the recent-transactions list, matched on the product code/name. Only the network
-// logos exist as images; other providers get a badge in their brand colour (third-party colours, not themed).
-type Provider = { match: RegExp; name: string; logo?: string; badge?: { label: string; bg: string } };
+// Provider names for the recent-transactions subtitle, matched on the product code/name.
+type Provider = { match: RegExp; name: string };
 const PROVIDERS: Provider[] = [
-  { match: /mtn/, name: "MTN Nigeria", logo: "/images/biller_mtn_hq.png" },
-  { match: /airtel/, name: "Airtel", logo: "/images/biller_airtel_hq.png" },
-  { match: /glo/, name: "Glo", logo: "/images/biller_glo_hq.png" },
-  { match: /9mobile|etisalat/, name: "9mobile", logo: "/images/biller_9mobile_hq.png" },
-  { match: /dstv/, name: "DSTV", badge: { label: "DStv", bg: "#1F5AA6" } },
-  { match: /gotv/, name: "GOtv", badge: { label: "GOtv", bg: "#2E9A4F" } },
-  { match: /startimes/, name: "StarTimes", badge: { label: "ST", bg: "#F57128" } },
-  { match: /showmax/, name: "Showmax", badge: { label: "SM", bg: "#1C1C1C" } },
-  { match: /sporty/, name: "SportyBet", badge: { label: "S", bg: "#E4202D" } },
-  { match: /bet9ja/, name: "Bet9ja", badge: { label: "B9", bg: "#008A46" } },
-  { match: /betway/, name: "Betway", badge: { label: "BW", bg: "#1C1C1C" } },
+  { match: /mtn/, name: "MTN Nigeria" },
+  { match: /airtel/, name: "Airtel" },
+  { match: /glo/, name: "Glo" },
+  { match: /9mobile|etisalat/, name: "9mobile" },
+  { match: /dstv/, name: "DSTV" },
+  { match: /gotv/, name: "GOtv" },
+  { match: /startimes/, name: "StarTimes" },
+  { match: /showmax/, name: "Showmax" },
+  { match: /sporty/, name: "SportyBet" },
+  { match: /bet9ja/, name: "Bet9ja" },
+  { match: /betway/, name: "Betway" },
 ];
+
+// Icon and tint per serviceType for the recent-transactions list (the same icons and tones as Digital services).
+const SERVICE_ICONS: Record<string, { Icon: LucideIcon; tone: string }> = {
+  AIRTIME: { Icon: Smartphone, tone: "bg-tone-82 text-brand-361" },
+  DATA: { Icon: Signal, tone: "bg-tone-65 text-brand-365" },
+  INTERNET: { Icon: Wifi, tone: "bg-tone-67 text-info-453" },
+  ELECTRICITY: { Icon: Zap, tone: "bg-warning-37 text-warning-336" },
+  TV: { Icon: Tv, tone: "bg-tone-79 text-spot-473" },
+  CABLE_TV: { Icon: Tv, tone: "bg-tone-79 text-spot-473" },
+  EDUCATION: { Icon: GraduationCap, tone: "bg-tone-68 text-spot-399" },
+  INSURANCE: { Icon: ShieldCheck, tone: "bg-tone-22 text-warning-293" },
+  BETTING: { Icon: Dices, tone: "bg-tone-60 text-info-416" },
+};
+const FALLBACK_SERVICE_ICON = { Icon: ReceiptText, tone: "bg-tone-37 text-ink-626" };
 
 function providerFor(productCode: string, productName: string) {
   const key = `${productCode} ${productName}`.toLowerCase();
@@ -186,31 +207,14 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function ProviderLogo({ provider, label }: { provider?: Provider; label: string }) {
-  if (provider?.logo) {
-    return (
-      <Image
-        src={provider.logo}
-        alt=""
-        width={56}
-        height={56}
-        className="h-14 w-14 shrink-0 rounded-full object-cover"
-      />
-    );
-  }
-  if (provider?.badge) {
-    return (
-      <div
-        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-base font-bold italic text-white shadow-sm"
-        style={{ backgroundColor: provider.badge.bg }}
-      >
-        {provider.badge.label}
-      </div>
-    );
-  }
+function ServiceIcon({ serviceType }: { serviceType: string }) {
+  const { Icon, tone } = SERVICE_ICONS[serviceType] ?? FALLBACK_SERVICE_ICON;
   return (
-    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-tone-37 text-sm font-bold text-ink-626">
-      {label.slice(0, 2).toUpperCase()}
+    // Dark mode flattens the light tints to the card colour, so the circle takes the page background there.
+    <div
+      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${tone} [[data-mode=dark]_&]:bg-tone-44`}
+    >
+      <Icon aria-hidden="true" className="h-6 w-6" strokeWidth={1.8} />
     </div>
   );
 }
@@ -618,7 +622,7 @@ export default function DashboardPage() {
                       key={transaction.txnRef}
                       className="flex items-center gap-4 py-5 first:pt-3"
                     >
-                      <ProviderLogo provider={provider} label={transaction.productName} />
+                      <ServiceIcon serviceType={transaction.serviceType} />
                       <div className="min-w-0 flex-1">
                         {/* Design shows the recipient (phone/meter/smartcard); fall back to the product name. */}
                         <p className="truncate text-lg font-medium leading-6 text-tone-744">

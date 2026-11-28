@@ -213,8 +213,8 @@ Someone who started signing up but never verified their email or phone is sent b
   - Analytics still uses the default variant.
 - **Digital Services usage:** a pie with callout labels (`ServiceUsageChart` with `callouts`). Names and colours per service are in `SERVICE_META`.
 - **Recent Transaction:** the last 5. Each row shows:
-  - A provider logo: network images for MTN, Airtel, Glo and 9mobile, and a brand-colour badge for DStv, GOtv, SportyBet and others (`PROVIDERS`).
-  - The recipient (falls back to the product name), with "Service - Provider" underneath.
+  - An icon for the service category (`serviceType`): phone for Airtime, signal for Data, Wi-Fi for Internet, bolt for Electricity, TV for Cable TV, cap for Education, shield for Insurance, dice for Betting, and a receipt for anything else. Icons and tints are in `SERVICE_ICONS` and match the Digital services page. In dark mode the circle uses the page background (`tone-44`), because some themes flatten the light tints to the card colour there. (Provider logos were dropped because the small images looked blurry.)
+  - The recipient (falls back to the product name), with "Service - Provider" underneath. Provider names come from `PROVIDERS`.
   - A SUCCESS, PENDING or FAILED pill.
 - **Reward points:** that card is commented out in the page and stays that way until rewards are ready.
 
